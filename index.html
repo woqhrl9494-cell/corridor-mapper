@@ -1,3 +1,13 @@
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║  EchoMap — Corridor Mapper                              ║
+  ║  Bistatic Radar Tomography Simulator                    ║
+  ╠══════════════════════════════════════════════════════════╣
+  ║  Author : Jaebok Lee                                    ║
+  ║  Email  : ok7393@hanyang.ac.kr                          ║
+  ║  School : Hanyang University                            ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -88,6 +98,23 @@ header {
   padding: 3px 8px;
   border-radius: 20px;
 }
+.header-author {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.header-author a {
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.header-author a:hover { opacity: 1; }
 
 /* ── LAYOUT ─────────────────────────────── */
 .main { display: flex; flex: 1; overflow: hidden; }
@@ -524,6 +551,13 @@ canvas {
   <span class="logo-sub">/ Corridor Mapper</span>
   <div class="header-sep"></div>
   <span class="header-badge">BISTATIC · RADAR · TOMOGRAPHY</span>
+  <div class="header-author">
+    <span>Jaebok Lee</span>
+    <span style="color:var(--border2)">·</span>
+    <a href="mailto:ok7393@hanyang.ac.kr">ok7393@hanyang.ac.kr</a>
+    <span style="color:var(--border2)">·</span>
+    <span>Hanyang Univ.</span>
+  </div>
 </header>
 
 <div class="main">
