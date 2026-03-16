@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/github/stars/woqhrl9494-cell/corridor-mapper?style=for-the-badge&color=FFD700" alt="Stars"/>
   <img src="https://img.shields.io/badge/Zero Dependencies-34C759?style=for-the-badge" alt="Zero Dependencies"/>
   <img src="https://img.shields.io/badge/Single File-FF9500?style=for-the-badge" alt="Single File"/>
-  <img src="https://img.shields.io/badge/License-MIT-8E8E93?style=for-the-badge" alt="MIT License"/>
+  <img src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-8E8E93?style=for-the-badge" alt="CC BY-NC-ND 4.0"/>
 </p>
 
 <br/>
@@ -165,4 +165,12 @@ Hanyang University
 
 ## 📄 License
 
-MIT © Jaebok Lee
+© 2026 Jaebok Lee, Hanyang University
+
+This project is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+
+- ✅ Share with attribution
+- ❌ No commercial use
+- ❌ No modifications or derivatives
+
+For commercial or derivative licensing: [ok7393@hanyang.ac.kr](mailto:ok7393@hanyang.ac.kr)
