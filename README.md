@@ -1,110 +1,157 @@
-# EchoMap — Corridor Mapper
+<div align="center">
 
-> **Interactive bistatic radar tomography simulator** for real-time corridor wall estimation using ellipse accumulation, density scoring, and coherence analysis.
+<h1>EchoMap — Corridor Mapper</h1>
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge&logo=github)](https://woqhrl9494-cell.github.io/corridor-mapper/)
-[![HTML5](https://img.shields.io/badge/HTML5-Single%20File-orange?style=for-the-badge&logo=html5)](https://woqhrl9494-cell.github.io/corridor-mapper/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+<p><strong>Bistatic radar tomography, reconstructed in real-time — in a single HTML file.</strong></p>
+
+<p>
+  <a href="https://woqhrl9494-cell.github.io/corridor-mapper/">
+    <img src="https://img.shields.io/badge/▶ Live Demo-007AFF?style=for-the-badge&logoColor=white" alt="Live Demo"/>
+  </a>
+  <img src="https://img.shields.io/github/stars/woqhrl9494-cell/corridor-mapper?style=for-the-badge&color=FFD700" alt="Stars"/>
+  <img src="https://img.shields.io/badge/Zero Dependencies-34C759?style=for-the-badge" alt="Zero Dependencies"/>
+  <img src="https://img.shields.io/badge/Single File-FF9500?style=for-the-badge" alt="Single File"/>
+  <img src="https://img.shields.io/badge/License-MIT-8E8E93?style=for-the-badge" alt="MIT License"/>
+</p>
+
+<br/>
+
+![EchoMap Demo](assets/demo.png)
+
+<br/>
+
+</div>
 
 ---
 
-## 🎯 Overview
+## What is this?
 
-EchoMap simulates how a **bistatic radar** system can reconstruct corridor wall geometry without direct line-of-sight — a key challenge in search-and-rescue, autonomous navigation, and through-wall sensing.
+Radars can't see through walls — but their reflections can.
 
-Each vehicle acts as a moving radar node. As it travels through the corridor, the system accumulates **bistatic ellipses** from reflected signals. The intersection density of these ellipses reveals the underlying wall structure, which is then extracted via contour tracing and ridge detection.
+**EchoMap** simulates how a network of bistatic radar nodes, mounted on moving vehicles, can reconstruct invisible corridor walls without any direct line-of-sight. Each vehicle acts as both transmitter and receiver. As radar pulses bounce off surfaces, the system accumulates thousands of *bistatic ellipses* — the geometric locus of all points that could have produced each reflected signal.
+
+Where ellipses intersect densely, there's a wall.
+
+This is the core idea behind **bistatic radar tomography**, and EchoMap lets you see it happen in real time — sliders, heatmaps, and all.
+
+**Open it. Press Start. Watch walls emerge from noise.**
+
+---
+
+## 🚀 Try it now
+
+**→ [woqhrl9494-cell.github.io/corridor-mapper](https://woqhrl9494-cell.github.io/corridor-mapper/)**
+
+No installation. No dependencies. One HTML file. Works in any modern browser.
+
+---
+
+## How it works
+
+```
+Moving vehicles emit radar pulses
+         ↓
+Each pulse reflected off a wall generates a bistatic ellipse
+         ↓
+Thousands of ellipses accumulate on a spatial density grid
+         ↓
+Grid cells with high intersection density → wall candidates
+         ↓
+Tangent coherence filtering removes false positives
+         ↓
+Ridge detection extracts the final wall estimate
+```
+
+### Three-panel analysis
+
+| Panel | What it shows |
+|-------|--------------|
+| **A — Density Gradient** | Raw ellipse accumulation heatmap. Orange = high density = likely wall |
+| **B — Tangent Coherence** | Each cell scored by how consistently ellipses align across it |
+| **A × B — Wall Score** | Combined signal. Green contours = estimated wall |
 
 ---
 
 ## ✨ Features
 
-- **Real-time ellipse accumulation** — visualize bistatic reflection geometry as vehicles move
-- **Density gradient analysis** — grid-based hit density scoring with tunable threshold
-- **Tangent coherence scoring** — wall candidacy ranked by local ellipse alignment
-- **Ridge extraction** — automated corridor wall estimation from density peaks
-- **Dual scenario support** — straight **Corridor** and curved **Torus** environments
-- **Live metrics** — Precision, Recall, F1, Hausdorff distance, Wall Score
-- **Zero dependencies** — pure HTML5 + Canvas, runs entirely in the browser
+- **Real-time bistatic ellipse accumulation** — thousands of ellipses rendered at interactive speeds
+- **Dual scenarios** — straight *Corridor* and curved *Torus* environments
+- **Live evaluation metrics** — Precision, Recall, F1, Hausdorff distance, Chamfer distance, Wall Score
+- **Fully parametric** — tweak wall roughness, vehicle count, radar noise, grid resolution, and more
+- **Zero dependencies** — pure HTML5 + Canvas API, no build step, no npm, no frameworks
+- **Single file** — the entire simulator lives in one `index.html`
 
 ---
 
-## 🚀 Live Demo
-
-**[→ Try it now](https://woqhrl9494-cell.github.io/corridor-mapper/)**
-
-No installation required. Open in any modern browser.
-
----
-
-## 🖥️ How It Works
-
-```
-Vehicles move through corridor
-        ↓
-Each pair of Tx/Rx positions defines a bistatic ellipse
-        ↓
-Ellipses are accumulated on a 2D density grid
-        ↓
-High-density cells → wall candidates
-        ↓
-Coherence filtering → final wall estimate
-```
-
-### Algorithm Pipeline
-
-| Stage | Description |
-|-------|-------------|
-| **Ellipse Generation** | For each radar hit, compute the bistatic ellipse from transmitter/receiver geometry |
-| **Grid Accumulation** | Rasterize ellipses onto a spatial grid; count intersections per cell |
-| **Density Gradient (A)** | Normalize grid → identify peak density regions |
-| **Tangent Coherence (B)** | Score each cell by alignment of surrounding ellipse tangents |
-| **Wall Score (A×B)** | Multiply density and coherence → ridge detection → final wall contour |
-
----
-
-## 🎮 Controls
+## 🎮 Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| **Seed** | Random environment seed |
-| **Gap height** | Corridor width (meters) |
-| **Roughness / Curvature** | Wall surface complexity |
-| **Vehicle Count / Speed** | Number of moving radar nodes and their velocity |
-| **Spread / Noise** | Measurement spread and signal noise level |
-| **Alpha** | Ellipse transparency for accumulation visualization |
-| **Grid G** | Spatial resolution of the density grid |
-| **Threshold** | Minimum density for wall candidate selection |
+| `Seed` | Randomizes the environment geometry |
+| `Gap height` | Corridor width in meters |
+| `Roughness` | Wall surface irregularity |
+| `Curvature` | Wall curvature (0 = flat, 1 = max curve) |
+| `Vehicle Count` | Number of moving radar nodes |
+| `Speed` | Vehicle speed (m/step) |
+| `Spread` | Radar beam spread angle |
+| `Noise` | Signal measurement noise σ |
+| `Alpha` | Ellipse opacity (lower = see more accumulation) |
+| `Show last N` | How many recent ellipses to render |
+| `Grid G` | Spatial resolution of density grid |
+| `Threshold` | Minimum density for wall candidacy |
 
 ---
 
 ## 📐 Scenarios
 
 ### Corridor
-Straight-walled corridor with configurable roughness and curvature. Classic indoor sensing scenario.
+A straight corridor with configurable wall roughness and curvature. Classic indoor sensing scenario.
 
 ### Torus
-Curved toroidal corridor — tests the algorithm's robustness under non-linear wall geometry.
-
----
-
-## 🛠️ Tech Stack
-
-- **Vanilla HTML5 / CSS3 / JavaScript** — zero frameworks, zero dependencies
-- **Canvas 2D API** — real-time rendering of ellipses, grids, and overlays
-- **DM Sans + DM Mono** — Google Fonts for clean scientific UI
+A closed curved corridor forming a ring — tests the algorithm's robustness under non-linear wall geometry.
 
 ---
 
 ## 📊 Evaluation Metrics
 
+The sidebar computes these metrics live as the simulation runs:
+
 | Metric | Description |
 |--------|-------------|
-| **Precision** | Fraction of estimated wall points near ground truth |
-| **Recall** | Fraction of ground truth wall covered by estimate |
-| **F1 Score** | Harmonic mean of precision and recall |
-| **Wall Score** | Combined density × coherence score |
-| **Chamfer Distance** | Mean bidirectional distance between estimated and true wall |
-| **Hausdorff 95** | 95th percentile of max deviation |
+| **Precision** | % of estimated wall points within tolerance of ground truth |
+| **Recall** | % of ground truth wall covered by the estimate |
+| **F1 Score** | Harmonic mean of Precision and Recall |
+| **Wall Score** | Peak A×B density score (coherence-weighted) |
+| **Chamfer Dist.** | Mean bidirectional distance between estimate and ground truth |
+| **Hausdorff 95** | 95th-percentile worst-case deviation |
+| **Avg Nearest** | Mean nearest-neighbor distance from estimate to truth |
+| **COH Peak** | Maximum coherence value observed |
+| **Wall Cells** | Number of grid cells classified as wall |
+
+---
+
+## 🛠 Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| Rendering | HTML5 Canvas 2D API |
+| Logic | Vanilla JavaScript (ES6+) |
+| Styling | CSS3 custom properties |
+| Fonts | DM Sans + DM Mono (Google Fonts) |
+| Dependencies | **None** |
+| Build step | **None** |
+
+---
+
+## 📂 Structure
+
+```
+corridor-mapper/
+├── index.html      ← The entire simulator (HTML + CSS + JS)
+├── assets/
+│   └── demo.png   ← Screenshot for README
+└── README.md
+```
 
 ---
 
@@ -118,4 +165,4 @@ Hanyang University
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT © Jaebok Lee
