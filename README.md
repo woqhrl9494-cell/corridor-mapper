@@ -16,7 +16,7 @@
 
 <br/>
 
-![EchoMap Demo](assets/demo.png)
+![EchoMap Demo](assets/demo.gif)
 
 <br/>
 
