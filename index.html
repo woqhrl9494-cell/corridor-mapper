@@ -1,0 +1,2870 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EchoMap — Corridor Mapper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f2f2f7;
+  --surface:  #ffffff;
+  --surface2: #f2f2f7;
+  --border:   rgba(0,0,0,0.08);
+  --border2:  rgba(0,0,0,0.13);
+  --text:     #1c1c1e;
+  --text2:    #6e6e73;
+  --text3:    #aeaeb2;
+  --accent:   #007aff;
+  --accent2:  #0055cc;
+  --green:    #34c759;
+  --amber:    #ff9500;
+  --red:      #ff3b30;
+  --cyan:     #32ade6;
+  --r:        12px;
+  --r-sm:     8px;
+  --sidebar:  317px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #e5e5ea;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── HEADER ─────────────────────────────── */
+header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  flex-shrink: 0;
+  gap: 12px;
+  position: relative;
+  z-index: 10;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(0,122,255,0.4);
+  flex-shrink: 0;
+}
+.logo-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.logo-sub {
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+  margin-left: 4px;
+}
+.header-sep { flex: 1; }
+.header-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  border: 1px solid var(--border2);
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* ── LAYOUT ─────────────────────────────── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar {
+  width: var(--sidebar);
+  min-width: var(--sidebar);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+  padding-bottom: 8px;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Scenario pills */
+.scenario-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.scen-pill {
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 100px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: 0.02em;
+}
+.scen-pill:hover { border-color: var(--accent); color: var(--accent); }
+.scen-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,122,255,0.3);
+}
+
+/* Section */
+.sec { padding: 5px 16px 0; }
+.sec-title {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Slider row */
+.param-row {
+  margin-bottom: 4px;
+}
+.param-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.param-name {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text2);
+}
+.param-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Custom range */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(0,0,0,0.1);
+  outline: none;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+input[type=range]:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0,122,255,0.35), 0 0 0 3px rgba(0,122,255,0.15);
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+/* Toggle row (checkboxes) */
+.toggle-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  margin-bottom: 6px;
+}
+.toggle-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text2);
+  transition: all 0.15s;
+  user-select: none;
+}
+.toggle-chip input { display: none; }
+.toggle-chip.checked {
+  border-color: rgba(0,122,255,0.3);
+  background: rgba(0,122,255,0.08);
+  color: var(--accent);
+}
+.toggle-chip .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.15s;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.btn:hover { border-color: rgba(0,0,0,0.2); background: var(--surface2); color: var(--text); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,122,255,0.3), 0 1px 2px rgba(0,0,0,0.1);
+}
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); box-shadow: 0 4px 16px rgba(0,122,255,0.4); }
+.btn-primary.running {
+  background: rgba(52,199,89,0.12);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 0 3px rgba(52,199,89,0.15);
+  animation: pulseGreen 2s ease-in-out infinite;
+}
+@keyframes pulseGreen {
+  0%,100% { box-shadow: 0 0 0 3px rgba(52,199,89,0.15); }
+  50%      { box-shadow: 0 0 0 5px rgba(52,199,89,0.28); }
+}
+.btn-danger { border-color: transparent; background: transparent; color: var(--text3); box-shadow: none; }
+.btn-danger:hover { border-color: rgba(255,59,48,0.3); color: var(--red); background: rgba(255,59,48,0.05); }
+
+
+.btn-row { display: flex; gap: 6px; }
+.btn-row .btn { flex: 1; }
+
+/* Stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.stat-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 2px;
+}
+.stat-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1;
+}
+
+/* ── CANVAS AREA ─────────────────────────── */
+.views {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: 12px;
+  gap: 10px;
+  overflow: hidden;
+}
+.views-row {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+.view {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.06);
+}
+.view::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: var(--r);
+}
+.vlabel {
+  position: absolute;
+  top: 10px; left: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(0,0,0,0.4);
+  pointer-events: none;
+  letter-spacing: 0.06em;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  z-index: 2;
+}
+.vlabel b {
+  color: rgba(0,0,0,0.7);
+  font-weight: 600;
+}
+.vlabel .tag {
+  display: inline-block;
+  background: rgba(0,0,0,0.06);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-right: 5px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+/* Scale bar */
+#scaleBar {
+  position: absolute;
+  bottom: 12px; left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  z-index: 2;
+  pointer-events: none;
+}
+#scaleBar .bar {
+  height: 2px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 1px;
+  position: relative;
+}
+#scaleBar .bar::before,
+#scaleBar .bar::after {
+  content: '';
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 2px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 1px;
+}
+#scaleBar .bar::before { left: 0; }
+#scaleBar .bar::after  { right: 0; }
+#scaleBar .bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+/* divider */
+.sec-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0 0;
+}
+
+/* 2-column param grid */
+.param-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+.param-grid2 .param-row { margin-bottom: 3px; }
+.param-grid2 .param-name { font-size: 10px; }
+.param-grid2 .param-val  { font-size: 10px; }
+.param-grid2 input[type=range] { height: 2px; }
+.param-grid2 input[type=range]::-webkit-slider-thumb { width: 11px; height: 11px; }
+
+/* Compact param-row for tight sections */
+.param-row-compact { margin-bottom: 5px; }
+.param-row-compact .param-label { margin-bottom: 2px; }
+.param-row-compact .param-name { font-size: 10px; }
+.param-row-compact .param-val  { font-size: 10px; min-width: 28px; }
+
+/* Stats: brighter, more readable */
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.stat-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1;
+}
+
+/* Compact sections */
+.sec-sm { padding: 8px 16px 0; }
+.sec-sm .sec-title { margin-bottom: 7px; }
+
+
+  /* ── Wall Metrics Panel ── */
+  /* mbar: progress bar inside stat-card */
+  .mbar-track {
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .mbar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease, background 0.4s;
+  }
+  .mval-good  { color: var(--green); }
+  .mval-warn  { color: var(--amber); }
+  .mval-bad   { color: var(--red); }
+  .mval-na    { color: var(--text3); }
+  .mbar-good  { background: var(--green); }
+  .mbar-warn  { background: var(--amber); }
+  .mbar-bad   { background: var(--red); }
+  .metrics-score-grade {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    transition: all 0.4s;
+  }
+  .grade-A { background: rgba(52,199,89,0.12);  color: var(--green); border: 1px solid rgba(52,199,89,0.25); }
+  .grade-B { background: rgba(255,149,0,0.10);  color: var(--amber); border: 1px solid rgba(255,149,0,0.25); }
+  .grade-C { background: rgba(255,59,48,0.10);  color: var(--red);   border: 1px solid rgba(255,59,48,0.25); }
+  .grade-X { background: var(--border);         color: var(--text3); border: 1px solid var(--border2); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot"></div>
+  <span class="logo-text">EchoMap</span>
+  <span class="logo-sub">/ Corridor Mapper</span>
+  <div class="header-sep"></div>
+  <span class="header-badge">BISTATIC · RADAR · TOMOGRAPHY</span>
+</header>
+
+<div class="main">
+<div class="sidebar">
+
+  <!-- SCENARIO -->
+  <div class="scenario-bar">
+    <button id="btnScenCorridor" class="scen-pill active">Corridor</button>
+    <button id="btnScenTorus"    class="scen-pill">Torus</button>
+  </div>
+
+  <!-- ENVIRONMENT -->
+  <div class="sec">
+    <div class="sec-title" id="secEnvTitle">Environment</div>
+
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Seed</span>
+          <span class="param-val" id="vSeed">42</span>
+        </div>
+        <input type="range" id="seed" min="1" max="99" value="42">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Gap height</span>
+          <span class="param-val" id="vGap">10 <span style="font-size:9px;color:var(--text3)">m</span></span>
+        </div>
+        <input type="range" id="gap" min="4" max="20" step="0.5" value="10">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Roughness</span>
+          <span class="param-val" id="vRough">0.40</span>
+        </div>
+        <input type="range" id="rough" min="0" max="1.0" step="0.05" value="0.40">
+      </div>
+
+      <div id="corridorParams">
+        <div class="param-row">
+          <div class="param-label">
+            <span class="param-name">Curvature</span>
+            <span class="param-val" id="vCurve">0.25</span>
+          </div>
+          <input type="range" id="curve" min="0.0" max="0.5" step="0.05" value="0.25">
+        </div>
+      </div>
+
+      <div id="torusParams" style="display:none;">
+        <div class="param-row">
+          <div class="param-label">
+            <span class="param-name">Radius</span>
+            <span class="param-val" id="vTR">10 <span style="font-size:9px;color:var(--text3)">m</span></span>
+          </div>
+          <input type="range" id="torusR" min="5" max="20" step="0.5" value="10">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VEHICLES -->
+  <div class="sec">
+    <div class="sec-title">Vehicles</div>
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Count</span>
+          <span class="param-val" id="vN">20</span>
+        </div>
+        <input type="range" id="nBots" min="2" max="30" step="1" value="20">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Speed</span>
+          <span class="param-val" id="vSpeed">5.0</span>
+        </div>
+        <input type="range" id="speed" min="0" max="10" step="0.1" value="5.0">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Spread</span>
+          <span class="param-val" id="vSpread">6.0</span>
+        </div>
+        <input type="range" id="spread" min="1" max="15" step="0.5" value="6.0">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Noise σ</span>
+          <span class="param-val" id="vNoise">0.0</span>
+        </div>
+        <input type="range" id="noise" min="0" max="1.5" step="0.05" value="0.0">
+      </div>
+    </div>
+  </div>
+
+  <!-- DISPLAY -->
+  <div class="sec">
+    <div class="sec-title">Display</div>
+    <div class="toggle-row">
+      <label class="toggle-chip checked" id="chipEllipses">
+        <input type="checkbox" id="showEllipses" checked>
+        <span class="dot"></span>Ellipses
+      </label>
+      <label class="toggle-chip checked" id="chipTruth">
+        <input type="checkbox" id="showTruth" checked>
+        <span class="dot"></span>Ground truth
+      </label>
+      <label class="toggle-chip checked" id="chipRobots">
+        <input type="checkbox" id="showRobots" checked>
+        <span class="dot"></span>Vehicles
+      </label>
+      <label class="toggle-chip" id="chipHits" style="--accent:#f59e0b;">
+        <input type="checkbox" id="showHits">
+        <span class="dot" style="background:#f59e0b"></span><span style="color:#f59e0b">Hit points</span>
+      </label>
+    </div>
+
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Alpha</span>
+          <span class="param-val" id="vAlpha">0.03</span>
+        </div>
+        <input type="range" id="ellAlpha" min="0.001" max="0.05" step="0.001" value="0.03">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Show last</span>
+          <span class="param-val" id="vEllN">300</span>
+        </div>
+        <input type="range" id="ellN" min="100" max="2000" step="100" value="300">
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS -->
+  <div class="sec">
+    <div class="sec-title">Analysis</div>
+    <div class="toggle-row">
+      <label class="toggle-chip checked" id="chipCoh">
+        <input type="checkbox" id="showCoh" checked>
+        <span class="dot"></span>Overlay
+      </label>
+      <label class="toggle-chip checked" id="chipContour" style="--accent:#22d3ee;">
+        <input type="checkbox" id="showContour" checked>
+        <span class="dot" style="color:var(--cyan)"></span><span style="color:var(--cyan)">Contour</span>
+      </label>
+      <label class="toggle-chip checked" id="chipRidge" style="--accent:#00C8E6;">
+        <input type="checkbox" id="showRidge" checked>
+        <span class="dot" style="background:#00C8E6"></span><span style="color:#00A8C6">Ridge</span>
+      </label>
+    </div>
+
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Grid G</span>
+          <span class="param-val" id="vGridG">100</span>
+        </div>
+        <input type="range" id="gridG" min="30" max="300" step="10" value="100">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Threshold</span>
+          <span class="param-val" id="vThr">0.60</span>
+        </div>
+        <input type="range" id="thr" min="0.05" max="0.99" step="0.01" value="0.60">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Panel fps</span>
+          <span class="param-val" id="vPanelFps">20</span>
+        </div>
+        <input type="range" id="panelFps" min="1" max="30" step="1" value="20">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATS -->
+  <div class="sec">
+    <div class="sec-title">Statistics</div>
+    <div class="stats-grid" style="gap:5px;">
+      <div class="stat-card">
+        <div class="stat-label">Ellipses</div>
+        <div class="stat-value" id="sEll">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Steps</div>
+        <div class="stat-value" id="sStep">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Wall cells</div>
+        <div class="stat-value" id="sWall">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Coh peak</div>
+        <div class="stat-value" id="sCohPeak">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WALL METRICS PANEL -->
+  <div class="sec" id="wallMetricsPanel">
+    <div class="sec-title">Wall Estimation Metrics</div>
+
+    <!-- Precision / Recall / F1 as stat-cards -->
+    <div class="stats-grid" style="gap:5px; margin-bottom:5px;">
+      <div class="stat-card">
+        <div class="stat-label">Precision</div>
+        <div class="stat-value mval-na" id="mValP">—</div>
+        <div class="mbar-track"><div class="mbar-fill" id="mBarP" style="width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Recall</div>
+        <div class="stat-value mval-na" id="mValR">—</div>
+        <div class="mbar-track"><div class="mbar-fill" id="mBarR" style="width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">F1 Score</div>
+        <div class="stat-value mval-na" id="mValF1">—</div>
+        <div class="mbar-track"><div class="mbar-fill" id="mBarF1" style="width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Wall Score</div>
+        <div class="stat-value mval-na" id="mScore" style="display:flex;align-items:baseline;gap:4px;">
+          <span id="mScoreVal">—</span><span class="metrics-score-grade grade-X" id="mGrade" style="font-size:9px;padding:1px 5px;">N/A</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Distance metrics -->
+    <div class="stats-grid" style="gap:5px;">
+      <div class="stat-card">
+        <div class="stat-label">Chamfer Dist.</div>
+        <div class="stat-value mval-na" id="mValMCD" style="font-size:12px;">—</div>
+        <div class="stat-label" style="margin-top:2px;margin-bottom:0;">avg nearest (m)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Hausdorff 95</div>
+        <div class="stat-value mval-na" id="mValH95" style="font-size:12px;">—</div>
+        <div class="stat-label" style="margin-top:2px;margin-bottom:0;">95th pct (m)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="sec" style="margin-top:4px;">
+    <button class="btn btn-primary" id="btnRun">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M3 2l7 4-7 4V2z"/>
+      </svg>
+      Start simulation
+    </button>
+    <div class="btn-row">
+      <button class="btn" id="btnStep">Step x1</button>
+      <button class="btn btn-danger" id="btnReset">Reset</button>
+    </div>
+  </div>
+
+</div><!-- /sidebar -->
+
+<!-- CANVAS AREA -->
+<div class="views">
+  <div class="views-row" style="flex:1.3;">
+    <div class="view" id="viewMain">
+      <div class="vlabel"><span class="tag">RAW</span>Ellipse accumulation</div>
+      <canvas id="cvs"></canvas>
+      <div id="scaleBar">
+        <div class="bar" id="scaleBarLine" style="width:60px;"></div>
+        <div class="bar-label" id="scaleBarLabel">5 m</div>
+      </div>
+    </div>
+  </div>
+  <div class="views-row" style="flex:1;">
+    <div class="view" id="viewDens">
+      <div class="vlabel"><span class="tag">A</span>Density gradient |∇N|</div>
+      <canvas id="cvsDens"></canvas>
+    </div>
+    <div class="view" id="viewCoh">
+      <div class="vlabel"><span class="tag">B</span>Tangent coherence C</div>
+      <canvas id="cvsCoh"></canvas>
+    </div>
+    <div class="view" id="viewComb">
+      <div class="vlabel"><span class="tag" style="background:rgba(52,199,89,0.2);color:#1a7a3a">|∇N|·Ψ</span>Hit density × Coherence — wall score</div>
+      <canvas id="cvsComb"></canvas>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+<script>
+
+// ═══════════════════════════════════════
+// WORLD  (corridor bounding box: x=0..60, y=0..30)
+// ═══════════════════════════════════════
+const WW = 60, WH = 30;
+const EPS = 1e-9, DT = 0.05;
+
+// ── Named constants ─────────────────────────────────────────────
+const MAX_ELLIPSES   = 30_000;
+const K_PER_WALL     = 4;      // Fermat candidates per wall type
+const COH_MIN_CNT    = 5;      // min band hits before coherence is valid
+const COH_SAT        = 200;    // count saturation for confidence weight
+
+// ── Ring buffer — O(1) push, no splice, no GC pressure ─────────
+class RingBuffer {
+  constructor(cap) {
+    this._buf  = new Array(cap);
+    this._head = 0;
+    this._size = 0;
+    this._cap  = cap;
+  }
+  push(v) {
+    this._buf[this._head] = v;
+    this._head = (this._head + 1) % this._cap;
+    if (this._size < this._cap) this._size++;
+  }
+  get length() { return this._size; }
+  clear() { this._head = 0; this._size = 0; }
+  /** Return the last n items in insertion order (or all if n ≥ size). */
+  tail(n) {
+    n = Math.min(n, this._size);
+    const cap = this._cap;
+    if(!this._tailBuf || this._tailBuf.length < n) this._tailBuf = new Array(n);
+    const out = this._tailBuf;
+    out.length = n;
+    for (let i = 0; i < n; i++)
+      out[i] = this._buf[(this._head - n + i + cap * 2) % cap];
+    return out;
+  }
+  [Symbol.iterator]() {
+    const size = this._size, cap = this._cap, buf = this._buf;
+    const start = size < cap ? 0 : this._head;
+    let i = 0;
+    return {
+      next: () => i < size
+        ? { value: buf[(start + i++) % cap], done: false }
+        : { done: true, value: undefined }
+    };
+  }
+}
+
+const cvs     = document.getElementById('cvs');
+const cvsDens = document.getElementById('cvsDens');
+const cvsCoh  = document.getElementById('cvsCoh');
+const cvsComb = document.getElementById('cvsComb');
+const ctx     = cvs.getContext('2d');
+const ctxD    = cvsDens.getContext('2d');
+const ctxC    = cvsCoh.getContext('2d');
+const ctxX    = cvsComb.getContext('2d');
+
+function setupCanvas(canvas) {
+  const dpr  = window.devicePixelRatio || 1;
+  const view = canvas.parentElement;
+  const W    = view.clientWidth  || 200;
+  const H    = view.clientHeight || 100;
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  canvas.style.width  = W + 'px'; canvas.style.height = H + 'px';
+  const c = canvas.getContext('2d');
+  c.setTransform(dpr,0,0,dpr,0,0);
+}
+function resize() {
+  [cvs, cvsDens, cvsCoh, cvsComb].forEach(setupCanvas);
+}
+let _resizeTimer = null;
+window.addEventListener('resize', ()=>{
+  resize(); render();                          // 즉시: 캔버스 크기·기본 렌더만
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(()=>{ renderAnalysis(); }, 150);  // 150ms 후 분석 패널 갱신
+});
+
+// w2s for a given canvas
+function w2sC(canvas, wx, wy) {
+  const W=canvas.clientWidth, H=canvas.clientHeight;
+  return { sx:(wx/WW)*W, sy:H-(wy/WH)*H };
+}
+function w2s(wx,wy) { return w2sC(cvs,wx,wy); }
+
+// ═══════════════════════════════════════
+// SEEDED RNG
+// ═══════════════════════════════════════
+function seededRNG(seed) {
+  let s=(seed|0)+1;
+  return ()=>{ s=(Math.imul(1664525,s)+1013904223)>>>0; return s/4294967296; };
+}
+
+// ═══════════════════════════════════════
+// SPINE-BASED CORRIDOR GENERATION
+//
+// 1) Catmull-Rom spline through random control points -> curved spine
+// 2) At each spine sample, compute normal
+// 3) top/bottom wall = spine ± (halfGap + wavy perturbation)
+// ═══════════════════════════════════════
+function catmullRom(p0,p1,p2,p3,t) {
+  // standard Catmull-Rom with alpha=0.5
+  return {
+    x: 0.5*((-p0.x+3*p1.x-3*p2.x+p3.x)*t*t*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t*t+(-p0.x+p2.x)*t+2*p1.x),
+    y: 0.5*((-p0.y+3*p1.y-3*p2.y+p3.y)*t*t*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t*t+(-p0.y+p2.y)*t+2*p1.y),
+  };
+}
+function catmullRomD(p0,p1,p2,p3,t) {
+  return {
+    x: 0.5*(3*(-p0.x+3*p1.x-3*p2.x+p3.x)*t*t+2*(2*p0.x-5*p1.x+4*p2.x-p3.x)*t+(-p0.x+p2.x)),
+    y: 0.5*(3*(-p0.y+3*p1.y-3*p2.y+p3.y)*t*t+2*(2*p0.y-5*p1.y+4*p2.y-p3.y)*t+(-p0.y+p2.y)),
+  };
+}
+
+function makeCorridorWalls() {
+  const seed  = +document.getElementById('seed').value;
+  const rough = +document.getElementById('rough').value * 0.5;
+  const curve = +document.getElementById('curve').value;
+  const gap   = +document.getElementById('gap').value;
+  const rng   = seededRNG(seed);
+  const nPts  = 600;
+
+  // Control points: x evenly spaced, y wanders
+  // More curve -> more control points AND larger y deviation
+  const nCtrl = 2 + Math.round(curve * 8);    // curve=0->2, curve=0.5->6
+  const ctrl  = [];
+  for (let i=0; i<=nCtrl; i++) {
+    const x = (i/nCtrl)*WW;
+    // margin: 벽이 spine에서 최대 (halfG + rough*6.5)m 벗어남
+    // topWall이 y>WH, botWall이 y<0 되지 않도록 spine 범위 제한
+    const margin = gap * 0.5 + rough * 6.5 + 1.0;
+    const maxDev = Math.min((WH * 0.5 - margin), curve * 18);
+    const y = WH*0.5 + (rng()*2-1)*maxDev;
+    ctrl.push({x, y});
+  }
+  // Pad ends for Catmull-Rom (ghost points)
+  const dx0=ctrl[1].x-ctrl[0].x, dy0=ctrl[1].y-ctrl[0].y;
+  const dxN=ctrl[nCtrl].x-ctrl[nCtrl-1].x, dyN=ctrl[nCtrl].y-ctrl[nCtrl-1].y;
+  const pts = [{x:ctrl[0].x-dx0,y:ctrl[0].y-dy0}, ...ctrl, {x:ctrl[nCtrl].x+dxN,y:ctrl[nCtrl].y+dyN}];
+
+  // Sample spine
+  const spineRaw = [];
+  const segsN = pts.length-3;
+  for (let si=0; si<segsN; si++) {
+    const p0=pts[si],p1=pts[si+1],p2=pts[si+2],p3=pts[si+3];
+    const steps = Math.ceil(nPts/segsN);
+    for (let k=0;k<steps;k++) {
+      const t=k/steps;
+      spineRaw.push({ pt:catmullRom(p0,p1,p2,p3,t), d:catmullRomD(p0,p1,p2,p3,t) });
+    }
+  }
+  { // Final point
+    const si=segsN-1;
+    const p0=pts[si],p1=pts[si+1],p2=pts[si+2],p3=pts[si+3];
+    spineRaw.push({ pt:catmullRom(p0,p1,p2,p3,1), d:catmullRomD(p0,p1,p2,p3,1) });
+  }
+
+  // Wavy perturbation harmonics (along arc index)
+  const n=spineRaw.length;
+  const nH=14, nR=6;
+  const hA=[],hF=[],hP=[], rA=[],rF=[],rP=[];
+  const rngT=seededRNG(seed+7);
+  const rngB=seededRNG(seed+77);
+  for (let k=0;k<nH;k++){
+    hF.push((k+1)*Math.PI*2/n);
+    hA.push(rough*(1.5/(k+1))*(rngT()*2-1));
+    hP.push(rngT()*Math.PI*2);
+  }
+  for (let k=0;k<nR;k++){
+    rF.push((nH+k+2)*Math.PI*2/n);
+    rA.push(rough*0.25*(rngT()*2-1));
+    rP.push(rngT()*Math.PI*2);
+  }
+  // Separate amplitudes for bottom wall
+  const hAb=[],hPb=[],rAb=[],rPb=[];
+  for (let k=0;k<nH;k++){
+    hAb.push(rough*(1.5/(k+1))*(rngB()*2-1));
+    hPb.push(rngB()*Math.PI*2);
+  }
+  for (let k=0;k<nR;k++){
+    rAb.push(rough*0.25*(rngB()*2-1));
+    rPb.push(rngB()*Math.PI*2);
+  }
+
+  const topWall=[], botWall=[], spineOut=[];
+  for (let i=0;i<spineRaw.length;i++){
+    const {pt,d}=spineRaw[i];
+    const dl=Math.hypot(d.x,d.y)+EPS;
+    const nx=-d.y/dl, ny=d.x/dl; // left-normal (= "up" if spine goes right)
+
+    let wT=0,wB=0;
+    for (let k=0;k<nH;k++){
+      wT+=hA[k] *Math.cos(hF[k]*i+hP[k]);
+      wB+=hAb[k]*Math.cos(hF[k]*i+hPb[k]);
+    }
+    for (let k=0;k<nR;k++){
+      wT+=rA[k] *Math.cos(rF[k]*i+rP[k]);
+      wB+=rAb[k]*Math.cos(rF[k]*i+rPb[k]);
+    }
+
+    const halfG    = gap * 0.5;
+    const MIN_HALF = 1.2;          // metres — minimum half-gap at any cross-section
+    const offT = Math.max(MIN_HALF, halfG + wT);
+    const offB = Math.max(MIN_HALF, halfG + wB);
+    const MARGIN = 0.5;  // 그리드 경계에서 0.5m 이내로 clamp
+    const twx = pt.x+nx*offT, twy = pt.y+ny*offT;
+    const bwx = pt.x-nx*offB, bwy = pt.y-ny*offB;
+    topWall.push({ x: Math.max(MARGIN, Math.min(WW-MARGIN, twx)),
+                   y: Math.max(MARGIN, Math.min(WH-MARGIN, twy)) });
+    botWall.push({ x: Math.max(MARGIN, Math.min(WW-MARGIN, bwx)),
+                   y: Math.max(MARGIN, Math.min(WH-MARGIN, bwy)) });
+    spineOut.push({ x:pt.x, y:pt.y, nx, ny });
+  }
+  return { topWall, botWall, spineOut };
+}
+
+// ═══════════════════════════════════════
+// TORUS WALLS
+// Centre at (WW/2, WH/2), radius R, gap g
+// inner wall: r = R - g/2 + wavy
+// outer wall: r = R + g/2 + wavy
+// ═══════════════════════════════════════
+function makeTorusWalls(){
+  const seed  = +document.getElementById('seed').value;
+  const rough = +document.getElementById('rough').value * 0.5;
+  const gap   = +document.getElementById('gap').value;
+  const R     = +document.getElementById('torusR').value;
+  const nPts  = 800;
+  const cx = WW*0.5, cy = WH*0.5;
+
+  // Fourier perturbation (along angle index)
+  const rngI = seededRNG(seed+3);
+  const rngO = seededRNG(seed+77);
+  const nH=10, nR2=5;
+  const hFI=[],hAI=[],hPI=[], rFI=[],rAI=[],rPI=[];
+  const hFO=[],hAO=[],hPO=[], rFO=[],rAO=[],rPO=[];
+  for(let k=0;k<nH;k++){
+    const f=(k+1)*Math.PI*2/nPts;
+    hFI.push(f); hAI.push(rough*(1.2/(k+1))*(rngI()*2-1)); hPI.push(rngI()*Math.PI*2);
+    hFO.push(f); hAO.push(rough*(1.2/(k+1))*(rngO()*2-1)); hPO.push(rngO()*Math.PI*2);
+  }
+  for(let k=0;k<nR2;k++){
+    const f=(nH+k+2)*Math.PI*2/nPts;
+    rFI.push(f); rAI.push(rough*0.2*(rngI()*2-1)); rPI.push(rngI()*Math.PI*2);
+    rFO.push(f); rAO.push(rough*0.2*(rngO()*2-1)); rPO.push(rngO()*Math.PI*2);
+  }
+
+  const innerWall=[], outerWall=[], spineOut=[];
+  const halfG = gap*0.5;
+  const MIN_HALF = 1.0;
+
+  for(let i=0;i<nPts;i++){
+    const ang = (i/nPts)*Math.PI*2;
+    // Radial normal: points outward
+    const rnx = Math.cos(ang), rny = Math.sin(ang);
+    // Tangent: perpendicular (CCW)
+    const tnx = -rny, tny = rnx;
+
+    // Wavy perturbations
+    let wI=0, wO=0;
+    for(let k=0;k<nH;k++){
+      wI += hAI[k]*Math.cos(hFI[k]*i+hPI[k]);
+      wO += hAO[k]*Math.cos(hFO[k]*i+hPO[k]);
+    }
+    for(let k=0;k<nR2;k++){
+      wI += rAI[k]*Math.cos(rFI[k]*i+rPI[k]);
+      wO += rAO[k]*Math.cos(rFO[k]*i+rPO[k]);
+    }
+
+    const rI = Math.max(MIN_HALF, halfG + wI);
+    const rO = Math.max(MIN_HALF, halfG + wO);
+
+    // spine at radius R
+    const sx = cx + rnx*R, sy = cy + rny*R;
+    // inner wall: spine - rI * rnx
+    innerWall.push({ x: sx - rnx*rI, y: sy - rny*rI });
+    // outer wall: spine + rO * rnx
+    outerWall.push({ x: sx + rnx*rO, y: sy + rny*rO });
+    // spine normal = tangent (direction of travel)
+    // nx = tnx means "left" of travel direction, but for torus
+    // we use radial normal (inward) as the "up" so vehicles offset radially
+    spineOut.push({ x: sx, y: sy, nx: -rnx, ny: -rny });
+  }
+  // Close loops
+  innerWall.push({...innerWall[0]});
+  outerWall.push({...outerWall[0]});
+  spineOut.push({...spineOut[0]});
+
+  return { topWall: outerWall, botWall: innerWall, spineOut };
+}
+
+// ═══════════════════════════════════════
+// WALL SEGMENTS for ray intersection
+// ═══════════════════════════════════════
+function buildWallSegments(topWall,botWall){
+  const segs=[];
+  for(let i=0;i<topWall.length-1;i++){
+    const ax=topWall[i].x,ay=topWall[i].y,bx=topWall[i+1].x,by=topWall[i+1].y;
+    segs.push({ax,ay,bx,by,wid:0,mx:(ax+bx)*0.5,my:(ay+by)*0.5});
+  }
+  for(let i=0;i<botWall.length-1;i++){
+    const ax=botWall[i].x,ay=botWall[i].y,bx=botWall[i+1].x,by=botWall[i+1].y;
+    segs.push({ax,ay,bx,by,wid:1,mx:(ax+bx)*0.5,my:(ay+by)*0.5});
+  }
+  return segs;
+}
+
+// Pre-partitioned segment lists — rebuilt in init(), used by simulatePair
+// Avoids per-call Map allocation (870 pairs/step × 1200 segs = significant GC)
+let wallSegsW0 = [];  // wid=0  (top / outer wall)
+let wallSegsW1 = [];  // wid=1  (bottom / inner wall)
+
+function partitionWallSegs() {
+  wallSegsW0 = wallSegs.filter(s => (s.wid ?? 0) === 0);
+  wallSegsW1 = wallSegs.filter(s => (s.wid ?? 0) === 1);
+}
+
+/**
+ * Find top-K segments by bistatic lower-bound distance without allocating
+ * a full S-element array.  Uses a small K-element sorted scratch list.
+ * O(S) scans, O(K) space — no Map, no per-segment object creation.
+ */
+function _topKSegs(wallArr, txPos, rxPos) {
+  // top[] kept sorted ascending by lb; length ≤ K_PER_WALL
+  const top = [];
+  for (const seg of wallArr) {
+    const lb = Math.hypot(txPos.x - seg.mx, txPos.y - seg.my)
+             + Math.hypot(rxPos.x - seg.mx, rxPos.y - seg.my);
+    if (top.length < K_PER_WALL || lb < top[top.length - 1].lb) {
+      // Binary-search insertion point
+      let lo = 0, hi = top.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; top[m].lb <= lb ? lo = m+1 : hi = m; }
+      top.splice(lo, 0, { seg, lb });
+      if (top.length > K_PER_WALL) top.length = K_PER_WALL;
+    }
+  }
+  return top;
+}
+
+// ═══════════════════════════════════════
+// GEOMETRY
+// ═══════════════════════════════════════
+function raySegIntersect(ox,oy,dx,dy,ax,ay,bx,by){
+  const ex=bx-ax,ey=by-ay,denom=dx*ey-dy*ex;
+  if(Math.abs(denom)<EPS) return null;
+  const t=((ax-ox)*ey-(ay-oy)*ex)/denom;
+  const u=((ax-ox)*dy-(ay-oy)*dx)/denom;
+  // u>1e-4 && u<1-1e-4: 세그먼트 끝점(공유 꼭짓점) 제외 — 인접 세그먼트 오판 방지
+  if(t>0.001&&u>1e-4&&u<1-1e-4) return {t,x:ox+t*dx,y:oy+t*dy};
+  return null;
+}
+// reflectPt removed — superseded by Fermat method in simulatePair
+
+// ═══════════════════════════════════════
+// SIMULATION
+// ═══════════════════════════════════════
+function simulatePair(txPos,rxPos){
+  // ── Fermat's principle 기반 반사점 탐색 ──────────────────────────
+  // reflectPt(mirror image) 방식은 차량이 벽의 오목면(concave side)에
+  // 있을 때 실패함 (inner wall이 대표적 사례).
+  // Fermat 방식: P* = argmin_{P∈seg}(|TX-P|+|RX-P|) 를 직접 탐색.
+  // t∈[0,1]의 단변수 볼록 함수 -> gradient descent 수렴 보장.
+  // 반사 법칙(cosIn≈cosOut)은 수렴점에서 자동으로 만족됨.
+  // ──────────────────────────────────────────────────────────────────
+  const noise=+document.getElementById('noise').value;
+
+  // Step 1: 벽별 top-K 선별 — pre-partitioned arrays로 Map 할당 제거
+  // _topKSegs: O(S) scan, O(K) space, no per-segment object heap allocation
+  const topSegs = [
+    ..._topKSegs(wallSegsW0, txPos, rxPos),
+    ..._topKSegs(wallSegsW1, txPos, rxPos),
+  ];
+
+  // Step 2: 각 후보 seg에서 Fermat 최적화
+  const candidates=[];
+  for(const{seg} of topSegs){
+    const{ax,ay,bx,by}=seg;
+    const ex=bx-ax, ey=by-ay, sl=Math.hypot(ex,ey);
+    if(sl<EPS) continue;
+    const wnx=-ey/sl, wny=ex/sl;
+
+    // gradient descent: minimize f(t)=|TX-P(t)|+|RX-P(t)|, t∈[0,1]
+    let t=0.5;
+    for(let iter=0;iter<25;iter++){
+      const px=ax+t*ex, py=ay+t*ey;
+      const d1=Math.hypot(txPos.x-px,txPos.y-py)+EPS;
+      const d2=Math.hypot(rxPos.x-px,rxPos.y-py)+EPS;
+      const grad=((px-txPos.x)*ex+(py-txPos.y)*ey)/d1
+                +((px-rxPos.x)*ex+(py-rxPos.y)*ey)/d2;
+      t=Math.max(0.01,Math.min(0.99,t-0.25*grad));
+    }
+    if(t<0.02||t>0.98) continue;  // seg 끝점은 이웃 seg와 중복 처리
+
+    const hx=ax+t*ex, hy=ay+t*ey;
+
+    // 반사 법칙 검증 (cosIn ≈ cosOut, tolerance 0.04)
+    const iL=Math.hypot(hx-txPos.x,hy-txPos.y); if(iL<EPS) continue;
+    const iDx=(hx-txPos.x)/iL, iDy=(hy-txPos.y)/iL;
+    const rDx=rxPos.x-hx, rDy=rxPos.y-hy;
+    const rL=Math.hypot(rDx,rDy);          if(rL<EPS) continue;
+    const cosIn =Math.abs(iDx*wnx+iDy*wny);
+    const cosOut=Math.abs((rDx/rL)*wnx+(rDy/rL)*wny);
+    if(Math.abs(cosIn-cosOut)>0.04) continue;
+
+    // LOS blocking: TX->hit 경로 차단 여부
+    let blocked=false;
+    for(const s2 of wallSegs){
+      if(s2===seg) continue;
+      const chk=raySegIntersect(txPos.x,txPos.y,iDx,iDy,s2.ax,s2.ay,s2.bx,s2.by);
+      if(chk&&chk.t<iL-0.05){blocked=true;break;}
+    }
+    if(blocked) continue;
+
+    // LOS blocking: hit->RX 경로 차단 여부
+    let blocked2=false;
+    const rUx=rDx/rL, rUy=rDy/rL;
+    for(const s2 of wallSegs){
+      if(s2===seg) continue;
+      const chk=raySegIntersect(hx,hy,rUx,rUy,s2.ax,s2.ay,s2.bx,s2.by);
+      if(chk&&chk.t<rL-0.05){blocked2=true;break;}
+    }
+    if(blocked2) continue;
+
+    const r=(iL+rL)+(Math.random()-0.5)*2*noise;
+    candidates.push({r, hit:{x:hx,y:hy}});
+  }
+  if(!candidates.length) return [];
+  // 모든 반사(top+bot 모두) 반환 — 한 벽만 탐지되는 문제 수정
+  // first-arrival 선택 제거: 가까운 벽만 선택하면 먼 벽 타원 누락됨
+  return candidates.map(c=>({tx:{...txPos},rx:{...rxPos},r:c.r,hit:c.hit}));
+}
+
+// ═══════════════════════════════════════
+// ROBOTS — follow spine, spread laterally
+// ═══════════════════════════════════════
+function spawnRobots(){
+  const N      = +document.getElementById('nBots').value;
+  const spread = +document.getElementById('spread').value;
+  const gap    = +document.getElementById('gap').value;
+  const maxOff = gap * 0.5 * 0.75;
+  const rng    = seededRNG(+document.getElementById('seed').value + 999);
+  bots = [];
+
+  if(scenarioMode === 'torus'){
+    // ── Torus: cluster in ±12% arc, split RADIALLY across the full gap ──
+    // spine.nx = -rnx (inward = toward center)
+    // yOff > 0 -> inner wall 방향,  yOff < 0 -> outer wall 방향
+
+    const halfN = Math.floor(N/2);
+    const halfG = gap * 0.5;  // spine -> wall 거리
+    // 전체 arc에 균등 배치: 각 차량이 torus를 고르게 커버
+    // outer half: 균등 분포 + outer wall 방향 (yOff < 0)
+    // inner half: 균등 분포 + inner wall 방향 (yOff > 0)
+    // -> 매 step에서 전체 벽면이 조명됨
+    // 초기 군집: 모든 차량이 clusterCentre 근처 ±8% arc에서 출발
+    // 이동 속도에 약간의 jitter(±15%)를 부여해 자연스럽게 퍼짐
+    const clusterCentre = rng();  // seed 기반 재현 가능
+    const clusterWidth  = 0.08;   // ±8% arc -> 전체 둘레의 16% 구간
+    for(let i=0;i<N;i++){
+      const frac = ((clusterCentre + (rng()*2-1)*clusterWidth) % 1 + 1) % 1;
+      const si   = Math.floor(frac * spine.length) % spine.length;
+      const sp   = spine[si];
+      let yOff;
+      if(i < halfN){
+        yOff = -(halfG * (0.15 + rng()*0.70));  // outer wall 방향
+      } else {
+        yOff =  (halfG * (0.15 + rng()*0.70));  // inner wall 방향
+      }
+      bots.push({
+        pos: { x: sp.x + sp.nx*yOff, y: sp.y + sp.ny*yOff },
+        yOff,
+        spineIdx: si,
+        speedJitter: 1.0 + (rng()*2-1)*0.15,  // ±15% 속도 편차
+      });
+    }
+  } else {
+    // ── Corridor: evenly distributed ──
+    // 초기 군집: 복도 시작 지점 근처 ±10% 구간에서 출발
+    const corrCentre = 0.1 + rng()*0.05;  // 복도 앞쪽 10~15% 지점
+    const corrWidth  = 0.08;               // ±8% arc
+    for(let i=0;i<N;i++){
+      const frac = Math.max(0, Math.min(1,
+        corrCentre + (rng()*2-1)*corrWidth));
+      const si   = Math.min(spine.length-1, Math.floor(frac * spine.length));
+      const sp   = spine[si];
+      const yOff = (rng()*2-1) * spread * 0.5;
+      const yOffC = Math.max(-maxOff, Math.min(maxOff, yOff));
+      bots.push({
+        pos: { x: sp.x + sp.nx*yOffC, y: sp.y + sp.ny*yOffC },
+        yOff: yOffC,
+        spineIdx: si,
+        speedJitter: 1.0 + (rng()*2-1)*0.15,  // ±15% 속도 편차
+      });
+    }
+  }
+}
+
+// Precompute spine arc-length table (metres per index, true path length)
+let spineArcPerIdx = 1.0;  // will be set in init()
+function computeSpineArc(){
+  let total = 0;
+  for(let i = 1; i < spine.length; i++)
+    total += Math.hypot(spine[i].x-spine[i-1].x, spine[i].y-spine[i-1].y);
+  spineArcPerIdx = total / Math.max(1, spine.length - 1);
+}
+
+function stepBots(){
+  const spd = +document.getElementById('speed').value;
+  const SN  = spine.length;
+  // True arc-length advance: metres / (metres per index) = indices to advance
+  const idxPerStep = (spd * DT) / spineArcPerIdx;
+
+  for(const bot of bots){
+    // ── 1. Advance spine index directly (no position-search drift) ──
+    bot.spineIdx += idxPerStep * (bot.speedJitter ?? 1.0) * (bot.dir ?? 1);
+
+    // ── 2. 경계 처리 ──
+    if(scenarioMode === 'torus'){
+      // Torus: 닫힌 루프 → modular wrap
+      if(bot.spineIdx >= SN - 1) bot.spineIdx -= (SN - 1);
+      if(bot.spineIdx < 0)       bot.spineIdx += (SN - 1);
+    } else {
+      // Corridor: 끝에서 방향 반전 (teleport 제거)
+      if(bot.spineIdx >= SN - 1){
+        bot.spineIdx = 2*(SN-1) - bot.spineIdx;
+        bot.dir = -(bot.dir ?? 1);
+      } else if(bot.spineIdx < 0){
+        bot.spineIdx = -bot.spineIdx;
+        bot.dir = -(bot.dir ?? 1);
+      }
+      bot.spineIdx = Math.max(0, Math.min(SN-1, bot.spineIdx));
+    }
+
+    // ── 3. Interpolate spine at fractional index ──
+    const i0  = Math.floor(bot.spineIdx);
+    const i1  = Math.min(SN-1, i0+1);
+    const f   = bot.spineIdx - i0;
+    const spx = spine[i0].x*(1-f) + spine[i1].x*f;
+    const spy = spine[i0].y*(1-f) + spine[i1].y*f;
+    const snx = spine[i0].nx*(1-f) + spine[i1].nx*f;
+    const sny = spine[i0].ny*(1-f) + spine[i1].ny*f;
+
+    // ── 4. Position = spine point + lateral offset ──
+    bot.pos.x = spx + snx * bot.yOff;
+    bot.pos.y = spy + sny * bot.yOff;
+  }
+}
+
+// ═══════════════════════════════════════
+// COHERENCE
+// ═══════════════════════════════════════
+let cohGrid=null;
+// ─────────────────────────────────────────────────────────
+// computeCoherence()
+//
+// For each grid cell q on the ellipse band, two orthogonal
+// signals are now accumulated simultaneously:
+//
+// (A) Tangent coherence C:
+//     The ellipse tangent direction φ at q. Under the
+//     reflection law, tangent ⊥ bisector-of-foci, so
+//     consistent tangents ↔ consistent wall orientation.
+//     Accumulated as unit-vector angle (mod π):
+//       C(q) = |Σ e^{2iφ}| / N
+//
+// (B) Normal consistency Ψ  ← NEW
+//     At any point q on an ellipse with foci F1, F2:
+//       n̂_ell(q) = (q-F1)/|q-F1| + (q-F2)/|q-F2|   (unnorm)
+//     This is the exact ellipse outward normal direction —
+//     AND by the reflection law it equals the wall normal n̂_wall.
+//     So if q is on the true wall, all ellipses passing through
+//     q must agree on n̂_ell(q) -> high Ψ.
+//     Accumulated as:
+//       Ψ(q) = |Σ e^{2iψ}| / N   where ψ = angle of n̂_ell
+//
+// Combined score:
+//   score(q) = C(q) · Ψ(q)
+//
+// This is strictly stronger than C alone: a cell must satisfy
+// BOTH tangent alignment AND normal consistency to score high.
+// ─────────────────────────────────────────────────────────
+function computeCoherence(){
+  // ── Wall Score = Ψ x w ────────────────────────────────────────
+  // Ψ(i) = |Σcos(2ψ)| / cnt  ∈ [0,1]
+  //   1에 가까울수록 법선 방향이 일관 = 평탄한 반사면 = 벽
+  //   0에 가까울수록 법선이 흩어짐 = 비벽(교차로, 빈 공간)
+  //
+  // w(i) = log(1+cnt) / log(1+SAT)  ∈ [0,1]
+  //   band-hit 횟수 기반 신뢰도. SAT 이상이면 포화 -> w≈1
+  //
+  // score(i) = Ψ(i) x w(i)
+  //   높은 score = 여러 타원이 교차하고 법선이 일관적 = 벽 확률 높음
+  // ──────────────────────────────────────────────────────────────
+  const G=accGrid ? accGrid.G : (+document.getElementById('gridG').value|0);
+  if(!accGrid) return;
+
+  const G2=G*G;
+  const {cosN,sinN,cnt}=accGrid;
+  const logSat=Math.log(1+COH_SAT);
+  const MIN_CNT=COH_MIN_CNT;
+  const thr=+document.getElementById('thr').value;
+
+  const data =new Float32Array(G2);  // score = Ψ x w
+  const dataC=new Float32Array(G2);  // Ψ (normal coherence)
+  const dataN=new Float32Array(G2);  // w (confidence weight)
+  let wallCells=0;
+
+  for(let i=0;i<G2;i++){
+    if(cnt[i]<MIN_CNT){ data[i]=0; continue; }
+    const Psi=Math.min(1, Math.sqrt(cosN[i]*cosN[i]+sinN[i]*sinN[i])/cnt[i]);
+    const w  =Math.min(1, Math.log(1+cnt[i])/logSat);
+    dataC[i]=Psi;
+    dataN[i]=w;
+    data[i]=Psi*w;
+    if(data[i]>thr) wallCells++;
+  }
+
+  cohGrid={G,data,dataC,dataN,cnt:accGrid.cnt};
+  document.getElementById('sWall').textContent=wallCells;
+  const peak=data.reduce((m,v)=>v>m?v:m,0);
+  document.getElementById('sCohPeak').textContent=peak.toFixed(3);
+}
+
+// Marching-squares edge midpoint contour
+function extractContour(G, data, thr) {
+  wallContour = [];
+  const cellW=WW/G, cellH=WH/G;
+  for(let gy=0;gy<G-1;gy++){
+    for(let gx=0;gx<G-1;gx++){
+      // 4 corners
+      const v00=data[gy*G+gx], v10=data[gy*G+gx+1];
+      const v01=data[(gy+1)*G+gx], v11=data[(gy+1)*G+gx+1];
+      // Crossing edges -> line segment
+      const pts=[];
+      // left edge (gx, gy->gy+1)
+      if((v00>thr)!==(v01>thr)){
+        const f=(thr-v00)/(v01-v00+1e-9);
+        pts.push({x:gx*cellW, y:WH-(gy+f)*cellH});
+      }
+      // right edge (gx+1, gy->gy+1)
+      if((v10>thr)!==(v11>thr)){
+        const f=(thr-v10)/(v11-v10+1e-9);
+        pts.push({x:(gx+1)*cellW, y:WH-(gy+f)*cellH});
+      }
+      // top edge (gy, gx->gx+1)
+      if((v00>thr)!==(v10>thr)){
+        const f=(thr-v00)/(v10-v00+1e-9);
+        pts.push({x:(gx+f)*cellW, y:WH-gy*cellH});
+      }
+      // bottom edge (gy+1, gx->gx+1)
+      if((v01>thr)!==(v11>thr)){
+        const f=(thr-v01)/(v11-v01+1e-9);
+        pts.push({x:(gx+f)*cellW, y:WH-(gy+1)*cellH});
+      }
+      if(pts.length>=2) wallContour.push([pts[0],pts[1]]);
+    }
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// computeWallMetrics: Ridge ↔ GT Wall 성능 평가
+//
+// 지표 체계 (참조 논문):
+//   (1) Precision P(tau) = |{r∈Ridge : d(r,GT)<=tau}| / |Ridge|
+//      -> 1-P = 오탐지율 (FP): ridge가 실제 벽에서 벗어난 비율
+//   (2) Recall R(tau)    = |{g∈GT   : d(g,Ridge)<=tau}| / |GT|
+//      -> 1-R = 미탐지율 (FN): GT 벽이 ridge에 커버되지 않은 비율
+//   (3) F1 = 2PR/(P+R)  (Arbelaez et al. 2011, Boundary F-measure)
+//   (4) Mean Chamfer Distance (MCD): ridge->GT 평균 최근접 거리 [m]
+//      (Pomerleau et al. 2013)
+//   (5) Hausdorff95: 95th percentile 최근접 거리 [m]
+//      (Dubuisson & Jain 1994, Modified Hausdorff Distance 변형)
+//
+//   tau = 1.5 grid cell (≈ 0.9m for G=100, WW=60m)
+//   Wall Score = F1 x (1 - MCD/tau)  -> [0,1] 종합 점수
+// ═══════════════════════════════════════════════════════════════
+function computeWallMetrics(rSegs, gtWallPts) {
+  if (!rSegs.length || !gtWallPts.length) return null;
+
+  // 1. ridge segs -> sampled points (1점/grid cell 간격)
+  const cW_m = WW / (densGrid ? densGrid.G : 100);
+  const cH_m = WH / (densGrid ? densGrid.G : 100);
+  const cellSz = Math.max(cW_m, cH_m);
+  const ridgePts = [];
+  for (const [x0,y0,x1,y1] of rSegs) {
+    const len = Math.hypot(x1-x0, y1-y0);
+    const n = Math.max(1, Math.round(len / cellSz));
+    for (let t = 0; t <= n; t++)
+      ridgePts.push({ x: x0+(x1-x0)*t/n, y: y0+(y1-y0)*t/n });
+  }
+  if (!ridgePts.length) return null;
+
+  // 2. brute-force nearest-neighbor (grid 해상도에서 충분히 빠름)
+  const minD = (p, arr) => {
+    let best = Infinity;
+    for (const q of arr) {
+      const d = (p.x-q.x)**2 + (p.y-q.y)**2;
+      if (d < best) best = d;
+    }
+    return Math.sqrt(best);
+  };
+
+  const tau = 1.5 * cellSz;  // 허용 오차 tau
+
+  // ridge->GT distances (Precision, MCD 산출)
+  const r2g = ridgePts.map(p => minD(p, gtWallPts));
+  const P   = r2g.filter(d => d <= tau).length / ridgePts.length;
+  const MCD = r2g.reduce((s,d) => s+d, 0) / ridgePts.length;
+
+  // GT->ridge distances (Recall 산출)
+  const g2r = gtWallPts.map(p => minD(p, ridgePts));
+  const R   = g2r.filter(d => d <= tau).length / gtWallPts.length;
+
+  const F1  = (P+R > 0) ? 2*P*R/(P+R) : 0;
+
+  // Hausdorff95 (95th percentile of combined distances)
+  const all = [...r2g, ...g2r].sort((a,b) => a-b);
+  const H95 = all[Math.floor(all.length * 0.95)];
+
+  // Wall Score = F1 x clamp(1 - MCD/tau, 0, 1)
+  const score = F1 * Math.max(0, 1 - MCD / tau);
+
+  return { P, R, F1, MCD, H95, score, tau, FP: 1-P, FN: 1-R };
+}
+
+// GT Wall 샘플링 (topWall + botWall -> 균등 간격 포인트 배열) — 캐시됨
+function sampleGTWall(nPerWall = 300) {
+  if (_cachedGTWallPts) return _cachedGTWallPts;
+  const pts = [];
+  const addWall = (wall) => {
+    if (!wall || !wall.length) return;
+    const total = wall.length;
+    for (let i = 0; i < nPerWall; i++) {
+      const t  = i / (nPerWall - 1) * (total - 1);
+      const i0 = Math.floor(t), i1 = Math.min(i0+1, total-1);
+      const f  = t - i0;
+      pts.push({
+        x: wall[i0].x + (wall[i1].x - wall[i0].x) * f,
+        y: wall[i0].y + (wall[i1].y - wall[i0].y) * f,
+      });
+    }
+  };
+  addWall(topWall);
+  addWall(botWall);
+  // torus: topWall는 outer, botWall는 inner -> 닫힌 루프
+  if (scenarioMode === 'torus' && topWall.length > 2) {
+    // 닫힘 보완: 마지막->첫점 연결
+    pts.push({ x: topWall[0].x, y: topWall[0].y });
+    pts.push({ x: botWall[0].x, y: botWall[0].y });
+  }
+  _cachedGTWallPts = pts;
+  return pts;
+}
+
+// updateWallMetrics: render() 후 호출하여 패널 갱신
+function updateWallMetrics(rSegs) {
+  const panel = document.getElementById('wallMetricsPanel');
+  if (!panel) return;
+
+  const setClass = (el, cls) => {
+    el.classList.remove('mval-good','mval-warn','mval-bad','mval-na');
+    el.classList.add(cls);
+  };
+  const setBarClass = (el, cls) => {
+    el.classList.remove('mbar-good','mbar-warn','mbar-bad');
+    el.classList.add(cls);
+  };
+  const colorClass = (v, hi=0.85, lo=0.70) =>
+    v >= hi ? 'mval-good' : v >= lo ? 'mval-warn' : 'mval-bad';
+
+  if (!rSegs || !rSegs.length || !topWall.length) {
+    ['mValP','mValR','mValF1','mValMCD','mValH95'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = '—';
+      setClass(el, 'mval-na');
+    });
+    const scoreEl = document.getElementById('mScore');
+    setClass(scoreEl, 'mval-na');
+    document.getElementById('mScoreVal').textContent = '—';
+    ['mBarP','mBarR','mBarF1'].forEach(id => {
+      document.getElementById(id).style.width = '0%';
+    });
+    const grade = document.getElementById('mGrade');
+    grade.textContent = 'N/A';
+    grade.className = 'metrics-score-grade grade-X';
+    return;
+  }
+
+  const gtPts = sampleGTWall(300);
+  const m = computeWallMetrics(rSegs, gtPts);
+  if (!m) return;
+
+  // Precision
+  const vP = document.getElementById('mValP');
+  vP.textContent = (m.P * 100).toFixed(1) + '%';
+  setClass(vP, colorClass(m.P));
+  const bP = document.getElementById('mBarP');
+  bP.style.width = (m.P * 100) + '%';
+  setBarClass(bP, colorClass(m.P).replace('mval','mbar'));
+
+  // Recall
+  const vR = document.getElementById('mValR');
+  vR.textContent = (m.R * 100).toFixed(1) + '%';
+  setClass(vR, colorClass(m.R));
+  const bR = document.getElementById('mBarR');
+  bR.style.width = (m.R * 100) + '%';
+  setBarClass(bR, colorClass(m.R).replace('mval','mbar'));
+
+  // F1
+  const vF1 = document.getElementById('mValF1');
+  vF1.textContent = (m.F1 * 100).toFixed(1) + '%';
+  setClass(vF1, colorClass(m.F1));
+  const bF1 = document.getElementById('mBarF1');
+  bF1.style.width = (m.F1 * 100) + '%';
+  setBarClass(bF1, colorClass(m.F1).replace('mval','mbar'));
+
+  // MCD
+  const vMCD = document.getElementById('mValMCD');
+  const tau = m.tau;
+  vMCD.textContent = m.MCD.toFixed(3) + ' m';
+  setClass(vMCD, m.MCD < tau*0.4 ? 'mval-good' : m.MCD < tau*0.75 ? 'mval-warn' : 'mval-bad');
+
+  // H95
+  const vH95 = document.getElementById('mValH95');
+  vH95.textContent = m.H95.toFixed(3) + ' m';
+  setClass(vH95, m.H95 < tau*1.5 ? 'mval-good' : m.H95 < tau*3.0 ? 'mval-warn' : 'mval-bad');
+
+  // Wall Score
+  const vScore = document.getElementById('mScore');
+  document.getElementById('mScoreVal').textContent = (m.score * 100).toFixed(1);
+  setClass(vScore, colorClass(m.score));
+
+  // Grade
+  const grade = document.getElementById('mGrade');
+  if (m.score >= 0.85)      { grade.textContent = 'A'; grade.className = 'metrics-score-grade grade-A'; }
+  else if (m.score >= 0.70) { grade.textContent = 'B'; grade.className = 'metrics-score-grade grade-B'; }
+  else if (m.score >= 0.0)  { grade.textContent = 'C'; grade.className = 'metrics-score-grade grade-C'; }
+  else                      { grade.textContent = '—'; grade.className = 'metrics-score-grade grade-X'; }
+}
+
+
+// ─────────────────────────────────────────────────────────
+// extractRidgeLine: Extra-smooth + 2D 8-neighbor local max
+//
+// 수학적 근거:
+//   벽 density D(x,y)는 벽 중심에서 Gaussian 단면을 가짐.
+//   Ridge = argmax { D(x,y) : D ≥ D(x±δ, y±δ) ∀ δ∈N₈ }
+//
+//   구현:
+//   1. logArr에 σ=1.5 추가 Gaussian smooth 적용
+//      -> plateau 제거, 방향 무관하게 단일 능선 생성
+//   2. 8-neighbor 2D local max -> ridge 픽셀
+//   3. 인접 ridge 픽셀 간 segment 생성
+//
+//   장점: column/row scan의 십자 패턴 없음,
+//         수평/수직/사선 벽 모두 처리
+// ─────────────────────────────────────────────────────────
+function extractRidgeLine(G, logArr, thr, cWd, cHd) {
+  // ─────────────────────────────────────────────────────────────
+  // Ridge 추출: Skeletonization (Zhang-Suen Thinning)
+  //
+  // 수학적 근거:
+  //   Gradient NMS는 density가 넓고 평평한 blob (elongated 복도/벽)에서
+  //   중심부 gradient ≈ 0 → NMS 실패 → 삼각형 아티팩트 발생.
+  //
+  //   올바른 접근: Binary Skeletonization
+  //   1. D_σ = G_{σ=0.8} * logArr   (plateau 제거, blob 형태 보존)
+  //   2. Mask = { D_σ ≥ thr }        (binary thresholding)
+  //   3. Skel = ZhangSuen(Mask)      (반복 thinning → 1px medial axis)
+  //
+  //   Zhang-Suen 조건 (pass 0):
+  //     2 ≤ N(p) ≤ 6,  T(p) = 1,
+  //     p2·p4·p6 = 0,  p4·p6·p8 = 0
+  //   → connectivity를 보존하면서 경계 픽셀만 제거
+  //   → 보장: 1px 두께, 연결성 보존, 삼각형 아티팩트 없음
+  //
+  //   Output: [ [x0,y0,x1,y1], ... ]  (world coords, m)
+  // ─────────────────────────────────────────────────────────────
+  const WH_ = G * cHd;
+
+  // Step 1: Mild Gaussian smooth (σ=0.8) — kernel cached
+  const sig=0.8, rs=Math.ceil(sig*3)|0;
+  if(!_wRidgeKern){ const k=new Float32Array(rs*2+1); let ks=0; for(let i=-rs;i<=rs;i++){const v=Math.exp(-0.5*(i/sig)**2);k[i+rs]=v;ks+=v;} for(let i=0;i<k.length;i++) k[i]/=ks; _wRidgeKern=k; }
+  const kern=_wRidgeKern;
+  const tmpS=new Float32Array(G*G);
+  for(let y=0;y<G;y++) for(let x=0;x<G;x++){
+    let s=0; for(let k=-rs;k<=rs;k++) s+=logArr[y*G+Math.max(0,Math.min(G-1,x+k))]*kern[k+rs];
+    tmpS[y*G+x]=s;
+  }
+  const sm=new Float32Array(G*G);
+  for(let y=0;y<G;y++) for(let x=0;x<G;x++){
+    let s=0; for(let k=-rs;k<=rs;k++) s+=tmpS[Math.max(0,Math.min(G-1,y+k))*G+x]*kern[k+rs];
+    sm[y*G+x]=s;
+  }
+  // 95th percentile normalization: prevents top 5% outlier cells from suppressing rough walls
+  const nonZero = [];
+  for(let i=0;i<G*G;i++) if(sm[i]>1e-9) nonZero.push(sm[i]);
+  if(!nonZero.length) return [];
+  nonZero.sort((a,b) => b-a);
+  const pctIdx = Math.floor(nonZero.length * 0.05) | 0;
+  const smMax = nonZero[Math.min(pctIdx, nonZero.length-1)];
+  for(let i=0;i<G*G;i++) sm[i] = Math.min(1, sm[i]/smMax);
+
+  // Border mask: clamp-to-border Gaussian amplifies edge cells → zero out 2-cell border
+  const BORDER = 2;
+  for(let y=0;y<G;y++) for(let x=0;x<G;x++){
+    if(y<BORDER||y>=G-BORDER||x<BORDER||x>=G-BORDER) sm[y*G+x]=0;
+  }
+
+  // Ghost-arc bleed suppression: Gaussian smooth bleeds non-zero ridgeInput into adjacent
+  // zero-ridgeInput cells (ghost arc zone). Zero out sm wherever ridgeInput was zero
+  // to prevent ghost walls from forming via bleed.
+  for(let i=0;i<G*G;i++) if(logArr[i] < 1e-9) sm[i] = 0;
+
+  // Step 2: Binary threshold → mask
+  const mask=new Uint8Array(G*G);
+  for(let i=0;i<G*G;i++) mask[i]=sm[i]>=thr?1:0;
+
+  // Step 3: Zhang-Suen Thinning → 1px medial axis skeleton
+  const b=new Uint8Array(mask);
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(let pass=0;pass<2;pass++){
+      const del=[];
+      for(let y=1;y<G-1;y++) for(let x=1;x<G-1;x++){
+        if(!b[y*G+x]) continue;
+        const p2=b[(y-1)*G+x],   p3=b[(y-1)*G+x+1], p4=b[y*G+x+1];
+        const p5=b[(y+1)*G+x+1], p6=b[(y+1)*G+x],   p7=b[(y+1)*G+x-1];
+        const p8=b[y*G+x-1],     p9=b[(y-1)*G+x-1];
+        const N=p2+p3+p4+p5+p6+p7+p8+p9;
+        if(N<2||N>6) continue;
+        // 0→1 전이 카운트 — 배열 할당 없이 인라인 처리
+        let T=0;
+        if(!p2&&p3)T++; if(!p3&&p4)T++; if(!p4&&p5)T++;
+        if(!p5&&p6)T++; if(!p6&&p7)T++; if(!p7&&p8)T++;
+        if(!p8&&p9)T++; if(!p9&&p2)T++;
+        if(T!==1) continue;
+        if(pass===0){ if(p2*p4*p6!==0) continue; if(p4*p6*p8!==0) continue; }
+        else        { if(p2*p4*p8!==0) continue; if(p2*p6*p8!==0) continue; }
+        del.push(y*G+x);
+      }
+      for(const i of del){ b[i]=0; changed=true; }
+    }
+  }
+
+  // Step 4: skeleton → world coord segments (8-방향 연결)
+  const dirs4=[[0,1],[1,0],[1,1],[1,-1]];
+  const segs=[];
+  for(let gy=0;gy<G;gy++) for(let gx=0;gx<G;gx++){
+    if(!b[gy*G+gx]) continue;
+    const p0x=(gx+0.5)*cWd, p0y=WH_-(gy+0.5)*cHd;
+    for(const[dy,dx] of dirs4){
+      const ny=gy+dy, nx=gx+dx;
+      if(ny<0||ny>=G||nx<0||nx>=G||!b[ny*G+nx]) continue;
+      segs.push([p0x, p0y, (nx+0.5)*cWd, WH_-(ny+0.5)*cHd]);
+    }
+  }
+  return segs;
+}
+
+// ═══════════════════════════════════════
+// RIDGE POLYLINE BUILDER  (shared by analysisLoop + render)
+// Chains raw [x0,y0,x1,y1] segments into continuous polylines.
+// Called once per analysis cycle; result cached in _cachedPolylines.
+// ═══════════════════════════════════════
+function buildPolylines(rSegs) {
+  if (!rSegs || !rSegs.length) return [];
+  const _key = (x,y) => `${x.toFixed(4)},${y.toFixed(4)}`;
+  const _adj = new Map();
+  for(const[x0,y0,x1,y1] of rSegs){
+    const k0=_key(x0,y0), k1=_key(x1,y1);
+    if(!_adj.has(k0)) _adj.set(k0,{x:x0,y:y0,nb:[]});
+    if(!_adj.has(k1)) _adj.set(k1,{x:x1,y:y1,nb:[]});
+    const n0=_adj.get(k0),n1=_adj.get(k1);
+    if(!n0.nb.includes(k1)) n0.nb.push(k1);
+    if(!n1.nb.includes(k0)) n1.nb.push(k0);
+  }
+  const _vis=new Set();
+  const _trace=(startK)=>{
+    const chain=[]; let cur=startK, prev=null;
+    while(cur && !_vis.has(cur)){
+      _vis.add(cur);
+      const nd=_adj.get(cur);
+      chain.push({x:nd.x,y:nd.y});
+      const nxt=nd.nb.find(k=>k!==prev&&!_vis.has(k));
+      prev=cur; cur=nxt||null;
+    }
+    return chain;
+  };
+  const polylines=[];
+  for(const[k,nd] of _adj) if(nd.nb.length===1&&!_vis.has(k)){
+    const c=_trace(k); if(c.length>=2) polylines.push(c);
+  }
+  for(const[k] of _adj) if(!_vis.has(k)){
+    const c=_trace(k); if(c.length>=2) polylines.push(c);
+  }
+  return polylines;
+}
+
+// ═══════════════════════════════════════
+// GRID
+// ═══════════════════════════════════════
+function drawGrid(){
+  const W=cvs.clientWidth, H=cvs.clientHeight;
+  const pxPerMx=W/WW, pxPerMy=H/WH;
+
+  // 적절한 grid 간격 선택 (화면 크기에 따라 1m, 2m, 5m, 10m)
+  const niceVals=[1,2,5,10];
+  const targetPx=80; // 목표 셀 크기(px)
+  const spacingM=niceVals.reduce((p,c)=>
+    Math.abs(c*pxPerMx-targetPx)<Math.abs(p*pxPerMx-targetPx)?c:p);
+  const spx=spacingM*pxPerMx, spy=spacingM*pxPerMy;
+
+  ctx.save();
+  ctx.strokeStyle='rgba(80,80,100,0.10)';
+  ctx.lineWidth=0.7;
+
+  // 수직선 + 수평선 — 단일 path, 단일 stroke (라인별 GPU 플러시 제거)
+  ctx.beginPath();
+  for(let mx=0; mx<=WW; mx+=spacingM){
+    const px=mx*pxPerMx;
+    ctx.moveTo(px,0); ctx.lineTo(px,H);
+  }
+  for(let my=0; my<=WH; my+=spacingM){
+    const py=H-my*pxPerMy;
+    ctx.moveTo(0,py); ctx.lineTo(W,py);
+  }
+  ctx.stroke();
+
+  // grid 좌표 레이블 (하단·좌측 가장자리)
+  ctx.font='9px DM Mono, monospace';
+  ctx.fillStyle='rgba(80,80,100,0.35)';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let mx=spacingM; mx<WW; mx+=spacingM){
+    ctx.fillText(mx+'m', mx*pxPerMx, H-12);
+  }
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let my=spacingM; my<WH; my+=spacingM){
+    ctx.fillText(my+'m', 24, H-my*pxPerMy);
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════
+// SCALE BAR
+// ═══════════════════════════════════════
+function drawScaleBar(){
+  const W=cvs.clientWidth, H=cvs.clientHeight;
+  const pxPerMx=W/WW, pxPerMy=H/WH;
+  const niceVals=[0.5,1,2,5,10];
+  const pad=14, tk=5;
+  const ox=pad, oy=H-pad;   // 두 축척 바가 공유하는 원점 (좌하단)
+
+  ctx.save();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(30,30,35,0.6)'; ctx.lineWidth=1.5;
+  ctx.font='bold 8px DM Mono, monospace'; ctx.fillStyle='rgba(30,30,35,0.6)';
+
+  // ── 가로 + 세로 축척 바 — 단일 path, 단일 stroke ──
+  const targetMx=W*0.12/pxPerMx;
+  const barMx=niceVals.reduce((p,c)=>Math.abs(c-targetMx)<Math.abs(p-targetMx)?c:p);
+  const barPx=barMx*pxPerMx;
+  const targetMy=H*0.12/pxPerMy;
+  const barMy=niceVals.reduce((p,c)=>Math.abs(c-targetMy)<Math.abs(p-targetMy)?c:p);
+  const barPy=barMy*pxPerMy;
+  ctx.beginPath();
+  ctx.moveTo(ox,       oy-tk); ctx.lineTo(ox,       oy+tk);   // 가로: 왼쪽 틱
+  ctx.moveTo(ox,       oy);    ctx.lineTo(ox+barPx, oy);      // 가로: 바
+  ctx.moveTo(ox+barPx, oy-tk); ctx.lineTo(ox+barPx, oy+tk);  // 가로: 오른쪽 틱
+  ctx.moveTo(ox-tk,    oy);    ctx.lineTo(ox+tk,    oy);      // 세로: 아래쪽 틱
+  ctx.moveTo(ox,       oy);    ctx.lineTo(ox,       oy-barPy);// 세로: 바
+  ctx.moveTo(ox-tk,    oy-barPy); ctx.lineTo(ox+tk, oy-barPy);// 세로: 위쪽 틱
+  ctx.stroke();
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText(`${barMx} m`, ox+barPx/2, oy-tk-2);
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText(`${barMy} m`, ox+tk+3, oy-barPy/2);
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function render(){
+  const W=cvs.clientWidth,H=cvs.clientHeight;
+  const scX=W/WW, scY=H/WH;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+  drawGrid();
+
+  const alpha     =+document.getElementById('ellAlpha').value;
+  const showEll   =document.getElementById('showEllipses').checked;
+  const showTruth =document.getElementById('showTruth').checked;
+  const showRobots=document.getElementById('showRobots').checked;
+  const showHits  =document.getElementById('showHits').checked;
+  const showCoh   =document.getElementById('showCoh').checked;
+
+  // 공통: 최근 ellN개 슬라이스 (Ellipses / Hit points 둘 다 사용)
+  const ellN     = +document.getElementById('ellN').value;
+  const ellSlice = allEllipses.tail(ellN);  // O(n) copy of last ellN items
+
+  // Ellipses
+  if(showEll){
+    ctx.save();ctx.lineWidth=0.7;
+    ctx.strokeStyle=`rgba(0,100,220,${alpha.toFixed(3)})`;
+    const STEPS=100;
+    for(const m of ellSlice){
+      const{tx,rx,r}=m;
+      const dist=Math.hypot(tx.x-rx.x,tx.y-rx.y);
+      if(!(r>dist)) continue;
+      const a=r*0.5,f=dist*0.5,b2=a*a-f*f;
+      if(!(b2>0)) continue;
+      const b=Math.sqrt(b2);
+      const ecx=(tx.x+rx.x)*0.5,ecy=(tx.y+rx.y)*0.5;
+      const ang=Math.atan2(rx.y-tx.y,rx.x-tx.x);
+      const cA=Math.cos(ang),sA=Math.sin(ang);
+      ctx.beginPath();
+      for(let k=0;k<=STEPS;k++){
+        const t=(k/STEPS)*Math.PI*2;
+        const wx=ecx+a*Math.cos(t)*cA-b*Math.sin(t)*sA;
+        const wy=ecy+a*Math.cos(t)*sA+b*Math.sin(t)*cA;
+        const sx=wx*scX,sy=H-wy*scY;
+        k===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Hit points — 독립 블록, Ellipses 토글과 무관하게 동작
+  if(showHits){
+    ctx.save();
+    ctx.shadowBlur=0; // no bloom — crisp pin-point dots
+    for(const m of ellSlice){
+      if(!m.hit) continue;
+      const sx=m.hit.x*scX,sy=H-m.hit.y*scY;
+      // Layer 1: white outer ring
+      ctx.beginPath();ctx.arc(sx,sy,4.5,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=1.0;ctx.stroke();
+      // Layer 2+3: amber fill + dark brown inner ring (same path r=3.2)
+      ctx.beginPath();ctx.arc(sx,sy,3.2,0,Math.PI*2);
+      ctx.fillStyle='rgb(251,146,60)';ctx.fill();
+      ctx.strokeStyle='rgba(80,30,0,0.55)';ctx.lineWidth=0.8;ctx.stroke();
+      // Layer 4: white specular pinpoint
+      ctx.beginPath();ctx.arc(sx,sy,1.0,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Coherence overlay — combined score |∇N| × Ψ²
+  // (density gradient × normal coherence²)
+  // 벽 셀: 높은 gradient + 일관된 법선 방향 → 모두 높음
+  // 내부/클러터: gradient는 있어도 Ψ 낮음 → 억제됨
+  if(showCoh && cohGrid && densGrid){
+    const G=cohGrid.G;
+    const thr=+document.getElementById('thr').value;
+    // 실제 combined score 계산: |∇N|/max × Ψ²
+    const gradMax_ = densGrid.gradMax + 1e-9;
+    const comb = new Float32Array(G*G);
+    let combMax = 0;
+    for(let i=0; i<G*G; i++){
+      comb[i] = (densGrid.grad[i] / gradMax_) * cohGrid.dataC[i] * cohGrid.dataC[i];
+      if(comb[i] > combMax) combMax = comb[i];
+    }
+    const thrAbs=combMax*thr;
+    const thrRange=combMax-thrAbs+1e-9;
+    // ImageData path: offscreen G×G canvas → drawImage(scaled) — 10,000 fillRect 대체
+    if(!_cohOffscreen||_cohOffscreen.width!==G){
+      _cohOffscreen=document.createElement('canvas');
+      _cohOffscreen.width=G; _cohOffscreen.height=G;
+      _cohImageData=null;
+    }
+    const octx=_cohOffscreen.getContext('2d');
+    if(!_cohImageData) _cohImageData=octx.createImageData(G,G);
+    const img=_cohImageData;
+    const px=img.data;
+    px.fill(0);
+    for(let i=0;i<G*G;i++){
+      const v=comb[i];
+      if(v<thrAbs) continue;
+      const li=Math.min(255,(v-thrAbs)/thrRange*255+0.5)|0;
+      const base=i<<2, lut=li<<2;
+      px[base]  =_warmOverlayLUT[lut];
+      px[base+1]=_warmOverlayLUT[lut+1];
+      px[base+2]=_warmOverlayLUT[lut+2];
+      px[base+3]=_warmOverlayLUT[lut+3];
+    }
+    octx.putImageData(img,0,0);
+    ctx.save();
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(_cohOffscreen,0,0,W,H);
+    ctx.restore();
+  }
+
+  // Estimated wall contour (marching squares)
+  if(document.getElementById('showContour').checked && wallContour.length){
+    ctx.save();
+    ctx.strokeStyle='rgba(36,161,72,0.95)';
+    ctx.lineWidth=1.8;
+    ctx.shadowColor='rgba(36,161,72,0.4)';
+    ctx.shadowBlur=6;
+    ctx.beginPath();
+    for(const [p0,p1] of wallContour){
+      ctx.moveTo(p0.x*scX,H-p0.y*scY);
+      ctx.lineTo(p1.x*scX,H-p1.y*scY);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Ground truth + spine
+  if(showTruth&&topWall.length){
+    // Spine (centre line)
+    ctx.beginPath();
+    for(let i=0;i<spine.length;i++){
+      const sx=spine[i].x*scX,sy=H-spine[i].y*scY;
+      i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+    }
+    ctx.strokeStyle='rgba(0,122,255,0.2)';ctx.lineWidth=0.8;
+    ctx.setLineDash([3,6]);ctx.stroke();ctx.setLineDash([]);
+
+    // Walls
+    const drawWall=(wall,col)=>{
+      ctx.beginPath();
+      for(let i=0;i<wall.length;i++){
+        const sx=wall[i].x*scX,sy=H-wall[i].y*scY;
+        i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+      }
+      ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.stroke();
+    };
+    drawWall(topWall,'rgba(30,30,35,0.75)');
+    drawWall(botWall,'rgba(30,30,35,0.75)');
+
+    // Entry/exit markers
+    ctx.save();
+    ctx.strokeStyle='rgba(0,122,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(topWall[0].x*scX,H-topWall[0].y*scY);ctx.lineTo(botWall[0].x*scX,H-botWall[0].y*scY);ctx.stroke();
+    const n=topWall.length-1;
+    ctx.beginPath();ctx.moveTo(topWall[n].x*scX,H-topWall[n].y*scY);ctx.lineTo(botWall[n].x*scX,H-botWall[n].y*scY);ctx.stroke();
+    ctx.setLineDash([]);ctx.restore();
+  }
+
+  // Robots
+  if(showRobots&&bots.length){
+    ctx.save();
+    const N=bots.length;
+    for(let i=0;i<N;i++){
+      const sx=bots[i].pos.x*scX,sy=H-bots[i].pos.y*scY;
+      ctx.save();
+      // Leader bot (i===0) gets accent; rest are secondary blue tones
+      const isLeader = (i===0);
+      const baseHue = 211; // iOS blue
+      const botHue  = baseHue + (i/N)*40 - 20;
+      const fill    = isLeader
+        ? 'rgba(0,122,255,1)'
+        : `hsla(${botHue},85%,52%,0.92)`;
+      const ring    = isLeader
+        ? 'rgba(0,122,255,0.25)'
+        : 'rgba(255,255,255,0.0)';
+      const radius  = isLeader ? 5.5 : 4;
+      // outer glow ring for leader
+      if(isLeader){
+        ctx.beginPath();ctx.arc(sx,sy,9,0,Math.PI*2);
+        ctx.fillStyle='rgba(0,122,255,0.12)';ctx.fill();
+      }
+      // subtle drop shadow
+      ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=4;ctx.shadowOffsetY=1;
+      ctx.beginPath();ctx.arc(sx,sy,radius,0,Math.PI*2);
+      ctx.fillStyle=fill;ctx.fill();
+      ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+      // white inner highlight
+      ctx.beginPath();ctx.arc(sx,sy-radius*0.2,radius*0.35,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.38)';ctx.fill();
+      // crisp border
+      ctx.beginPath();ctx.arc(sx,sy,radius,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=1.2;ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // Ridge — draw from cache (computed once in analysisLoop, not every render)
+  if(document.getElementById('showRidge')?.checked && _cachedPolylines && _cachedPolylines.length > 0){
+    const _drawPolylines=(polys)=>{
+      for(const poly of polys){
+        ctx.beginPath();
+        ctx.moveTo(poly[0].x*scX,H-poly[0].y*scY);
+        for(let i=1;i<poly.length;i++){
+          ctx.lineTo(poly[i].x*scX,H-poly[i].y*scY);
+        }
+        ctx.stroke();
+      }
+    };
+    ctx.save();
+    ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.strokeStyle='rgba(255,255,255,0.70)'; ctx.lineWidth=2.0;
+    _drawPolylines(_cachedPolylines);
+    ctx.strokeStyle='rgba(0,200,230,1.0)'; ctx.lineWidth=1.2;
+    ctx.shadowColor='rgba(0,220,255,0.55)'; ctx.shadowBlur=4;
+    _drawPolylines(_cachedPolylines);
+    ctx.restore();
+  }
+
+  drawScaleBar();
+  drawLegend();
+  document.getElementById('sEll').textContent =allEllipses.length;
+  document.getElementById('sStep').textContent=totalSteps;
+
+  // Wall Metrics panel is updated in analysisLoop (once per cycle, not every render)
+}
+
+function drawLegend(){
+  const W=cvs.clientWidth, H=cvs.clientHeight;
+  // legend 항목: type = 'line'|'dash'|'ridge'|'dot'|'rect'
+  const items=[
+    {type:'line',  color:'rgba(0,100,220,0.55)',  label:'Bistatic ellipse'},
+    {type:'line',  color:'rgba(20,20,25,0.80)',   label:'Wall (GT)'},
+    {type:'dash',  color:'rgba(0,122,255,0.30)',  label:'Spine'},
+    {type:'line',  color:'rgba(36,161,72,0.95)',  label:'Est. contour'},
+    {type:'ridge', color:'rgba(0,200,230,1.0)',   label:'Ridge (est.)'},
+    {type:'rect',  color:'rgba(255,140,0,0.75)',  label:'Hit density'},
+    {type:'dot',   color:'rgba(0,122,255,1)',      label:'Vehicle'},
+  ];
+  const lh=17, lineLen=20, padX=10, padY=8;
+  const lw=148;
+  const bh=items.length*lh+padY*2;
+  const bx=W-lw-14, by=H-bh-14;
+
+  ctx.save();
+  // 배경 pill
+  ctx.fillStyle='rgba(255,255,255,0.88)';
+  ctx.strokeStyle='rgba(0,0,0,0.08)';
+  ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.roundRect(bx,by,lw,bh,7); ctx.fill(); ctx.stroke();
+
+  ctx.font='500 10.5px DM Sans, -apple-system, sans-serif';
+  ctx.textBaseline='middle';
+
+  items.forEach((item,i)=>{
+    const iy=by+padY+i*lh+lh/2;
+    const ix=bx+padX;
+    ctx.save();
+    ctx.lineJoin='round'; ctx.lineCap='round';
+
+    if(item.type==='line'){
+      ctx.strokeStyle=item.color; ctx.lineWidth=1.8;
+      ctx.beginPath(); ctx.moveTo(ix,iy); ctx.lineTo(ix+lineLen,iy); ctx.stroke();
+    }
+    else if(item.type==='dash'){
+      ctx.strokeStyle=item.color; ctx.lineWidth=1.5;
+      ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(ix,iy); ctx.lineTo(ix+lineLen,iy); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    else if(item.type==='ridge'){
+      // 흰 테두리 + 오렌지 중심
+      ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=4.0;
+      ctx.beginPath(); ctx.moveTo(ix,iy); ctx.lineTo(ix+lineLen,iy); ctx.stroke();
+      ctx.strokeStyle=item.color; ctx.lineWidth=2.2;
+      ctx.shadowColor='rgba(255,120,0,0.5)'; ctx.shadowBlur=4;
+      ctx.beginPath(); ctx.moveTo(ix,iy); ctx.lineTo(ix+lineLen,iy); ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+    else if(item.type==='rect'){
+      // hit density 색상 샘플 (hot colormap gradient)
+      const grad=ctx.createLinearGradient(ix,iy,ix+lineLen,iy);
+      grad.addColorStop(0,'rgba(220,50,0,0.25)');
+      grad.addColorStop(0.5,'rgba(255,100,0,0.55)');
+      grad.addColorStop(1,'rgba(255,50,0,0.85)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(ix, iy-4, lineLen, 8);
+      ctx.strokeStyle='rgba(0,0,0,0.08)'; ctx.lineWidth=0.5;
+      ctx.strokeRect(ix, iy-4, lineLen, 8);
+    }
+    else if(item.type==='dot'){
+      ctx.fillStyle=item.color;
+      ctx.shadowColor='rgba(0,100,255,0.35)'; ctx.shadowBlur=4;
+      ctx.beginPath(); ctx.arc(ix+lineLen/2,iy,4,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(ix+lineLen/2,iy,4,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.fillStyle='rgba(30,30,35,0.72)';
+    ctx.fillText(item.label, ix+lineLen+7, iy);
+  });
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════
+// DENSITY GRID  N(x,y) = # ellipses whose interior contains (x,y)
+// ═══════════════════════════════════════
+let densGrid = null;  // {G, raw, grad, gradMax}
+
+// ─────────────────────────────────────────────
+// initAccGrid(): 누적 그리드 초기화
+// ─────────────────────────────────────────────
+function initAccGrid(G){
+  const cellW=WW/G, cellH=WH/G;
+  accGrid={
+    G, cellW, cellH,
+    // ── Leakage-free backprojection accumulation ─────────────────
+    // raw : 타원 내부(r_cell < r) 카운트 → |∇raw| peaks at wall boundary
+    // band: 타원 perimeter (|r_cell - r| < 2 cells) 카운트
+    // cosN/sinN/cnt: perimeter 셀의 bisector 법선 누적 (Ψ)
+    // → tx, rx, r 만 사용 — hit point (oracle) 완전 배제
+    raw  : new Float32Array(G*G),  // ellipse interior count (for gradient density)
+    cnt  : new Float32Array(G*G),
+    cosN : new Float32Array(G*G),
+    sinN : new Float32Array(G*G),
+    band : new Float32Array(G*G),  // ellipse perimeter hit count
+  };
+}
+
+// ─────────────────────────────────────────────
+// accumulateEllipse(m): 새 타원 하나를 그리드에 누적
+// computeDensity / computeCoherence를 호출할 필요 없이
+// 실시간으로 그리드를 갱신한다.
+// ─────────────────────────────────────────────
+function accumulateEllipse(m){
+  // ── Leakage-free backprojection ────────────────────────────────
+  // band : 타원 perimeter (|r_cell - r_obs| < bandTol) 카운트
+  // cosN/sinN/cnt : 각 perimeter 셀에서 bisector 법선 누적
+  //   bisector ψ = angle of (q-F1)/|q-F1| + (q-F2)/|q-F2|
+  //   → Snell/Fermat 반사법칙상 실제 반사점에서만 일관됨 → Ψ 피크
+  // 사용 정보: tx, rx, r 만 — hit point 완전 배제 (oracle 없음)
+  // ──────────────────────────────────────────────────────────────
+  const G=accGrid.G;
+  const {raw,cosN,sinN,cnt,cellW,cellH,band}=accGrid;
+
+  const{tx,rx,r}=m;
+  const f1x=tx.x,f1y=tx.y,f2x=rx.x,f2y=rx.y;
+  const dist=Math.hypot(f2x-f1x,f2y-f1y);
+  if(!(r>dist)) return;
+  const a=r*0.5, f_=dist*0.5, b2=a*a-f_*f_;
+  if(!(b2>0)) return;
+  const b=Math.sqrt(b2);
+  const ecx=(f1x+f2x)*0.5, ecy=(f1y+f2y)*0.5;
+  const ang=Math.atan2(f2y-f1y,f2x-f1x);
+  const cA=Math.cos(ang), sA=Math.sin(ang);
+
+  // 바운딩 박스: 타원 내부(r_cell < r_obs)만 필요하므로 타원 자체 크기로 충분
+  const cosA2=cA*cA, sinA2=sA*sA;
+  const extX=Math.sqrt(a*a*cosA2+b*b*sinA2);
+  const extY=Math.sqrt(a*a*sinA2+b*b*cosA2);
+  const gxMin=Math.max(0,Math.floor((ecx-extX)/WW*G));
+  const gxMax=Math.min(G-1,Math.ceil ((ecx+extX)/WW*G));
+  const gyMin=Math.max(0,Math.floor((WH-(ecy+extY))/WH*G));
+  const gyMax=Math.min(G-1,Math.ceil ((WH-(ecy-extY))/WH*G));
+  if(gyMin>gyMax||gxMin>gxMax) return;
+
+  // Gaussian band: σ = 1 cell-height (세로 방향 기준)
+  // → 정확히 perimeter에 있는 셀은 w=1, 멀어질수록 감소
+  // → binary band 대비 coherence 품질 향상, 벽 위치 정밀도 향상
+  const bandSig = cellH;           // σ in world-metres (≈0.3 m)
+  const bandSig2 = bandSig*bandSig;
+  const bandCut = bandSig*3;       // 3σ cutoff
+  for(let gy=gyMin;gy<=gyMax;gy++){
+    for(let gx=gxMin;gx<=gxMax;gx++){
+      const wx=(gx+0.5)*cellW, wy=WH-(gy+0.5)*cellH;
+      const r_cell=Math.hypot(wx-f1x,wy-f1y)+Math.hypot(wx-f2x,wy-f2y);
+      const idx=gy*G+gx;
+      // ── raw: interior count (r_cell < r) → |∇raw| peaks at wall ─
+      if(r_cell<r) raw[idx]++;
+      // ── Gaussian-weighted perimeter: peaks exactly at ellipse ────
+      const dr=r_cell-r;
+      if(Math.abs(dr)>=bandCut) continue;
+      const w=Math.exp(-dr*dr/(2*bandSig2));
+      band[idx]+=w;
+      const lc1=Math.hypot(wx-f1x,wy-f1y)+EPS;
+      const lc2=Math.hypot(wx-f2x,wy-f2y)+EPS;
+      const psi=Math.atan2((wy-f1y)/lc1+(wy-f2y)/lc2,(wx-f1x)/lc1+(wx-f2x)/lc2);
+      const c2p=Math.cos(2*psi), s2p=Math.sin(2*psi);
+      cnt [idx]+=w;
+      cosN[idx]+=w*c2p;
+      sinN[idx]+=w*s2p;
+    }
+  }
+}
+
+function computeDensity() {
+  // ── Two-scale normalised gradient ────────────────────────────
+  // 문제: raw 단순 gradient는 차량 분포 불균일로 내부에 spurious peaks 발생
+  //       → max 정규화 시 wall cells(p80-p95)이 threshold 0.60 미달
+  //
+  // 해법: fine smooth / coarse smooth 비율로 background 제거 후 gradient
+  //   normDens = smooth(σ=1.5) / smooth(σ=6.0) — 내부 uniform → gradient≈0
+  //   wall에서 normDens가 1.0→0.0 급락 → gradient peak 선명
+  //   이후 sqrt 정규화로 wall cells을 threshold 이상으로 확보
+  // ──────────────────────────────────────────────────────────────
+  const G = accGrid ? accGrid.G : (+document.getElementById('gridG').value | 0);
+  if(!accGrid) initAccGrid(G);
+
+  // Step 1a: Fine smooth (σ=0.8) — 날카로운 edge 보존, noise만 제거
+  const sFine   = gaussSmooth(accGrid.raw, G, G, 0.8);
+  // Step 1b: Coarse smooth (σ=10.0) — 차량 분포 불균일 완전 억제
+  const sCoarse = gaussSmooth(accGrid.raw, G, G, 10.0);
+
+  // Step 2: Normalised density = fine / coarse  (≈1 inside, ≈0 outside, transition at wall)
+  const normDens = new Float32Array(G*G);
+  for(let i=0;i<G*G;i++) normDens[i] = sFine[i] / (sCoarse[i] + 1.0);
+
+  // Step 3: Sobel gradient of normDens → sharply peaks at wall boundary
+  const grad = new Float32Array(G*G);
+  let rawGradMax = 0;
+  for(let gy=1;gy<G-1;gy++){
+    for(let gx=1;gx<G-1;gx++){
+      const dx = normDens[gy*G+gx+1] - normDens[gy*G+gx-1];
+      const dy = normDens[(gy+1)*G+gx] - normDens[(gy-1)*G+gx];
+      const m  = Math.sqrt(dx*dx+dy*dy);
+      grad[gy*G+gx] = m;
+      if(m>rawGradMax) rawGradMax=m;
+    }
+  }
+
+  // Step 4: sqrt(grad/max) normalization — compresses outlier peaks,
+  //         reliably places wall cells above threshold=0.60
+  const logArr = new Float32Array(G*G);
+  const invMax = 1/(rawGradMax+1e-9);
+  for(let i=0;i<G*G;i++) logArr[i] = Math.sqrt(grad[i]*invMax);
+
+  densGrid = {G, raw:accGrid.raw, grad:logArr, gradMax:1.0, normDens};
+
+  // Ridge는 render()에서 densGrid.grad 를 직접 사용해 즉시 그림
+  // (타이밍 문제 방지: computeDensity->wallRidge->render 체인 대신
+  //  render 내부에서 densGrid가 있으면 바로 계산)
+}
+
+// Simple Gaussian blur on flat array (σ in cells) — kernel cached per (sigma,r) pair
+function gaussSmooth(arr, W, H, sigma) {
+  // Normalized convolution: 경계 근처 셀도 편향 없는 추정.
+  // clamp-to-border 방식은 boundary 근처 interior 셀에서
+  // sCoarse를 ~50% 과소추정 → normDens 과대 → gradient 과대 →
+  // rawGradMax inflation → 내부 벽 셀 score 상대 억제 문제 발생.
+  // 해법: 유효 범위 내 kernel 가중치 합(ks)으로 나눔 (partial normalization).
+  const out = new Float32Array(W*H);
+  const r   = Math.ceil(sigma*2.5)|0;
+  if(!_gKernCache || _gKernR!==r){
+    const k=new Float32Array(r*2+1); let ksum=0;
+    for(let i=-r;i<=r;i++){ const v=Math.exp(-0.5*(i/sigma)**2); k[i+r]=v; ksum+=v; }
+    for(let i=0;i<k.length;i++) k[i]/=ksum;
+    _gKernCache=k; _gKernR=r;
+  }
+  const kern=_gKernCache;
+  const tmp = new Float32Array(W*H);
+  // horizontal — normalized convolution (boundary-unbiased)
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    let s=0, ks=0;
+    for(let k=-r;k<=r;k++){
+      const xx=x+k;
+      if(xx>=0 && xx<W){ s+=arr[y*W+xx]*kern[k+r]; ks+=kern[k+r]; }
+    }
+    tmp[y*W+x]= ks>1e-9 ? s/ks : 0;
+  }
+  // vertical — normalized convolution
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    let s=0, ks=0;
+    for(let k=-r;k<=r;k++){
+      const yy=y+k;
+      if(yy>=0 && yy<H){ s+=tmp[yy*W+x]*kern[k+r]; ks+=kern[k+r]; }
+    }
+    out[y*W+x]= ks>1e-9 ? s/ks : 0;
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════
+// RENDER ANALYSIS PANELS (A, B, AxB)
+// fillRect(G²) -> ImageData pixel buffer -> putImageData(1회)
+// ~300x faster, enables autoN=1 real-time updates
+// ═══════════════════════════════════════
+
+// Pre-built LUT (lookup tables) for hot/cool colormaps — computed once
+// Each LUT is Uint8Array[256*4] = RGBA for t=0..255/255
+const _hotLUT  = new Uint8Array(256*4);
+const _coolLUT = new Uint8Array(256*4);
+const _warmOverlayLUT = new Uint8Array(256*4); // coherence overlay: same RGB as hot, variable alpha 0.30→0.75
+(function buildLUT(){
+  for(let i=0;i<256;i++){
+    const t=i/255;
+    let r,g,b;
+    // hot: gold -> amber -> deep scarlet (Pantone 121C -> 152C -> 186C)
+    if(t < 0.5){
+      const s=t/0.5;
+      r=255; g=Math.round(208-s*134); b=Math.round(96-s*96);
+    } else {
+      const s=(t-0.5)/0.5;
+      r=Math.round(255-s*63); g=Math.round(74-s*64); b=0;
+    }
+    const a=t<0.005?0:230;
+    _hotLUT[i*4]=r; _hotLUT[i*4+1]=g; _hotLUT[i*4+2]=b; _hotLUT[i*4+3]=a;
+    // warm overlay: same RGB, alpha scales 0.30→0.75 with t
+    const aw=t<0.005?0:(0.30+0.45*t)*255+0.5|0;
+    _warmOverlayLUT[i*4]=r; _warmOverlayLUT[i*4+1]=g; _warmOverlayLUT[i*4+2]=b; _warmOverlayLUT[i*4+3]=aw;
+
+    // cool: transparent(bg) -> periwinkle -> iOS blue -> indigo
+    if(t < 0.5){
+      const s=t/0.5;
+      r=Math.round(210-s*120); g=Math.round(220-s*80); b=255;
+    } else {
+      const s=(t-0.5)/0.5;
+      r=Math.round(90-s*40); g=Math.round(140-s*100); b=Math.round(255-s*55);
+    }
+    const a2=t<0.005?0:224;
+    _coolLUT[i*4]=r; _coolLUT[i*4+1]=g; _coolLUT[i*4+2]=b; _coolLUT[i*4+3]=a2;
+  }
+})();
+
+// Draw heatmap via ImageData — single putImageData call
+function drawHeatmapFast(c, canvas, data, maxVal, lut, G_hint) {
+  const W=canvas.clientWidth|0, H=canvas.clientHeight|0;
+  // Resize canvas physical pixels to match display size
+  if(canvas.width!==W||canvas.height!==H){ canvas.width=W; canvas.height=H; }
+  const img = c.createImageData(W, H);
+  const px  = img.data;
+  const inv = 255/(maxVal+1e-9);
+  // Use caller-supplied G to avoid floating-point sqrt rounding
+  const G_  = G_hint ?? Math.round(Math.sqrt(data.length));
+  const cW  = W/G_, cH = H/G_;
+  // bg fill: #f5f5f7 = (245,245,247)
+  for(let i=0;i<px.length;i+=4){ px[i]=245;px[i+1]=245;px[i+2]=247;px[i+3]=255; }
+  for(let gy=0;gy<G_;gy++){
+    for(let gx=0;gx<G_;gx++){
+      const t=data[gy*G_+gx]*inv;
+      if(t<2) continue;  // skip near-zero (stays as bg)
+      const li=Math.min(255,t|0)*4;
+      const a=lut[li+3]; if(a===0) continue;
+      // Fill the rectangular screen region for this grid cell
+      const x0=Math.round(gx*cW),  x1=Math.round((gx+1)*cW);
+      const y0=Math.round(gy*cH),  y1=Math.round((gy+1)*cH);
+      const cr=lut[li],cg=lut[li+1],cb=lut[li+2];
+      // Alpha-blend over #f5f5f7 — precompute per cell (constant within cell)
+      const af=a/255, bf=1-af;
+      const blR=cr*af+245*bf|0, blG=cg*af+245*bf|0, blB=cb*af+247*bf|0;
+      for(let py=y0;py<y1;py++){
+        const row=py*W;
+        for(let px2=x0;px2<x1;px2++){
+          const off=(row+px2)*4;
+          px[off]=blR; px[off+1]=blG; px[off+2]=blB; px[off+3]=255;
+        }
+      }
+    }
+  }
+  c.putImageData(img,0,0);
+}
+
+// Colormap functions kept for colorbar only (not used for heatmap rendering)
+function hot(t){
+  if(t<0.005) return 'rgba(0,0,0,0)';
+  const i=Math.min(255,Math.round(t*255))*4;
+  return `rgba(${_hotLUT[i]},${_hotLUT[i+1]},${_hotLUT[i+2]},${_hotLUT[i+3]/255})`;
+}
+function cool(t){
+  if(t<0.005) return 'rgba(0,0,0,0)';
+  const i=Math.min(255,Math.round(t*255))*4;
+  return `rgba(${_coolLUT[i]},${_coolLUT[i+1]},${_coolLUT[i+2]},${_coolLUT[i+3]/255})`;
+}
+
+function renderAnalysis() {
+  const hasDens=!!densGrid, hasCoh=!!cohGrid;
+  const G=hasDens?densGrid.G:(hasCoh?cohGrid.G:+document.getElementById('gridG').value|0);
+  const thr=+document.getElementById('thr').value;
+
+  if(!hasDens && !hasCoh){
+    for(const [c,cv] of [[ctxD,cvsDens],[ctxC,cvsCoh],[ctxX,cvsComb]]){
+      const W=cv.clientWidth|0,H=cv.clientHeight|0;
+      if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
+      c.clearRect(0,0,W,H);
+      c.fillStyle='#ffffff'; c.fillRect(0,0,W,H);
+      drawTruth(c,cv);
+    }
+    return;
+  }
+
+  // ── Panel A: |∇N| ──
+  if(densGrid){
+    const gradNorm=densGrid.gradMax+1e-9;
+    drawHeatmapFast(ctxD,cvsDens,densGrid.grad,gradNorm,_hotLUT,densGrid.G);
+    drawContourOnCtx(ctxD,cvsDens,densGrid.grad,gradNorm*thr,'#ff9f0a');
+    drawTruth(ctxD,cvsDens);
+    drawPanelColorbar(ctxD,cvsDens,hot,'low','high |∇raw|');
+  }
+
+  // ── Panel B: Normal Coherence Ψ·w ──
+  // 밀도와 독립적인 순수 코히어런스 정보를 표시.
+  // Panel A(밀도)·AxB(밀도×코히어런스)와 구별되는 독자적 시각:
+  // "반사 법선이 얼마나 일관되게 합의되는가" — threshold 이상만 표시.
+  if(cohGrid){
+    const rawB  = cohGrid.data;   // Ψ × w ∈ [0,1]
+    const peakB = rawB.reduce((m,v)=>v>m?v:m,0)+1e-9;
+    const thrB  = thr;  // hit-point 누적으로 알고리즘이 수정됨 → 별도 오프셋 불필요
+    const cutB  = peakB * thrB;
+    const dispB = new Float32Array(rawB.length);
+    for(let i=0;i<rawB.length;i++) dispB[i] = rawB[i] > cutB ? rawB[i] : 0;
+    drawHeatmapFast(ctxC,cvsCoh,dispB,peakB,_coolLUT,cohGrid.G);
+    drawContourOnCtx(ctxC,cvsCoh,rawB,cutB,'#32ade6');
+    drawTruth(ctxC,cvsCoh);
+    drawPanelColorbar(ctxC,cvsCoh,cool,'low','high Ψ·w');
+    drawNormalNote(ctxC,cvsCoh,cohGrid);
+  }
+
+  // ── Panel AxB: |∇N| x Ψxw ──
+  if(densGrid && cohGrid){
+    const comb=new Float32Array(G*G);
+    let combMax=0;
+    const gradNormC=densGrid.gradMax+1e-9;
+    // Combined score = normalised hit-density × Ψ (normal coherence weight)
+    // Ψ·w from cohGrid.data penalises cells with inconsistent normals (open space,
+    // junctions) while preserving both walls even when phase cancellation reduces
+    // Ψ on one wall.  Density is renormalised after multiplication.
+    for(let i=0;i<G*G;i++){
+      const nd = densGrid.grad[i] / gradNormC;
+      const psi = cohGrid.dataC[i];         // Ψ (순수 normal coherence, w 없음)
+      comb[i] = nd * psi * psi;              // Ψ² : 벽(0.83²=0.69) vs 내부(0.15²=0.02) 차이 증폭
+      if(comb[i]>combMax) combMax=comb[i];
+    }
+    drawHeatmapFast(ctxX,cvsComb,comb,combMax+1e-9,_hotLUT,G);
+    const combThr=(combMax+1e-9)*thr;
+    drawContourOnCtx(ctxX,cvsComb,comb,combThr,'#30d158');
+    drawTruth(ctxX,cvsComb);
+    drawPanelColorbar(ctxX,cvsComb,hot,'low','high AxB');
+    extractContour(G,comb,combThr);
+  }
+}
+
+// Small annotation showing Ψ peak on Panel B
+function drawNormalNote(c, canvas, cg) {
+  if(!cg || !cg.dataN) return;
+  const W=canvas.clientWidth, H=canvas.clientHeight;
+  const peak=cg.dataN.reduce((m,v)=>v>m?v:m,0);
+  c.save();
+  c.font='500 9px DM Sans, sans-serif';
+  c.textAlign='right'; c.textBaseline='top';
+  c.fillStyle='rgba(0,0,0,0.35)';
+  c.fillText(`Ψ peak: ${peak.toFixed(3)}`, W-10, 28);
+  c.restore();
+}
+
+// Minimal horizontal colorbar at bottom of sub-panel
+function drawPanelColorbar(c, canvas, colorFn, labelL, labelR) {
+  const W=canvas.clientWidth, H=canvas.clientHeight;
+  const bw=70, bh=6, bx=(W-bw)/2, by=H-20;
+  c.save();
+  // gradient bar
+  for(let i=0;i<bw;i++){
+    c.fillStyle=colorFn((i+0.5)/bw);
+    c.fillRect(bx+i, by, 1, bh);
+  }
+  // border
+  c.strokeStyle='rgba(0,0,0,0.12)'; c.lineWidth=0.5;
+  c.strokeRect(bx, by, bw, bh);
+  // labels
+  c.font='500 8px DM Sans, sans-serif';
+  c.fillStyle='rgba(30,30,35,0.5)';
+  c.textBaseline='top';
+  c.textAlign='left';  c.fillText(labelL, bx, by+bh+3);
+  c.textAlign='right'; c.fillText(labelR, bx+bw, by+bh+3);
+  c.restore();
+}
+
+// Draw contour at threshold on a sub-canvas ctx
+function drawContourOnCtx(c, canvas, data, thr, color) {
+  if(!data) return;
+  const G=Math.round(Math.sqrt(data.length));
+  const W=canvas.clientWidth, H=canvas.clientHeight;
+  const cellW=W/G, cellH=H/G;
+  c.save();
+  c.strokeStyle=color; c.lineWidth=1.8;
+  c.shadowColor=color; c.shadowBlur=3;
+  // 모든 등고선 세그먼트를 단일 path에 누적 → stroke 1회 (세그먼트별 GPU 플러시 제거)
+  c.beginPath();
+  for(let gy=0;gy<G-1;gy++) for(let gx=0;gx<G-1;gx++){
+    const v00=data[gy*G+gx],     v10=data[gy*G+gx+1];
+    const v01=data[(gy+1)*G+gx], v11=data[(gy+1)*G+gx+1];
+    const pts=[];
+    if((v00>thr)!==(v01>thr)){const f=(thr-v00)/(v01-v00+1e-9);pts.push({x:gx*cellW,y:(gy+f)*cellH});}
+    if((v10>thr)!==(v11>thr)){const f=(thr-v10)/(v11-v10+1e-9);pts.push({x:(gx+1)*cellW,y:(gy+f)*cellH});}
+    if((v00>thr)!==(v10>thr)){const f=(thr-v00)/(v10-v00+1e-9);pts.push({x:(gx+f)*cellW,y:gy*cellH});}
+    if((v01>thr)!==(v11>thr)){const f=(thr-v01)/(v11-v01+1e-9);pts.push({x:(gx+f)*cellW,y:(gy+1)*cellH});}
+    if(pts.length>=2){c.moveTo(pts[0].x,pts[0].y);c.lineTo(pts[1].x,pts[1].y);}
+  }
+  c.stroke();
+  c.restore();
+}
+
+// Draw ground truth on sub-canvas
+function drawTruth(c, canvas) {
+  if(!topWall.length) return;
+  const W=canvas.clientWidth, H=canvas.clientHeight;
+  const scX=W/WW, scY=H/WH;
+  c.strokeStyle='rgba(20,20,25,0.6)'; c.lineWidth=1.6;
+  const draw=(wall)=>{
+    c.beginPath();
+    for(let i=0;i<wall.length;i++){
+      const sx=wall[i].x*scX, sy=H-wall[i].y*scY;
+      i===0?c.moveTo(sx,sy):c.lineTo(sx,sy);
+    }
+    c.stroke();
+  };
+  draw(topWall); draw(botWall);
+}
+
+// ═══════════════════════════════════════
+// SIM STEP
+// ═══════════════════════════════════════
+function simStep(){
+  stepBots();
+  // Init accumulation grid on first step (G may have changed since init)
+  if(!accGrid){
+    const G=+document.getElementById('gridG').value|0;
+    initAccGrid(G);
+  }
+  const N=bots.length;
+  for(let i=0;i<N;i++) for(let j=i+1;j<N;j++){
+    const ms=simulatePair(bots[i].pos,bots[j].pos);
+    for(const m of ms){
+      allEllipses.push(m);          // RingBuffer: auto-evicts oldest, no splice
+      if(accGrid) accumulateEllipse(m);
+    }
+  }
+  totalSteps++;
+  analysisDirty=true;   // consumed by analysisLoop
+  render();
+  if(running) animId=requestAnimationFrame(simStep);
+}
+
+// ═══════════════════════════════════════
+// STATE & INIT
+// ═══════════════════════════════════════
+let topWall=[],botWall=[],wallSegs=[],spine=[],wallContour=[];
+let scenarioMode='corridor';  // 'corridor' | 'torus'
+let _cachedGTWallPts = null;  // sampleGTWall() 캐시 — init()에서 초기화
+let bots=[],totalSteps=0;
+let allEllipses = new RingBuffer(MAX_ELLIPSES);  // O(1) push, no splice
+let accGrid=null;
+let analysisDirty=false;
+let _cachedRidgeSegs=null;    // [x0,y0,x1,y1][] — computed once per cycle
+let _cachedPolylines=null;    // chained polylines from ridge segs
+let running=false,animId=null;
+let _cohOffscreen=null;       // offscreen canvas for coherence overlay (G×G, reused)
+let _cohImageData=null;       // cached ImageData for coherence overlay (avoid per-frame alloc)
+let _gKernCache=null,_gKernR=0; // cached gaussSmooth kernel
+let _wRidgeKern=null;           // cached wallRidge kernel (σ=0.8, r=3)
+
+// seed/rough/curve 를 매번 랜덤으로 설정하고 display 값도 갱신
+function randomizeParams(){
+  const seed  = 1 + Math.floor(Math.random()*99);          // 1~99
+  const rough = Math.round(Math.random()*20)/20;           // 0~1, step 0.05
+  const curve = Math.round(Math.random()*10)/20;           // 0~0.5, step 0.05
+  const setVal = (id,vid,val,dec)=>{
+    document.getElementById(id).value = val;
+    document.getElementById(vid).textContent = parseFloat(val).toFixed(dec);
+  };
+  setVal('seed', 'vSeed', seed, 0);
+  setVal('rough','vRough', rough, 2);
+  setVal('curve','vCurve', curve, 2);
+}
+
+function init(){
+  const walls = scenarioMode==='torus' ? makeTorusWalls() : makeCorridorWalls();
+  topWall=walls.topWall; botWall=walls.botWall; spine=walls.spineOut;
+  wallSegs=buildWallSegments(topWall,botWall);
+  // Close torus wall segments (connect last point back to first)
+  if(scenarioMode==='torus'){
+    const tw=topWall, bw=botWall;
+    const tax=tw[tw.length-2].x,tay=tw[tw.length-2].y,tbx=tw[0].x,tby=tw[0].y;
+    const bax=bw[bw.length-2].x,bay=bw[bw.length-2].y,bbx=bw[0].x,bby=bw[0].y;
+    wallSegs.push({ax:tax,ay:tay,bx:tbx,by:tby,wid:0,mx:(tax+tbx)*0.5,my:(tay+tby)*0.5});
+    wallSegs.push({ax:bax,ay:bay,bx:bbx,by:bby,wid:1,mx:(bax+bbx)*0.5,my:(bay+bby)*0.5});
+  }
+  partitionWallSegs();   // build wallSegsW0/W1 for fast simulatePair lookup
+  computeSpineArc();
+  allEllipses.clear();cohGrid=null;densGrid=null;wallContour=[];totalSteps=0;
+  accGrid=null;analysisDirty=false;_cachedRidgeSegs=null;_cachedPolylines=null;
+  _cachedGTWallPts=null;
+  spawnRobots();
+  render();
+  renderAnalysis();   // show GT on sub-panels from the start
+  document.getElementById('sWall').textContent='—';
+}
+
+// ═══════════════════════════════════════
+// UI WIRING
+// ═══════════════════════════════════════
+// 4th element: optional unit suffix preserved as styled inner span
+[['seed','vSeed',0],['rough','vRough',2],['curve','vCurve',2],['gap','vGap',1,'m'],
+ ['panelFps','vPanelFps',0],
+ ['nBots','vN',0],['speed','vSpeed',1],['noise','vNoise',2],['spread','vSpread',1],
+ ['ellAlpha','vAlpha',3],['ellN','vEllN',0],['gridG','vGridG',0],['thr','vThr',2],
+].forEach(([id,vid,dec,unit])=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    const v = parseFloat(document.getElementById(id).value).toFixed(dec);
+    const el = document.getElementById(vid);
+    if(unit) el.innerHTML = v + ' <span style="font-size:9px;color:var(--text3)">' + unit + '</span>';
+    else el.textContent = v;
+    render();
+  });
+});
+// Scenario toggle
+function setScenario(mode){
+  // Stop simulation first — switching mid-run leaves wallSegs/spine in wrong state
+  if(running){
+    running=false; cancelAnimationFrame(animId);
+    const btn=document.getElementById('btnRun');
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Start simulation';
+    btn.className='btn btn-primary';
+  }
+  scenarioMode = mode;
+  document.getElementById('secEnvTitle').textContent = mode==='torus'?'Environment — Torus':'Environment';
+  document.getElementById('corridorParams').style.display = mode==='torus'?'none':'block';
+  document.getElementById('torusParams').style.display    = mode==='torus'?'block':'none';
+  document.getElementById('btnScenCorridor').className = 'scen-pill' + (mode==='corridor'?' active':'');
+  document.getElementById('btnScenTorus').className    = 'scen-pill' + (mode==='torus'   ?' active':'');
+  init();
+}
+document.getElementById('btnScenCorridor').addEventListener('click',()=>setScenario('corridor'));
+document.getElementById('btnScenTorus').addEventListener('click',()=>setScenario('torus'));
+
+// torusR slider
+document.getElementById('torusR').addEventListener('input',()=>{
+  const v = parseFloat(document.getElementById('torusR').value).toFixed(1);
+  document.getElementById('vTR').innerHTML = v + ' <span style="font-size:9px;color:var(--text3)">m</span>';
+  if(!running) init();
+});
+
+// Grid G 변경 시 accGrid 재초기화 (G 크기가 바뀌므로 기존 누적 무효)
+document.getElementById('gridG').addEventListener('change', ()=>{
+  if(accGrid){
+    const newG = +document.getElementById('gridG').value|0;
+    if(newG !== accGrid.G){
+      accGrid=null;
+      cohGrid=null; densGrid=null; wallContour=[];
+      _cachedRidgeSegs=null; _cachedPolylines=null;
+      renderAnalysis(); render();
+    }
+  }
+});
+
+// 'input' 이벤트만 사용 — 'change'는 드래그 후 릴리즈 시 중복 발화하므로 제거
+['seed','rough','curve','gap','nBots','spread'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{ if(!running) init(); });
+});
+// render() is called inside chip wiring above — no separate wiring needed
+
+
+document.getElementById('btnRun').addEventListener('click',()=>{
+  running=!running;
+  const btn=document.getElementById('btnRun');
+  if(running){
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8" rx="1"/><rect x="7" y="2" width="3" height="8" rx="1"/></svg> Pause';
+    btn.className='btn btn-primary running';simStep();
+  }else{
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Start simulation';
+    btn.className='btn btn-primary';cancelAnimationFrame(animId);
+  }
+});
+document.getElementById('btnStep').addEventListener('click',()=>{ if(!running) simStep(); });
+document.getElementById('btnReset').addEventListener('click',()=>{
+  running=false;cancelAnimationFrame(animId);
+  document.getElementById('btnRun').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Start simulation';
+  document.getElementById('btnRun').className='btn btn-primary';
+  randomizeParams();
+  init();
+  renderAnalysis();   // clears panels + redraws GT immediately
+});
+randomizeParams();resize();init();
+
+// ── Independent analysis render loop ─────────────────────────────
+// Completely decoupled from simStep via its own requestAnimationFrame.
+// Rate-limited by "Panel fps" slider so the compute budget is explicit.
+// simStep only sets analysisDirty=true; this loop does all the work.
+let _aLastT=0;
+function analysisLoop(now){
+  if(analysisDirty){
+    const fps=+document.getElementById('panelFps').value;
+    if(now-_aLastT >= 1000/fps){
+      if(accGrid){ computeDensity(); computeCoherence(); }
+      // Compute ridge + metrics ONCE per analysis cycle (not per render frame)
+      if(densGrid && document.getElementById('showRidge').checked){
+        const thr_r = +document.getElementById('thr').value;
+        const Gr = densGrid.G, cWr = WW/Gr, cHr = WH/Gr;
+        // Combined score: |∇N| × Ψ² — coherence가 클러터/비벽 ridge 억제
+        // Cold-start fallback: cnt < COH_MIN_CNT인 셀은 Ψ=0으로 완전 억제되므로
+        // cnt > 0이면 gradient만으로 0.25×grad (Ψ=0.5 상당)로 fallback → 아래 벽 복구
+        let ridgeInput = densGrid.grad;
+        if(cohGrid && cohGrid.G === Gr){
+          const gradMax_ = densGrid.gradMax + 1e-9;
+          const cohCnt = cohGrid.cnt;
+          ridgeInput = new Float32Array(Gr * Gr);
+          for(let i = 0; i < Gr * Gr; i++){
+            const gNorm = densGrid.grad[i] / gradMax_;
+            if(cohGrid.dataN[i] > 0){
+              // 충분한 hit: combined score grad × Ψ²
+              // ghost arc 억제: ghost arc 셀은 normDens(nd)<0.55이고 gNorm≤0.55
+              //   → nd>0.55 OR (nd>0.15 AND gNorm>0.55) 조건으로 유지/제거
+              //   (이전 nd>0.45, gNorm>0.50 기준은 ghost arc nd≈0.47이 통과하는 문제 있었음)
+              //   Gaussian bleed 방지는 extractRidgeLine 내부의 post-smooth gate가 처리
+              const nd = densGrid.normDens ? densGrid.normDens[i] : 1;
+              const psi = cohGrid.dataC[i];
+              const keep = psi >= 0.45 && (nd > 0.55 || (nd > 0.15 && gNorm > 0.55));
+              ridgeInput[i] = keep ? gNorm * psi * psi : 0;
+            }
+            // Cold-start (cnt < COH_MIN_CNT): Ψ 정보 없음 → ridgeInput=0 유지
+            // cnt === 0: ridgeInput[i] = 0 (default)
+          }
+        }
+        _cachedRidgeSegs = extractRidgeLine(Gr, ridgeInput, thr_r, cWr, cHr);
+        _cachedPolylines = buildPolylines(_cachedRidgeSegs);
+        updateWallMetrics(_cachedRidgeSegs);
+      } else {
+        _cachedRidgeSegs = null;
+        _cachedPolylines = null;
+        updateWallMetrics(null);
+      }
+      renderAnalysis();
+      render();
+      analysisDirty=false;
+      _aLastT=now;
+    }
+  }
+  requestAnimationFrame(analysisLoop);
+}
+requestAnimationFrame(analysisLoop);
+
+// ── Toggle chip wiring ──
+// label 클릭 -> 브라우저가 checkbox를 자동 토글 -> 'change' 이벤트 발생
+// -> chip.classList 동기화 + render() 호출
+// click 핸들러는 불필요 (label이 이미 checkbox와 연결됨)
+['Ellipses','Truth','Robots','Hits','Coh','Contour','Ridge'].forEach(name=>{
+  const chip = document.getElementById('chip'+name);
+  if(!chip) return;
+  const cb = chip.querySelector('input[type=checkbox]');
+  if(!cb) return;
+  cb.addEventListener('change', ()=>{
+    chip.classList.toggle('checked', cb.checked);
+    render();
+  });
+});
+
+document.getElementById('btnScenCorridor').classList.add('active');
+</script>
+</body>
+</html>
