@@ -2,7 +2,7 @@
 
 <h1>EchoMap — Corridor Mapper</h1>
 
-<p><strong>Bistatic radar tomography, reconstructed in real-time — in a single HTML file.</strong></p>
+<p><strong>Bistatic radar wall mapping, compared head-to-head: grid accumulation vs. paper-faithful Gaussian Mixture — in a single HTML file.</strong></p>
 
 <p>
   <a href="https://woqhrl9494-cell.github.io/corridor-mapper/">
@@ -28,13 +28,18 @@
 
 Radars can't see through walls — but their reflections can.
 
-**EchoMap** simulates how a network of bistatic radar nodes, mounted on moving vehicles, can reconstruct invisible corridor walls without any direct line-of-sight. Each vehicle acts as both transmitter and receiver. As radar pulses bounce off surfaces, the system accumulates thousands of *bistatic ellipses* — the geometric locus of all points that could have produced each reflected signal.
+**EchoMap** simulates how bistatic radar nodes on moving vehicles reconstruct invisible corridor walls with no line-of-sight. Each vehicle pair acts as transmitter and receiver. When a pulse reflects off a surface, the set of all points consistent with that travel time traces a *bistatic ellipse* — an ellipsoid in 3D, an ellipse in 2D.
 
-Where ellipses intersect densely, there's a wall.
+Where many ellipses intersect, there's likely a wall.
 
-This is the core idea behind **bistatic radar tomography**, and EchoMap lets you see it happen in real time — sliders, heatmaps, and all.
+EchoMap runs **two wall-estimation algorithms in parallel** and lets you compare them live:
 
-**Open it. Press Start. Watch walls emerge from noise.**
+| Method | Idea |
+|--------|------|
+| **Grid Direct** | Accumulate ellipse density on a spatial grid; extract walls by ridge/NMS detection |
+| **GM Paper** | Fit anisotropic 2D Gaussians to ellipse arc samples; fuse them online into a Gaussian Mixture; extract walls via Hessian ridge scoring |
+
+**Open it. Press Start. Watch both methods converge.**
 
 ---
 
@@ -49,84 +54,117 @@ No installation. No dependencies. One HTML file. Works in any modern browser.
 ## How it works
 
 ```
-Moving vehicles emit radar pulses
+Moving vehicle pairs emit radar pulses
          ↓
-Each pulse reflected off a wall generates a bistatic ellipse
+Each reflected pulse → bistatic ellipse (path-length locus)
          ↓
-Thousands of ellipses accumulate on a spatial density grid
+Arc-length-equalized sampling → anisotropic 2D Gaussian components
          ↓
-Grid cells with high intersection density → wall candidates
+Online Gaussian Mixture fusion (frequency-normalized, locally-first)
          ↓
-Tangent coherence filtering removes false positives
+Hessian ridge scoring: S_T = −n̂_T^T ∇²g̃ n̂_T   (peak at wall center)
          ↓
-Ridge detection extracts the final wall estimate
+Temporal EMA + integer-step NMS → single-cell-thin wall estimate
 ```
 
-### Three-panel analysis
+The **Grid Direct** method runs the same ellipse accumulation but rasterises directly to a density grid, then applies threshold/ridge/NMS extraction. Both methods are evaluated against ground-truth wall geometry every 3 steps.
 
-| Panel | What it shows |
-|-------|--------------|
-| **A — Density Gradient** | Raw ellipse accumulation heatmap. Orange = high density = likely wall |
-| **B — Tangent Coherence** | Each cell scored by how consistently ellipses align across it |
-| **A × B — Wall Score** | Combined signal. Green contours = estimated wall |
+---
+
+## Five-panel layout
+
+| Panel | Label | What it shows |
+|-------|-------|--------------|
+| **A** | Map | Vehicle positions, bistatic ellipses, GT walls (black), Grid Direct estimate (blue), GM Paper estimate (teal) |
+| **B** | Grid Direct — Density | Raw ellipse accumulation heatmap |
+| **C** | GM Paper — Density | Gaussian Mixture density field evaluated on the grid |
+| **D** | Grid Direct — Wall | Extracted wall mask (blue cells) with GT overlay |
+| **E** | GM Paper — Wall | Hessian-ridge wall mask (teal cells) with GT overlay |
+
+Live **Precision / Recall / F1** scores are displayed for both methods simultaneously.
 
 ---
 
 ## ✨ Features
 
-- **Real-time bistatic ellipse accumulation** — thousands of ellipses rendered at interactive speeds
-- **Dual scenarios** — straight *Corridor* and curved *Torus* environments
-- **Live evaluation metrics** — Precision, Recall, F1, Hausdorff distance, Chamfer distance, Wall Score
-- **Fully parametric** — tweak wall roughness, vehicle count, radar noise, grid resolution, and more
-- **Zero dependencies** — pure HTML5 + Canvas API, no build step, no npm, no frameworks
-- **Single file** — the entire simulator lives in one `index.html`
+- **Dual-method real-time comparison** — Grid Direct and GM Paper run in parallel every step
+- **Paper-faithful GM algorithm** — arc-length equalization, χ̄ sensitivity weighting, γ anisotropy factor, structure tensor M_T, Hessian ridge A_T
+- **Hessian ridge wall scoring** — peaks exactly at the density ridge center; eliminates the double-line artifact that gradient-based scoring produces
+- **Integer-step NMS** — suppresses non-maximal Hessian values along the wall-normal direction without bilinear interpolation artifacts
+- **Robust p99 threshold** — EMA of per-step 99th-percentile score; immune to single-spike instability
+- **Dual scenarios** — straight *Corridor* and closed *Torus* environments
+- **Randomized reset** — each Reset draws new seed, roughness, curvature, and gap for instant environment variety
+- **Live evaluation** — Precision, Recall, F1, MCD, wall-cell count; updated every 3 steps
+- **Zero dependencies** — pure HTML5 + Canvas API
 
 ---
 
 ## 🎮 Parameters
 
+### Environment
+
 | Parameter | Description |
 |-----------|-------------|
-| `Seed` | Randomizes the environment geometry |
-| `Gap height` | Corridor width in meters |
-| `Roughness` | Wall surface irregularity |
-| `Curvature` | Wall curvature (0 = flat, 1 = max curve) |
+| `Seed` | Corridor geometry seed (randomized on Reset) |
+| `Gap height` | Corridor width in metres |
+| `Roughness` | Wall surface irregularity amplitude |
+| `Curvature` | Wall curvature (0 = straight, 0.5 = max) |
 | `Vehicle Count` | Number of moving radar nodes |
-| `Speed` | Vehicle speed (m/step) |
-| `Spread` | Radar beam spread angle |
-| `Noise` | Signal measurement noise σ |
-| `Alpha` | Ellipse opacity (lower = see more accumulation) |
-| `Show last N` | How many recent ellipses to render |
-| `Grid G` | Spatial resolution of density grid |
-| `Threshold` | Minimum density for wall candidacy |
+| `Speed` | Vehicle speed (m / step) |
+| `Spread` | Cross-corridor spread of vehicle formation |
+| `σ_noise` | Measurement range noise std-dev (m) |
+| `σ_p (position)` | Vehicle position noise std-dev (m) |
+
+### GM Algorithm
+
+| Parameter | Description |
+|-----------|-------------|
+| `η (forgetting)` | Component weight decay per step |
+| `τ_p (prune)` | Minimum weight to keep a component |
+| `τ_m (merge B.)` | Bhattacharyya distance threshold for merging |
+| `σ_⊥ (normal)` | Initial covariance perpendicular to ellipse |
+| `σ_t (tangent)` | Initial covariance along ellipse tangent |
+| `Δs (arc spacing)` | Arc-length step between ellipse samples (m) |
+
+### Wall Extraction
+
+| Parameter | Description |
+|-----------|-------------|
+| `Threshold / Hessian Ridge / Outer Peak` | Grid Direct extraction mode |
+| `τ_w (threshold)` | Density threshold for *Threshold* mode |
+| `τ_r (ridge/NMS min)` | Ridge height minimum for *Hessian Ridge* and *Outer Peak* modes |
+| `ε_g (grad bound)` | Gradient lower-bound for *Outer Peak* mode |
+
+### Display
+
+| Parameter | Description |
+|-----------|-------------|
+| `Grid G` | Spatial resolution of both density grids |
+| `Panel FPS` | Rendering rate cap |
 
 ---
 
 ## 📐 Scenarios
 
 ### Corridor
-A straight corridor with configurable wall roughness and curvature. Classic indoor sensing scenario.
+A randomly generated open-ended corridor. Wall roughness and curvature are independently controllable. Vehicles traverse back and forth; every opposite pair generates ellipses.
 
 ### Torus
-A closed curved corridor forming a ring — tests the algorithm's robustness under non-linear wall geometry.
+A closed ring corridor. Tests algorithm robustness under highly curved, fully-wraparound geometry.
 
 ---
 
 ## 📊 Evaluation Metrics
 
-The sidebar computes these metrics live as the simulation runs:
+Computed every 3 simulation steps against sampled ground-truth wall points (300 pts / wall, τ = 0.9 m matching radius):
 
 | Metric | Description |
 |--------|-------------|
-| **Precision** | % of estimated wall points within tolerance of ground truth |
-| **Recall** | % of ground truth wall covered by the estimate |
-| **F1 Score** | Harmonic mean of Precision and Recall |
-| **Wall Score** | Peak A×B density score (coherence-weighted) |
-| **Chamfer Dist.** | Mean bidirectional distance between estimate and ground truth |
-| **Hausdorff 95** | 95th-percentile worst-case deviation |
-| **Avg Nearest** | Mean nearest-neighbor distance from estimate to truth |
-| **COH Peak** | Maximum coherence value observed |
-| **Wall Cells** | Number of grid cells classified as wall |
+| **Precision** | Fraction of estimated wall cells within 0.9 m of GT |
+| **Recall** | Fraction of GT points covered within 0.9 m |
+| **F1 Score** | Harmonic mean of P and R |
+| **MCD** | Mean Chamfer Distance (bidirectional) |
+| **Wall cells** | Number of grid cells classified as wall |
 
 ---
 
@@ -147,8 +185,9 @@ The sidebar computes these metrics live as the simulation runs:
 
 ```
 corridor-mapper/
-├── index.html      ← The entire simulator (HTML + CSS + JS)
+├── index.html      ← The entire simulator (HTML + CSS + JS, ~3300 lines)
 ├── assets/
+│   ├── demo.gif   ← Animated demo
 │   └── demo.png   ← Screenshot for README
 └── README.md
 ```
