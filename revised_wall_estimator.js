@@ -39,6 +39,8 @@
     tauC: 0.45,
     tauR: 0.10,
     tauD: 0.35,
+    evidenceQuantile: 0.99,
+    tauEDominance: 0.60,
     useVisibility: false,
     visibilityAlpha: 1.0,
     visibilityMin: 0.05,
@@ -156,6 +158,8 @@
       out.tauC = clamp(finiteOr(out.tauC, DEFAULT_CONFIG.tauC), 0, 1);
       out.tauR = Math.max(0, finiteOr(out.tauR, DEFAULT_CONFIG.tauR));
       out.tauD = Math.max(0, finiteOr(out.tauD, DEFAULT_CONFIG.tauD));
+      out.evidenceQuantile = clamp(finiteOr(out.evidenceQuantile, DEFAULT_CONFIG.evidenceQuantile), 0, 1);
+      out.tauEDominance = Math.max(0, finiteOr(out.tauEDominance, DEFAULT_CONFIG.tauEDominance));
       out.visibilityAlpha = Math.max(0, finiteOr(out.visibilityAlpha, DEFAULT_CONFIG.visibilityAlpha));
       out.visibilityMin = clamp(finiteOr(out.visibilityMin, DEFAULT_CONFIG.visibilityMin), 0, 1);
       out.visibilityCoherence = clamp(finiteOr(out.visibilityCoherence, DEFAULT_CONFIG.visibilityCoherence), 0, 1);
@@ -194,7 +198,10 @@
         updateRuntimeMs: 0,
         stateBytesApprox: 0,
         supportPoints: 0,
+        rawRidgePoints: 0,
         ridgePoints: 0,
+        evidenceReference: 0,
+        evidenceDominanceThreshold: 0,
       };
     }
 
@@ -642,6 +649,8 @@
       const ridge = new Uint8Array(size);
       const ridgeOwner = new Int32Array(size);
       ridgeOwner.fill(0x7fffffff);
+      const ridgeScore = new Float32Array(size);
+      ridgeScore.fill(-Infinity);
       const ridgeX = new Float32Array(size);
       const ridgeY = new Float32Array(size);
       const ridgeNX = new Float32Array(size);
@@ -679,9 +688,11 @@
             if (value.R > concentration[index]) concentration[index] = value.R;
             if (value.D < stationarity[index]) stationarity[index] = value.D;
             if (value.support) support[index] = 1;
-            if (value.ridge && seed.id < ridgeOwner[index]) {
+            if (value.ridge && (value.E > ridgeScore[index] + EPS ||
+                (Math.abs(value.E - ridgeScore[index]) <= EPS && seed.id < ridgeOwner[index]))) {
               ridge[index] = 1;
               ridgeOwner[index] = seed.id;
+              ridgeScore[index] = value.E;
               ridgeX[index] = x;
               ridgeY[index] = y;
               ridgeNX[index] = value.normalX;
@@ -699,15 +710,42 @@
           const gx = clamp(Math.floor(seedStats.mx / cellWidth), 0, G - 1);
           const gy = clamp(Math.floor((this.config.worldHeight - seedStats.my) / cellHeight), 0, G - 1);
           const index = gy * G + gx;
-          if (seed.id < ridgeOwner[index]) {
+          if (seedValue.E > ridgeScore[index] + EPS ||
+              (Math.abs(seedValue.E - ridgeScore[index]) <= EPS && seed.id < ridgeOwner[index])) {
             ridge[index] = 1;
             ridgeOwner[index] = seed.id;
+            ridgeScore[index] = seedValue.E;
             ridgeX[index] = seedStats.mx;
             ridgeY[index] = seedStats.my;
             ridgeNX[index] = seedValue.normalX;
             ridgeNY[index] = seedValue.normalY;
           }
         }
+      }
+
+      // A single Gaussian mode has D=0, R=1 and negative normal curvature at
+      // its own mean. Therefore the raw union of all per-seed analytic ridges
+      // admits persistent ellipse-interior modes as trivial self-ridges. Keep
+      // only ridges that also belong to the dominant evidence band:
+      //   T_E = max(tau_E, tau_E,dom * Q_q({E(x) > 0})).
+      // Q_0.99 is robust to one extreme cell and uses only the current causal
+      // estimator state; ground truth and future snapshots are not inputs.
+      const positiveEvidence = [];
+      for (let index = 0; index < size; index++) {
+        if (evidence[index] > 0) positiveEvidence.push(evidence[index]);
+      }
+      positiveEvidence.sort((a, b) => a - b);
+      const quantileIndex = positiveEvidence.length
+        ? Math.min(positiveEvidence.length - 1, Math.floor(this.config.evidenceQuantile * (positiveEvidence.length - 1)))
+        : 0;
+      const evidenceReference = positiveEvidence.length ? positiveEvidence[quantileIndex] : 0;
+      const evidenceDominanceThreshold = Math.max(this.config.tauE, this.config.tauEDominance * evidenceReference);
+      let rawRidgePoints = 0;
+      for (let index = 0; index < size; index++) {
+        if (!ridge[index]) continue;
+        rawRidgePoints++;
+        const candidateEvidence = Math.max(evidence[index], ridgeScore[index]);
+        if (candidateEvidence + EPS < evidenceDominanceThreshold) ridge[index] = 0;
       }
 
       const ridgePoints = [];
@@ -729,7 +767,10 @@
       }
 
       this.lastDiagnostics.supportPoints = supportPoints;
+      this.lastDiagnostics.rawRidgePoints = rawRidgePoints;
       this.lastDiagnostics.ridgePoints = ridgePoints.length;
+      this.lastDiagnostics.evidenceReference = evidenceReference;
+      this.lastDiagnostics.evidenceDominanceThreshold = evidenceDominanceThreshold;
       return { G, cellWidth, cellHeight, evidence, coherence, concentration, stationarity, support, ridge, ridgePoints };
     }
 

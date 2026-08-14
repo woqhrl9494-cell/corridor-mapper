@@ -325,6 +325,51 @@ run('15 double-bounce visibility ablation', () => {
   return { off, on, beneficial: on.phantomPoints < off.phantomPoints && on.recall >= off.recall };
 });
 
+run('16 evidence-dominance rejects trivial self-ridges', () => {
+  const build = (tauEDominance) => {
+    const estimator = new RevisedEstimator({
+      HConf: 2,
+      KMode: 3,
+      tauB: 4,
+      tauE: 0.001,
+      tauC: 0.35,
+      tauR: 0.03,
+      tauD: 0.45,
+      evidenceQuantile: 0.99,
+      tauEDominance,
+    });
+    for (let t = 0; t < 3; t++) {
+      const kernels = [];
+      for (let x = 4; x <= 56; x += 0.75) kernels.push(makeKernel(x, 10, Math.PI / 2, 0.75, 0.16, 1));
+      for (let y = 4; y <= 26; y += 2.5) {
+        if (Math.abs(y - 10) < 1) continue;
+        for (let x = 6; x <= 54; x += 3) kernels.push(makeKernel(x, y, Math.PI / 2, 0.75, 0.16, 0.08));
+      }
+      estimator.debugIngestKernels(t, kernels);
+    }
+    const grid = estimator.extractGrid(120);
+    const near = grid.ridgePoints.filter((point) => Math.abs(point.y - 10) <= 0.6).length;
+    const far = grid.ridgePoints.length - near;
+    return { estimator, grid, near, far };
+  };
+
+  const raw = build(0);
+  const gated = build(0.60);
+  const diagnostics = gated.estimator.getDiagnostics();
+  assert.ok(gated.near >= 20, `near-wall ridge points=${gated.near}`);
+  assert.ok(gated.far <= Math.max(2, 0.2 * raw.far), `far raw=${raw.far}, gated=${gated.far}`);
+  assert.ok(diagnostics.rawRidgePoints > diagnostics.ridgePoints);
+  assert.ok(diagnostics.evidenceDominanceThreshold > gated.estimator.config.tauE);
+  return {
+    rawRidges: raw.grid.ridgePoints.length,
+    gatedRidges: gated.grid.ridgePoints.length,
+    rawFar: raw.far,
+    gatedFar: gated.far,
+    nearWall: gated.near,
+    evidenceThreshold: diagnostics.evidenceDominanceThreshold,
+  };
+});
+
 const failures = results.filter((result) => result.status !== 'PASS');
 console.log(JSON.stringify({ summary: { passed: results.length - failures.length, failed: failures.length, total: results.length }, results }, null, 2));
 if (failures.length) process.exitCode = 1;

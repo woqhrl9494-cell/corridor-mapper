@@ -29,7 +29,7 @@
 ## C. 변경 파일
 
 - `revised_wall_estimator.js`: revised causal estimator, local mode state, optional previous-snapshot visibility, analytic extraction, diagnostics
-- `revised_wall_estimator.test.js`: specification의 15개 deterministic validation
+- `revised_wall_estimator.test.js`: specification과 evidence-dominance 회귀를 포함한 16개 deterministic validation
 - `index.html`: 공개 GitHub Pages 저장소의 기존 `index.html`을 기준으로 revised estimator 기본 결선, legacy 선택 옵션, A–E 패널 유지, DPR-safe B/C rendering
 - `corridor_mapper_claude_gm.html`: revised estimator 기본 결선, legacy 선택 옵션, diagnostics UI, DPR-safe canvas rendering
 - `REVISED_ESTIMATOR_MIGRATION.md`: 구조, 수식 대응, 검증 결과, 남은 제한 기록
@@ -69,9 +69,10 @@
 | 12 branch | PASS | three local orientations retained |
 | 13 dwell-time bias | PASS | raw mass ratio 5.0, `W/H` ratio 1.0 |
 | 14 visibility causality | PASS | first-snapshot visibility 1.0, next 0.9896 |
-| 15 double bounce ablation | PASS | OFF phantom 364/precision 0.323/recall 1.0, ON phantom 368/precision 0.317/recall 1.0 |
+| 15 double bounce ablation | PASS | OFF phantom 364/precision 0.322/recall 1.0, ON phantom 363/precision 0.320/recall 1.0 |
+| 16 evidence dominance | PASS | diffuse self-ridge 153 -> 0, strong wall ridge 52/52 retained |
 
-Test 15에서 visibility는 phantom을 줄이지 못했다. 따라서 specification에 따라 기본값을 OFF로 유지하며 효과를 주장하지 않는다.
+Test 15에서 visibility의 phantom 감소는 1개뿐이고 precision은 감소했다. 따라서 기본값을 OFF로 유지하며 유의미한 효과를 주장하지 않는다.
 
 Browser integration:
 
@@ -85,3 +86,34 @@ Browser integration:
 - 실제 browser run의 DPR은 1이었다. DPR 2에서 문제가 생기는 코드 경로는 physical backing-store와 logical overlay transform을 통일해 제거했지만, 실제 MacBook Retina 화면에서의 최종 육안 검증은 수행하지 못했다.
 - 현재 web simulator는 corridor/torus만 UI로 노출한다. single wall/corner/branch/double-bounce는 deterministic test fixture에 구현되어 있으며 UI scenario로 추가하지 않았다.
 - visibility ray integral은 cellSize/2 이하 midpoint quadrature이다. exact DDA 경계 교차식은 아니지만 실제 segment length를 적분하며 endpoint cell을 제외한다.
+
+## G. Local analytic-ridge correction
+
+원인: seed별 국소 Gaussian 장의 ridge를 그대로 합집합하면, 타원 내부의 단일 모드도 자기 평균에서 `D=0`, `R=1`, 음의 정상곡률을 만족해 자명한 self-ridge가 된다. Evidence E에는 실제 벽의 강한 띠가 보이지만 최종 mask가 내부 self-ridge 수천 개로 채워져 벽이 묻혔다.
+
+수정: 기존 analytic `E,C,R,D` 조건을 유지하고 다음 current-snapshot evidence-dominance gate를 추가했다.
+
+`T_E = max(tau_E, tau_E,dom * Q_q({E(x) > 0}))`, `q=0.99`, `tau_E,dom=0.60`
+
+최종 ridge는 기존 조건과 `E >= T_E`를 모두 만족해야 한다. `Q_0.99`는 최대값 한 점보다 안정적이며 estimator의 현재 causal state만 사용한다. GT 좌표와 미래 snapshot은 threshold 계산에 들어가지 않는다. 양의 evidence 정렬 때문에 추출당 시간복잡도 `O(G^2 log G)`와 `O(G^2)` 임시 메모리가 추가된다. 현재 병목은 여전히 seed-neighbor analytic field evaluation이다.
+
+브라우저 검증, Grid G=150:
+
+- corridor seed 42, 57 steps: wall cells 5,501 -> 320, precision 0.203 -> 0.997, recall 0.480 -> 0.290, F1 0.285 -> 0.449
+- corridor seed 42, 120 steps: precision 0.995, recall 0.550, F1 0.708, extraction/update 250.7 ms
+- torus, 120 steps: precision 0.948, recall 0.568, F1 0.711, extraction/update 251.7 ms
+- console warning/error 0건
+
+동일 입력, 동일 `G=150`, 120-step held-out 비교:
+
+| Scenario | Seed | Grid Direct F1 | Revised F1 | Grid Direct recall | Revised recall |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| corridor | 7 | 0.677 | 0.710 | 0.512 | 0.553 |
+| corridor | 19 | 0.692 | 0.727 | 0.535 | 0.595 |
+| corridor | 73 | 0.696 | 0.733 | 0.533 | 0.587 |
+| torus | 7 | 0.583 | 0.717 | 0.438 | 0.578 |
+| torus | 73 | 0.612 | 0.732 | 0.467 | 0.600 |
+
+5개 held-out run 모두 Revised F1과 recall이 Grid Direct보다 높았다. 이는 시험한 조건의 재현 결과이며 모든 가능한 seed/noise/geometry에 대한 수학적 우월성 보장은 아니다. 성능 비교와 threshold 선택에 사용한 GT는 estimator 입력에 전달되지 않는다.
+
+57-step recall 감소는 아직 관측하지 않은 전체 GT 벽까지 recall denominator에 포함하는 metric 영향과 강한 evidence가 형성되기 전의 warm-up 영향이 함께 있다. 동일 시점 Grid Direct recall은 0.272이며 revised recall 0.290보다 낮다.

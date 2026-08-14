@@ -774,7 +774,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="view" id="viewGMWall">
       <div class="vlabel">
         <span class="vlabel-badge vlabel-badge-e">E</span>
-        <span class="vlabel-text">Revised — Analytic Ridge</span>
+        <span class="vlabel-text">Revised — Gated Analytic Ridge</span>
       </div>
       <canvas id="cvsGMWall"></canvas>
     </div>
@@ -902,6 +902,8 @@ function revisedConfig(){
     tauC:0.45,
     tauR:0.10,
     tauD:0.35,
+    evidenceQuantile:0.99,
+    tauEDominance:0.60,
   };
 }
 let revisedEstimator = new window.RevisedWallEstimator.RevisedEstimator(revisedConfig());
@@ -3389,7 +3391,7 @@ function resetForEstimatorChange(){
   const densLabel=document.querySelector('#viewGMDens .vlabel-text');
   const wallLabel=document.querySelector('#viewGMWall .vlabel-text');
   if(densLabel) densLabel.textContent=revised?'Revised — Evidence E':'Legacy GM — Density';
-  if(wallLabel) wallLabel.textContent=revised?'Revised — Analytic Ridge':'Legacy GM — Wall Mask';
+  if(wallLabel) wallLabel.textContent=revised?'Revised — Gated Analytic Ridge':'Legacy GM — Wall Mask';
   document.querySelectorAll('.chdr-gm').forEach(el=>el.textContent=revised?'Revised':'Legacy GM');
   init();
 }
