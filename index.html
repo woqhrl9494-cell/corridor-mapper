@@ -168,6 +168,44 @@ header {
 }
 .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
+/* Collapsible parameter groups. All groups start closed so run controls stay visible. */
+.control-group { padding-top: 4px; }
+.sec-toggle {
+  width: 100%; min-height: 29px; padding: 5px 0;
+  border: 0; background: transparent; color: var(--text3);
+  display: flex; align-items: center; gap: 7px;
+  font: 700 9px/1 -apple-system, 'SF Pro Text', sans-serif;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  cursor: pointer; text-align: left;
+}
+.sec-toggle::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.sec-toggle:hover { color: var(--text2); }
+.sec-chevron {
+  width: 13px; height: 13px; flex: 0 0 auto;
+  transition: transform 0.22s ease;
+}
+.control-group:not(.collapsed) .sec-chevron { transform: rotate(180deg); }
+.sec-content {
+  max-height: 760px; opacity: 1; overflow: hidden;
+  padding-top: 3px;
+  transition: max-height 0.28s ease, opacity 0.18s ease, padding-top 0.28s ease;
+}
+.control-group.collapsed .sec-content {
+  max-height: 0; opacity: 0; padding-top: 0; pointer-events: none;
+}
+.run-controls { padding-top: 8px; padding-bottom: 1px; border-bottom: 1px solid var(--border); }
+.toggle-chip {
+  min-height: 25px; padding: 4px 7px; border: 1px solid var(--border2);
+  border-radius: 6px; background: var(--surface2); color: var(--text2);
+  display: flex; align-items: center; gap: 6px;
+  font: 500 10px 'DM Sans', sans-serif; cursor: pointer;
+}
+.toggle-chip input { accent-color: var(--accent); }
+.toggle-chip.checked { color: var(--accent); border-color: rgba(0,122,255,0.35); background: rgba(0,122,255,0.07); }
+.diffuse-params.disabled { opacity: 0.42; }
+.diffuse-params.disabled input { pointer-events: none; }
+.micro-note { margin: 0 0 5px; color: var(--text3); font: 500 8.5px/1.35 'DM Mono', monospace; }
+
 /* Slider row */
 .param-row { margin-bottom: 5px; }
 .param-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
@@ -406,9 +444,27 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <button id="btnScenTorus"    class="scen-pill">Torus</button>
   </div>
 
+  <!-- SIMULATION CONTROLS: kept at the top regardless of group state -->
+  <div class="sec run-controls">
+    <button class="btn btn-primary" id="btnRun">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M3 2l7 4-7 4V2z"/>
+      </svg>
+      Start simulation
+    </button>
+    <div class="btn-row">
+      <button class="btn" id="btnStep">Step x1</button>
+      <button class="btn btn-danger" id="btnReset">Reset</button>
+    </div>
+  </div>
+
   <!-- ENVIRONMENT -->
-  <div class="sec">
-    <div class="sec-title">Environment</div>
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupEnvironment">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Environment</span>
+    </button>
+    <div class="sec-content" id="groupEnvironment">
     <div class="param-grid2">
       <div class="param-row">
         <div class="param-label">
@@ -450,16 +506,21 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- VEHICLES -->
-  <div class="sec">
-    <div class="sec-title">Vehicles</div>
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupVehicles">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Vehicles</span>
+    </button>
+    <div class="sec-content" id="groupVehicles">
     <div class="param-grid2">
       <div class="param-row">
         <div class="param-label">
           <span class="param-name">Count</span>
-          <span class="param-val" id="vN">20</span>
+          <span class="param-val" id="vN">8</span>
         </div>
         <input type="range" id="nBots" min="2" max="30" step="1" value="8">
       </div>
@@ -478,11 +539,16 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
         <input type="range" id="spread" min="1" max="15" step="0.5" value="6.0">
       </div>
     </div>
+    </div>
   </div>
 
   <!-- NOISE -->
-  <div class="sec">
-    <div class="sec-title">Noise</div>
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupNoise">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Measurement Noise</span>
+    </button>
+    <div class="sec-content" id="groupNoise">
     <div class="param-grid2">
       <div class="param-row">
         <div class="param-label">
@@ -499,11 +565,52 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
         <input type="range" id="posSigma" min="0" max="1.0" step="0.05" value="0.10">
       </div>
     </div>
+    </div>
+  </div>
+
+  <!-- DIFFUSE PATHS -->
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupDiffuse">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Diffuse Paths</span>
+    </button>
+    <div class="sec-content" id="groupDiffuse">
+      <label class="toggle-chip" id="chipDiffuse"><input type="checkbox" id="useDiffusePaths"><span id="diffuseToggleText">Material-aware diffuse · OFF</span></label>
+      <div class="diffuse-params disabled" id="diffuseParams">
+        <p class="micro-note">Wall-arc spread and extracted paths per nominal reflection family</p>
+        <div class="param-grid2">
+          <div class="param-row">
+            <div class="param-label"><span class="param-name">σ_s (arc spread)</span><span class="param-val" id="vDiffuseSigma">1.00 m</span></div>
+            <input type="range" id="diffuseSigma" min="0" max="4" step="0.1" value="1.0" disabled>
+          </div>
+          <div class="param-row">
+            <div class="param-label"><span class="param-name">M̄_D (path mean)</span><span class="param-val" id="vDiffuseMean">2.00</span></div>
+            <input type="range" id="diffuseMean" min="1" max="6" step="0.25" value="2.0" disabled>
+          </div>
+        </div>
+        <div class="cinfo-row">
+          <div class="cinfo-cell">σ̂_s: <b id="sDiffuseStd">—</b></div>
+          <div class="cinfo-cell">Paths/fam: <b id="sDiffuseMultiplicity">—</b></div>
+        </div>
+        <div class="cinfo-row">
+          <div class="cinfo-cell">Boundary retry: <b id="sDiffuseBoundary">0</b></div>
+          <div class="cinfo-cell">Failures: <b id="sDiffuseFailure">0</b></div>
+        </div>
+        <div class="cinfo-row">
+          <div class="cinfo-cell">σθ/ρtan: <b id="sDiffuseTangency">—</b></div>
+          <div class="cinfo-cell">Γ/Ceff: <b id="sDiffuseCoherence">—</b></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- GM PARAMETERS -->
-  <div class="sec">
-    <div class="sec-title">Estimator</div>
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupEstimator">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Estimator</span>
+    </button>
+    <div class="sec-content" id="groupEstimator">
     <div class="param-grid2">
       <div class="param-row">
         <div class="param-label"><span class="param-name">Algorithm</span></div>
@@ -568,11 +675,16 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
         <input type="range" id="deltaS" min="0.5" max="4.0" step="0.25" value="1.50">
       </div>
     </div>
+    </div>
   </div>
 
   <!-- WALL EXTRACTION -->
-  <div class="sec">
-    <div class="sec-title">Wall Extraction</div>
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupExtraction">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Wall Extraction</span>
+    </button>
+    <div class="sec-content" id="groupExtraction">
     <div class="wall-mode-bar">
       <button class="wall-pill" id="pillThresh">Threshold</button>
       <button class="wall-pill" id="pillRidge">Hessian Ridge</button>
@@ -601,11 +713,16 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
         <input type="range" id="epsGSlider" min="0.01" max="1.0" step="0.01" value="0.10">
       </div>
     </div>
+    </div>
   </div>
 
   <!-- DISPLAY -->
-  <div class="sec">
-    <div class="sec-title">Display</div>
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupDisplay">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Display</span>
+    </button>
+    <div class="sec-content" id="groupDisplay">
     <div class="param-grid2">
       <div class="param-row">
         <div class="param-label">
@@ -621,6 +738,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
         </div>
         <input type="range" id="panelFps" min="1" max="30" step="1" value="20">
       </div>
+    </div>
     </div>
   </div>
 
@@ -724,20 +842,6 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     </div>
   </div>
 
-  <!-- CONTROLS -->
-  <div class="sec" style="margin-top:6px;">
-    <button class="btn btn-primary" id="btnRun">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-        <path d="M3 2l7 4-7 4V2z"/>
-      </svg>
-      Start simulation
-    </button>
-    <div class="btn-row">
-      <button class="btn" id="btnStep">Step x1</button>
-      <button class="btn btn-danger" id="btnReset">Reset</button>
-    </div>
-  </div>
-
 </div><!-- /sidebar -->
 
 <!-- CANVAS AREA -->
@@ -776,7 +880,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="view" id="viewGMWall">
       <div class="vlabel">
         <span class="vlabel-badge vlabel-badge-e">E</span>
-        <span class="vlabel-text">Revised — Thin Gated Ridge</span>
+        <span class="vlabel-text">Revised — Causal Evidence Ridge</span>
       </div>
       <canvas id="cvsGMWall"></canvas>
     </div>
@@ -785,6 +889,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
 
 </div><!-- /main -->
 <script src="./wall_metrics.js"></script>
+<script src="./diffuse_path.js"></script>
 <script src="./revised_wall_estimator.js"></script>
 <script>
 'use strict';
@@ -900,11 +1005,19 @@ function runtimeLabel(history){
   return `${runtimePercentile(history,0.50).toFixed(1)}/${runtimePercentile(history,0.95).toFixed(1)}ms`;
 }
 
+if(!window.DiffusePath?.buildWallArcTable) throw new Error('diffuse_path.js failed to load');
 if(!window.RevisedWallEstimator?.RevisedEstimator) throw new Error('revised_wall_estimator.js failed to load');
 if(!window.WallMetrics?.computeBoundaryMetrics) throw new Error('wall_metrics.js failed to load');
 
 function isRevisedMode(){ return document.getElementById('estimatorMode')?.value !== 'legacy'; }
+function getDiffuseSettings(){
+  const enabled=!!document.getElementById('useDiffusePaths')?.checked;
+  const sigmaS=enabled?Math.max(0,+(document.getElementById('diffuseSigma')?.value||0)):0;
+  const configuredMean=Math.max(1,+(document.getElementById('diffuseMean')?.value||1));
+  return {enabled,sigmaS,meanPathCount:enabled&&sigmaS>EPS?configuredMean:1};
+}
 function revisedConfig(){
+  const diffuse=getDiffuseSettings();
   return {
     worldWidth:WW,
     worldHeight:WH,
@@ -926,6 +1039,13 @@ function revisedConfig(){
     dominanceRampStart:60,
     dominanceRampEnd:120,
     useNormalNms:true,
+    useDirectionalAssignment:true,
+    useMaterialAwareTangency:diffuse.enabled&&diffuse.sigmaS>EPS,
+    diffuseSigmaS:diffuse.sigmaS,
+    assignmentNormalSigma:1.5,
+    assignmentTangentialCells:1.0,
+    assignmentSearchRadiusCells:1,
+    enableSurfaceGraphShadow:false,
   };
 }
 let revisedEstimator = new window.RevisedWallEstimator.RevisedEstimator(revisedConfig());
@@ -986,20 +1106,27 @@ function simPairNoiseRng(seedBase, stepIdx, pairIdx, txPos, rxPos) {
   return seededRNG(seed);
 }
 
-// ═══════════════════════════════════════
-// CATMULL-ROM HELPERS
-// ═══════════════════════════════════════
-function catmullRom(p0,p1,p2,p3,t) {
-  return {
-    x: 0.5*((-p0.x+3*p1.x-3*p2.x+p3.x)*t*t*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t*t+(-p0.x+p2.x)*t+2*p1.x),
-    y: 0.5*((-p0.y+3*p1.y-3*p2.y+p3.y)*t*t*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t*t+(-p0.y+p2.y)*t+2*p1.y),
-  };
-}
-function catmullRomD(p0,p1,p2,p3,t) {
-  return {
-    x: 0.5*(3*(-p0.x+3*p1.x-3*p2.x+p3.x)*t*t+2*(2*p0.x-5*p1.x+4*p2.x-p3.x)*t+(-p0.x+p2.x)),
-    y: 0.5*(3*(-p0.y+3*p1.y-3*p2.y+p3.y)*t*t+2*(2*p0.y-5*p1.y+4*p2.y-p3.y)*t+(-p0.y+p2.y)),
-  };
+function polylineMaxTurnAngle(points){
+  const lengths=[];
+  for(let i=1;i<points.length;i++){
+    const length=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
+    if(length>EPS) lengths.push(length);
+  }
+  lengths.sort((a,b)=>a-b);
+  const meaningfulLength=0.25*(lengths[Math.floor(lengths.length/2)]||0);
+  let maximum=0;
+  for(let i=1;i<points.length-1;i++){
+    const ax=points[i].x-points[i-1].x,ay=points[i].y-points[i-1].y;
+    const bx=points[i+1].x-points[i].x,by=points[i+1].y-points[i].y;
+    const la=Math.hypot(ax,ay),lb=Math.hypot(bx,by);
+    // Hard domain clamping can create sub-pixel backtracking segments at x=0
+    // or x=WW. They do not form a rendered wall corner and must not dominate
+    // the geometric turn diagnostic.
+    if(!(la>=meaningfulLength&&lb>=meaningfulLength)) continue;
+    const cosine=Math.max(-1,Math.min(1,(ax*bx+ay*by)/(la*lb)));
+    maximum=Math.max(maximum,Math.acos(cosine));
+  }
+  return maximum;
 }
 
 // ═══════════════════════════════════════
@@ -1013,33 +1140,88 @@ function makeCorridorWalls() {
   const rng   = seededRNG(seed);
   const nPts  = 600;
 
-  const nCtrl = 2 + Math.round(curve * 8);
-  const ctrl  = [];
-  for (let i = 0; i <= nCtrl; i++) {
-    const x = (i/nCtrl)*WW;
-    const margin = gap * 0.5 + rough * 6.5 + 1.0;
-    const maxDev = Math.min((WH * 0.5 - margin), curve * 18);
-    const y = WH*0.5 + (rng()*2-1)*maxDev;
-    ctrl.push({x, y});
-  }
-  const dx0=ctrl[1].x-ctrl[0].x, dy0=ctrl[1].y-ctrl[0].y;
-  const dxN=ctrl[nCtrl].x-ctrl[nCtrl-1].x, dyN=ctrl[nCtrl].y-ctrl[nCtrl-1].y;
-  const pts = [{x:ctrl[0].x-dx0,y:ctrl[0].y-dy0}, ...ctrl, {x:ctrl[nCtrl].x+dxN,y:ctrl[nCtrl].y+dyN}];
-
-  const spineRaw = [];
-  const segsN = pts.length-3;
-  for (let si=0; si<segsN; si++) {
-    const p0=pts[si],p1=pts[si+1],p2=pts[si+2],p3=pts[si+3];
-    const steps = Math.ceil(nPts/segsN);
-    for (let k=0;k<steps;k++) {
-      const t=k/steps;
-      spineRaw.push({ pt:catmullRom(p0,p1,p2,p3,t), d:catmullRomD(p0,p1,p2,p3,t) });
+  // A curvature-budgeted Fourier centerline is C2 continuous and cannot
+  // concentrate an almost-right-angle turn in one short interval. One, two,
+  // and three full cycles make the maximum setting visibly meander. Their
+  // modest amplitudes provide a stable backbone; random-phase terms below
+  // determine the seed-specific asymmetry. Wall texture is added separately.
+  const harmonicCycles=[1,2,3];
+  const randomSign=()=>rng()<0.5?-1:1;
+  // Metre-valued backbone amplitudes at curve=0.5. The two-cycle term prevents
+  // the tunnel from spending its full curvature range on one broad half-wave.
+  const harmonicBaseAmplitudes=[0.30,1.20,0.15];
+  const harmonicCoefficients=[
+    randomSign()*harmonicBaseAmplitudes[0],
+    randomSign()*harmonicBaseAmplitudes[1],
+    randomSign()*harmonicBaseAmplitudes[2],
+  ];
+  // Random-phase terms break the left/right cosine symmetry. Multiplication by
+  // sin^2(pi*x/WW) makes both their value and first derivative vanish at the
+  // map boundaries, so randomness cannot reintroduce clipped end hooks.
+  const asymmetryCycles=[1,2,3];
+  const asymmetryBaseAmplitudes=[2.0,1.5,0.35];
+  const asymmetryTerms=asymmetryCycles.map((cycles,index)=>({
+    cycles,
+    amplitude:asymmetryBaseAmplitudes[index]*(0.70+0.60*rng()),
+    phase:rng()*Math.PI*2,
+  }));
+  const margin=gap*0.5+rough*6.5+1.0;
+  const verticalLimit=Math.max(0,WH*0.5-margin);
+  const curveGain=Math.max(0,Math.min(1,curve/0.5));
+  const nominalOffset=gap*0.5+2.5*rough;
+  const rawShape=new Float64Array(nPts+1);
+  const rawFirstDerivative=new Float64Array(nPts+1);
+  const rawSecondDerivative=new Float64Array(nPts+1);
+  let rawMin=Infinity,rawMax=-Infinity;
+  let rawMaxSecondDerivative=0;
+  for(let i=0;i<=nPts;i++){
+    const x=(i/nPts)*WW;
+    let value=0,firstDerivative=0,secondDerivative=0;
+    for(let index=0;index<harmonicCoefficients.length;index++){
+      const waveNumber=harmonicCycles[index]*Math.PI*2/WW;
+      const coefficient=harmonicCoefficients[index];
+      const phase=waveNumber*x;
+      value+=coefficient*Math.cos(phase);
+      firstDerivative-=coefficient*waveNumber*Math.sin(phase);
+      secondDerivative-=coefficient*waveNumber*waveNumber*Math.cos(phase);
     }
+    const envelopePhase=Math.PI*x/WW;
+    const envelope=Math.sin(envelopePhase)**2;
+    const envelopeD=(Math.PI/WW)*Math.sin(2*envelopePhase);
+    const envelopeDD=2*(Math.PI/WW)**2*Math.cos(2*envelopePhase);
+    for(const term of asymmetryTerms){
+      const waveNumber=term.cycles*Math.PI*2/WW;
+      const phase=waveNumber*x+term.phase;
+      const sine=Math.sin(phase),cosine=Math.cos(phase);
+      value+=term.amplitude*envelope*sine;
+      firstDerivative+=term.amplitude*(envelopeD*sine+envelope*waveNumber*cosine);
+      secondDerivative+=term.amplitude*(
+        envelopeDD*sine+2*envelopeD*waveNumber*cosine-envelope*waveNumber*waveNumber*sine);
+    }
+    rawShape[i]=value;
+    rawFirstDerivative[i]=firstDerivative;
+    rawSecondDerivative[i]=secondDerivative;
+    rawMin=Math.min(rawMin,value);rawMax=Math.max(rawMax,value);
+    rawMaxSecondDerivative=Math.max(rawMaxSecondDerivative,Math.abs(secondDerivative));
   }
-  {
-    const si=segsN-1;
-    const p0=pts[si],p1=pts[si+1],p2=pts[si+2],p3=pts[si+3];
-    spineRaw.push({ pt:catmullRom(p0,p1,p2,p3,1), d:catmullRomD(p0,p1,p2,p3,1) });
+  const rawCenter=0.5*(rawMin+rawMax);
+  const rawHalfRange=0.5*(rawMax-rawMin);
+  // Since |kappa| <= scale*|f''| for y=scale*f(x), this bound is
+  // conservative even when the centerline slope is nonzero.
+  const curvatureScale=curveGain>EPS
+    ?Math.min(1,0.70/Math.max(EPS,nominalOffset*curveGain*rawMaxSecondDerivative)):1;
+  const preScale=curveGain*curvatureScale;
+  const verticalScale=preScale*rawHalfRange>EPS?Math.min(1,verticalLimit/(preScale*rawHalfRange)):1;
+  const shapeScale=preScale*verticalScale;
+  const maxDev=shapeScale*rawHalfRange;
+  const spineRaw=[];
+  for(let i=0;i<=nPts;i++){
+    const x=(i/nPts)*WW;
+    spineRaw.push({
+      pt:{x,y:WH*0.5+(rawShape[i]-rawCenter)*shapeScale},
+      d:{x:1,y:rawFirstDerivative[i]*shapeScale},
+      dd:{x:0,y:rawSecondDerivative[i]*shapeScale},
+    });
   }
 
   const n=spineRaw.length;
@@ -1067,11 +1249,16 @@ function makeCorridorWalls() {
     rPb.push(rngB()*Math.PI*2);
   }
 
-  const topWall=[], botWall=[], spineOut=[];
+  const geometry=new Array(n);
+  const desiredTop=new Float64Array(n),desiredBottom=new Float64Array(n);
+  const signedCurvature=new Float64Array(n),arcLength=new Float64Array(n);
   for (let i=0;i<spineRaw.length;i++){
-    const {pt,d}=spineRaw[i];
+    const {pt,d,dd}=spineRaw[i];
     const dl=Math.hypot(d.x,d.y)+EPS;
     const nx=-d.y/dl, ny=d.x/dl;
+    const speed2=d.x*d.x+d.y*d.y;
+    signedCurvature[i]=(d.x*dd.y-d.y*dd.x)/Math.max(EPS,Math.pow(speed2,1.5));
+    if(i>0) arcLength[i]=arcLength[i-1]+Math.hypot(pt.x-spineRaw[i-1].pt.x,pt.y-spineRaw[i-1].pt.y);
     let wT=0,wB=0;
     for (let k=0;k<nH;k++){
       wT+=hA[k] *Math.cos(hF[k]*i+hP[k]);
@@ -1083,8 +1270,18 @@ function makeCorridorWalls() {
     }
     const halfG    = gap * 0.5;
     const MIN_HALF = 1.2;
-    const offT = Math.max(MIN_HALF, halfG + wT);
-    const offB = Math.max(MIN_HALF, halfG + wB);
+    desiredTop[i]=Math.max(MIN_HALF,halfG+wT);
+    desiredBottom[i]=Math.max(MIN_HALF,halfG+wB);
+    geometry[i]={pt,nx,ny};
+  }
+  const safeOffsets=window.RevisedWallEstimator.regularizeCorridorOffsets(
+    desiredTop,desiredBottom,signedCurvature,arcLength,
+    {safetyProduct:0.72,maxOffsetSlope:0.35});
+
+  const topWall=[], botWall=[], spineOut=[];
+  for(let i=0;i<n;i++){
+    const {pt,nx,ny}=geometry[i];
+    const offT=safeOffsets.top[i],offB=safeOffsets.bottom[i];
     const MARGIN = 0.5;
     const twx = pt.x+nx*offT, twy = pt.y+ny*offT;
     const bwx = pt.x-nx*offB, bwy = pt.y-ny*offB;
@@ -1094,6 +1291,24 @@ function makeCorridorWalls() {
                    y: Math.max(MARGIN, Math.min(WH-MARGIN, bwy)) });
     spineOut.push({ x:pt.x, y:pt.y, nx, ny });
   }
+  const centerlineMirrorRms=Math.sqrt(spineRaw.reduce((sum,sample,index)=>{
+    const mirrored=spineRaw[n-1-index];
+    return sum+(sample.pt.y-mirrored.pt.y)**2;
+  },0)/n);
+  // Generation-only audit data. This is never passed to either estimator.
+  window.lastCorridorGeometryDiagnostics={
+    harmonicCount:harmonicCoefficients.length,
+    harmonicCycles:harmonicCycles.join(','),
+    asymmetryTermCount:asymmetryTerms.length,
+    centerlineAmplitude:maxDev,
+    centerlineMirrorRms,
+    maxOffsetCurvatureProduct:safeOffsets.maxOffsetCurvatureProduct,
+    maxTopTurnAngle:polylineMaxTurnAngle(topWall),
+    maxBottomTurnAngle:polylineMaxTurnAngle(botWall),
+    minimumPairedWidth:topWall.reduce((minimum,point,index)=>
+      Math.min(minimum,Math.hypot(point.x-botWall[index].x,point.y-botWall[index].y)),Infinity),
+  };
+  document.documentElement.dataset.corridorGeometryAudit=JSON.stringify(window.lastCorridorGeometryDiagnostics);
   return { topWall, botWall, spineOut };
 }
 
@@ -1161,17 +1376,18 @@ function buildWallSegments(topWall, botWall){
   const segs=[];
   for(let i=0;i<topWall.length-1;i++){
     const ax=topWall[i].x,ay=topWall[i].y,bx=topWall[i+1].x,by=topWall[i+1].y;
-    segs.push({ax,ay,bx,by,wid:0,mx:(ax+bx)*0.5,my:(ay+by)*0.5});
+    segs.push({ax,ay,bx,by,wid:0,segmentIndex:i,mx:(ax+bx)*0.5,my:(ay+by)*0.5});
   }
   for(let i=0;i<botWall.length-1;i++){
     const ax=botWall[i].x,ay=botWall[i].y,bx=botWall[i+1].x,by=botWall[i+1].y;
-    segs.push({ax,ay,bx,by,wid:1,mx:(ax+bx)*0.5,my:(ay+by)*0.5});
+    segs.push({ax,ay,bx,by,wid:1,segmentIndex:i,mx:(ax+bx)*0.5,my:(ay+by)*0.5});
   }
   return segs;
 }
 
 let wallSegsW0 = [];
 let wallSegsW1 = [];
+let wallArcTables = [];
 function partitionWallSegs() {
   wallSegsW0 = wallSegs.filter(s => (s.wid ?? 0) === 0);
   wallSegsW1 = wallSegs.filter(s => (s.wid ?? 0) === 1);
@@ -1201,12 +1417,52 @@ function raySegIntersect(ox,oy,dx,dy,ax,ay,bx,by){
   return null;
 }
 
+function isPathOccluded(origin,target){
+  const dx=target.x-origin.x,dy=target.y-origin.y;
+  const length=Math.hypot(dx,dy);
+  if(!(length>EPS)) return true;
+  const ux=dx/length,uy=dy/length;
+  for(const segment of wallSegs){
+    const hit=raySegIntersect(origin.x,origin.y,ux,uy,segment.ax,segment.ay,segment.bx,segment.by);
+    if(hit&&hit.t<length-0.05) return true;
+  }
+  return false;
+}
+
+function newDiffuseDiagnostics(){
+  return {
+    nominalFamilies:0,
+    targetPaths:0,
+    generatedPaths:0,
+    generationFailures:0,
+    boundaryResampleCount:0,
+    visibilityResampleCount:0,
+    deltaCount:0,
+    deltaSum:0,
+    deltaSquaredSum:0,
+  };
+}
+let diffuseDiagnostics=newDiffuseDiagnostics();
+
+function updateDiffuseDiagnosticDisplay(){
+  const count=diffuseDiagnostics.deltaCount;
+  const mean=count?diffuseDiagnostics.deltaSum/count:0;
+  const variance=count?Math.max(0,diffuseDiagnostics.deltaSquaredSum/count-mean*mean):0;
+  const multiplicity=diffuseDiagnostics.nominalFamilies
+    ?diffuseDiagnostics.generatedPaths/diffuseDiagnostics.nominalFamilies:0;
+  document.getElementById('sDiffuseStd').textContent=count?Math.sqrt(variance).toFixed(2)+' m':'—';
+  document.getElementById('sDiffuseMultiplicity').textContent=diffuseDiagnostics.nominalFamilies?multiplicity.toFixed(2):'—';
+  document.getElementById('sDiffuseBoundary').textContent=diffuseDiagnostics.boundaryResampleCount;
+  document.getElementById('sDiffuseFailure').textContent=diffuseDiagnostics.generationFailures;
+}
+
 // ═══════════════════════════════════════
 // SIMULATION — Fermat-based bistatic
 // ═══════════════════════════════════════
 function simulatePair(txPos, rxPos, noiseRng){
   const noise = GM_NOISE_STD;
   const localNoiseRng = noiseRng || seededRNG(1);
+  const diffuse=getDiffuseSettings();
 
   const topSegs = [
     ..._topKSegs(wallSegsW0, txPos, rxPos),
@@ -1257,12 +1513,70 @@ function simulatePair(txPos, rxPos, noiseRng){
     }
     if(blocked2) continue;
 
-    const eps = randn(localNoiseRng) * noise;
-    const r = (iL+rL) + eps;
-    candidates.push({r, hit:{x:hx,y:hy}});
+    if(!diffuse.enabled){
+      // Regression path: keep the original RNG call order and measurement fields.
+      const eps = randn(localNoiseRng) * noise;
+      const r = (iL+rL) + eps;
+      candidates.push({r, hit:{x:hx,y:hy}});
+      continue;
+    }
+
+    const wallId=seg.wid??0;
+    const arcTable=wallArcTables[wallId];
+    const specularArc=window.DiffusePath.arcLengthAtSegment(arcTable,seg.segmentIndex,t);
+    const familyId=diffuseDiagnostics.nominalFamilies++;
+    const targetCount=window.DiffusePath.shiftedPoisson(diffuse.meanPathCount,localNoiseRng);
+    diffuseDiagnostics.targetPaths+=targetCount;
+    if(!arcTable||!Number.isFinite(specularArc)){
+      diffuseDiagnostics.generationFailures+=targetCount;
+      continue;
+    }
+    const distanceToWallEnd=Math.min(specularArc,arcTable.totalLength-specularArc);
+    for(let pathIndex=0;pathIndex<targetCount;pathIndex++){
+      let accepted=false;
+      let pathBoundaryRetries=0;
+      for(let attempt=0;attempt<40;attempt++){
+        const deltaS=diffuse.sigmaS>EPS?randn(localNoiseRng)*diffuse.sigmaS:0;
+        const diffuseArc=specularArc+deltaS;
+        if(diffuseArc<0||diffuseArc>arcTable.totalLength){
+          pathBoundaryRetries++;
+          diffuseDiagnostics.boundaryResampleCount++;
+          continue;
+        }
+        const diffuseHit=window.DiffusePath.pointAtArcLength(arcTable,diffuseArc);
+        if(!diffuseHit) continue;
+        // A diffuse point remains on the same wall and is visibility-tested,
+        // but is deliberately not subjected to the specular equal-angle gate.
+        if(isPathOccluded(txPos,diffuseHit)||isPathOccluded(diffuseHit,rxPos)){
+          diffuseDiagnostics.visibilityResampleCount++;
+          continue;
+        }
+        const diffuseIL=Math.hypot(diffuseHit.x-txPos.x,diffuseHit.y-txPos.y);
+        const diffuseRL=Math.hypot(rxPos.x-diffuseHit.x,rxPos.y-diffuseHit.y);
+        const r=diffuseIL+diffuseRL+randn(localNoiseRng)*noise;
+        candidates.push({
+          r,
+          hit:{x:diffuseHit.x,y:diffuseHit.y},
+          specularHit:{x:hx,y:hy},
+          deltaS,
+          familyId,
+          wallId,
+          distanceToWallEnd,
+          boundaryResampleCount:pathBoundaryRetries,
+          diffuse:true,
+        });
+        diffuseDiagnostics.generatedPaths++;
+        diffuseDiagnostics.deltaCount++;
+        diffuseDiagnostics.deltaSum+=deltaS;
+        diffuseDiagnostics.deltaSquaredSum+=deltaS*deltaS;
+        accepted=true;
+        break;
+      }
+      if(!accepted) diffuseDiagnostics.generationFailures++;
+    }
   }
   if(!candidates.length) return [];
-  return candidates.map(c=>({tx:{...txPos},rx:{...rxPos},r:c.r,hit:c.hit}));
+  return candidates.map(c=>({tx:{...txPos},rx:{...rxPos},...c}));
 }
 
 // ═══════════════════════════════════════
@@ -2429,6 +2743,9 @@ function moveBots(){
 // METRICS
 // ═══════════════════════════════════════
 let _cachedGTWallPts = null;
+let _cachedGTWallCurvature = null;
+let _cachedGraphEval = null;
+let _cachedGraphEvalStep = -Infinity;
 let metricObservedMask = null;
 const METRIC_MATCH_TAU = 0.4;       // metres, primary boundary tolerance
 const METRIC_GT_SPACING = 0.2;      // metres, uniform arc-length sampling
@@ -2440,8 +2757,119 @@ function sampleGTWall() {
   if(!_cachedGTWallPts){
     _cachedGTWallPts=window.WallMetrics.sampleWallsArcLength([topWall,botWall],METRIC_GT_SPACING);
     metricObservedMask=window.WallMetrics.createObservedMask(_cachedGTWallPts);
+    _cachedGTWallCurvature=null;
   }
   return _cachedGTWallPts;
+}
+
+// Evaluation-only GT curvature. It is computed after estimator updates and is
+// never passed to Grid Direct, RevisedEstimator, or an online threshold.
+function sampleGTWallCurvature(){
+  const gtPts=sampleGTWall();
+  if(_cachedGTWallCurvature && _cachedGTWallCurvature.length===gtPts.length) return _cachedGTWallCurvature;
+  const curvature=new Float64Array(gtPts.length);
+  const wallIndices=new Map();
+  for(let index=0;index<gtPts.length;index++){
+    const wallId=gtPts[index].wallId??0;
+    if(!wallIndices.has(wallId)) wallIndices.set(wallId,[]);
+    wallIndices.get(wallId).push(index);
+  }
+  for(const indices of wallIndices.values()){
+    for(let local=1;local<indices.length-1;local++){
+      const prev=gtPts[indices[local-1]],center=gtPts[indices[local]],next=gtPts[indices[local+1]];
+      const ax=center.x-prev.x,ay=center.y-prev.y,bx=next.x-center.x,by=next.y-center.y;
+      const la=Math.hypot(ax,ay),lb=Math.hypot(bx,by);
+      if(!(la>0&&lb>0)) continue;
+      const dot=Math.max(-1,Math.min(1,(ax*bx+ay*by)/(la*lb)));
+      curvature[indices[local]]=Math.acos(dot)/(0.5*(la+lb));
+    }
+    if(indices.length>1){
+      curvature[indices[0]]=curvature[indices[1]];
+      curvature[indices.at(-1)]=curvature[indices.at(-2)];
+    }
+  }
+  _cachedGTWallCurvature=curvature;
+  return curvature;
+}
+
+function evaluateSurfaceGraphDiagnostics(gtPts){
+  if(!isRevisedMode()||!revisedEstimator?.exportSurfaceGraph) return null;
+  if(_cachedGraphEval&&totalSteps-_cachedGraphEvalStep<30) return _cachedGraphEval;
+  const graph=revisedEstimator.exportSurfaceGraph();
+  if(!graph.nodes.length){
+    _cachedGraphEval={nodes:0,groups:0};
+    _cachedGraphEvalStep=totalSteps;
+    return _cachedGraphEval;
+  }
+  const curvature=sampleGTWallCurvature();
+  const sortedCurvature=Array.from(curvature).sort((a,b)=>a-b);
+  const highThreshold=sortedCurvature[Math.min(sortedCurvature.length-1,Math.floor(0.75*(sortedCurvature.length-1)))]||0;
+  const nodesById=new Map();
+  for(const node of graph.nodes){
+    let nearestIndex=-1,nearestDistance=Infinity;
+    for(let index=0;index<gtPts.length;index++){
+      const distance=Math.hypot(node.mx-gtPts[index].x,node.my-gtPts[index].y);
+      if(distance<nearestDistance){nearestDistance=distance;nearestIndex=index;}
+    }
+    nodesById.set(node.id,{...node,nearestDistance,gtCurvature:nearestIndex>=0?curvature[nearestIndex]:0,
+      wallLike:nearestDistance<=METRIC_MATCH_TAU});
+  }
+  const groupRows=graph.groups.map(group=>{
+    const nodes=group.modeIds.map(id=>nodesById.get(id)).filter(Boolean);
+    const wallFraction=nodes.length?nodes.filter(node=>node.wallLike).length/nodes.length:0;
+    return {...group,wallFraction,wallLike:wallFraction>=0.5};
+  });
+  const wallGroups=groupRows.filter(group=>group.wallLike);
+  const clutterGroups=groupRows.filter(group=>!group.wallLike);
+  const mean=values=>values.length?values.reduce((sum,value)=>sum+value,0)/values.length:0;
+  const quantiles=values=>{
+    if(!values.length) return {p50:0,p90:0,max:0};
+    const sorted=values.slice().sort((a,b)=>a-b);
+    const at=p=>sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(p*sorted.length)-1))];
+    return {p50:at(0.50),p90:at(0.90),max:sorted.at(-1)};
+  };
+  const auc=(positive,negative)=>{
+    let pairs=0,score=0;
+    for(const p of positive) for(const n of negative){pairs++;score+=p>n?1:p===n?0.5:0;}
+    return pairs?score/pairs:null;
+  };
+  const wallDiameters=wallGroups.map(group=>group.diameter);
+  const clutterDiameters=clutterGroups.map(group=>group.diameter);
+  const wallPairSupport=wallGroups.map(group=>group.pairSupportCount||0);
+  const clutterPairSupport=clutterGroups.map(group=>group.pairSupportCount||0);
+  const groupScore=group=>group.diameter*Math.log1p(group.pairSupportCount||0)*(group.meanCoherence||0);
+  const wallNodes=[...nodesById.values()].filter(node=>node.wallLike&&Number.isFinite(node.effectiveNeighbors));
+  const highNodes=wallNodes.filter(node=>node.gtCurvature>=highThreshold);
+  const lowNodes=wallNodes.filter(node=>node.gtCurvature<highThreshold);
+  const gateHistogram=nodes=>nodes.reduce((counts,node)=>{
+    const key=node.localGate||'unknown';counts[key]=(counts[key]||0)+1;return counts;
+  },{});
+  _cachedGraphEval={
+    nodes:graph.nodes.length,
+    groups:groupRows.length,
+    wallGroups:wallGroups.length,
+    clutterGroups:clutterGroups.length,
+    diameterAuc:auc(wallDiameters,clutterDiameters),
+    pairSupportAuc:auc(wallPairSupport,clutterPairSupport),
+    combinedStructureAuc:auc(wallGroups.map(groupScore),clutterGroups.map(groupScore)),
+    wallDiameterMean:mean(wallDiameters),
+    wallDiameterMax:wallDiameters.length?Math.max(...wallDiameters):0,
+    clutterDiameterMean:mean(clutterDiameters),
+    clutterDiameterMax:clutterDiameters.length?Math.max(...clutterDiameters):0,
+    wallPairSupport:quantiles(wallPairSupport),
+    clutterPairSupport:quantiles(clutterPairSupport),
+    wallSupportSpan:quantiles(wallGroups.map(group=>group.supportSpanSnapshots||0)),
+    clutterSupportSpan:quantiles(clutterGroups.map(group=>group.supportSpanSnapshots||0)),
+    wallMeanCoherence:quantiles(wallGroups.map(group=>group.meanCoherence||0)),
+    clutterMeanCoherence:quantiles(clutterGroups.map(group=>group.meanCoherence||0)),
+    highCurvatureThreshold:highThreshold,
+    highCurvatureEffectiveNeighbors:mean(highNodes.map(node=>node.effectiveNeighbors)),
+    lowCurvatureEffectiveNeighbors:mean(lowNodes.map(node=>node.effectiveNeighbors)),
+    highCurvatureGateHistogram:gateHistogram(highNodes),
+    lowCurvatureGateHistogram:gateHistogram(lowNodes),
+  };
+  _cachedGraphEvalStep=totalSteps;
+  return _cachedGraphEval;
 }
 
 // Simulation-only evaluation support. Exact reflection hits define which GT
@@ -2469,6 +2897,71 @@ function getWallPtsFromMask(){
     }
   }
   return pts;
+}
+
+// GT-free finite-difference ridge extraction used as a shadow diagnostic for
+// Evidence E. Row 0 is world-top, matching RevisedEstimator.extractGrid().
+function extractEvidenceRidgePoints(src,G,evidenceRatio){
+  if(!src||!G) return [];
+  const positive=[];
+  for(let index=0;index<src.length;index++) if(src[index]>0) positive.push(src[index]);
+  if(!positive.length) return [];
+  positive.sort((a,b)=>a-b);
+  const q99=positive[Math.min(positive.length-1,Math.floor(0.99*(positive.length-1)))];
+  const threshold=Math.max(EPS,Math.max(0,Math.min(1,evidenceRatio))*q99);
+  const cellW=WW/G,cellH=WH/G;
+  const candidates=[];
+  for(let gy=1;gy<G-1;gy++) for(let gx=1;gx<G-1;gx++){
+    const index=gy*G+gx,value=src[index];
+    if(value<threshold) continue;
+    const Hxx=(src[index+1]-2*value+src[index-1])/(cellW*cellW);
+    const Hyy=(src[index+G]-2*value+src[index-G])/(cellH*cellH);
+    const Hxy=(src[index+G+1]-src[index+G-1]-src[index-G+1]+src[index-G-1])/(4*cellW*cellH);
+    const halfTrace=0.5*(Hxx+Hyy);
+    const disc=Math.sqrt(Math.max(0,0.25*(Hxx-Hyy)*(Hxx-Hyy)+Hxy*Hxy));
+    const lambdaMin=halfTrace-disc;
+    if(!(lambdaMin<0)) continue;
+    let nx=Hxy,ny=lambdaMin-Hxx;
+    let length=Math.hypot(nx,ny);
+    if(length<EPS){nx=Hxx<=Hyy?1:0;ny=Hxx<=Hyy?0:1;length=1;}
+    nx/=length;ny/=length;
+    const scaledX=nx/cellW,scaledY=ny/cellH;
+    const scale=Math.max(Math.abs(scaledX),Math.abs(scaledY));
+    if(!(scale>EPS)) continue;
+    const ox=Math.round(scaledX/scale),oy=Math.round(scaledY/scale);
+    const minus=(gy-oy)*G+(gx-ox),plus=(gy+oy)*G+(gx+ox);
+    if(value+EPS<src[minus]||value+EPS<src[plus]) continue;
+    candidates.push({x:(gx+0.5)*cellW,y:WH-(gy+0.5)*cellH,nx,ny,gx,gy});
+  }
+  return candidates;
+}
+
+// Corridor-only diagnostic: first strong Evidence E maximum from each exterior
+// side of a column. It is not eligible as the general torus estimator.
+function extractEvidenceOuterPeakPoints(src,G,evidenceRatio){
+  if(!src||!G) return [];
+  let maxValue=0;
+  for(const value of src) if(value>maxValue) maxValue=value;
+  if(!(maxValue>EPS)) return [];
+  const cellW=WW/G,cellH=WH/G,points=[];
+  for(let gx=0;gx<G;gx++){
+    let columnMax=0;
+    for(let gy=0;gy<G;gy++) columnMax=Math.max(columnMax,src[gy*G+gx]);
+    const threshold=Math.max(0.05*maxValue,Math.max(0,Math.min(1,evidenceRatio))*columnMax);
+    for(let gy=1;gy<G-1;gy++){
+      const index=gy*G+gx,value=src[index];
+      if(value>=threshold&&value>=src[index-G]&&value>src[index+G]){
+        points.push({x:(gx+0.5)*cellW,y:WH-(gy+0.5)*cellH,gx,gy});break;
+      }
+    }
+    for(let gy=G-2;gy>0;gy--){
+      const index=gy*G+gx,value=src[index];
+      if(value>=threshold&&value>src[index-G]&&value>=src[index+G]){
+        points.push({x:(gx+0.5)*cellW,y:WH-(gy+0.5)*cellH,gx,gy});break;
+      }
+    }
+  }
+  return points;
 }
 
 function updateMetrics(){
@@ -2512,6 +3005,18 @@ function updateMetrics(){
     }
   }
   const mGM = computeWallMetrics(wallPtsGM, gtPts);
+  const graphEval=evaluateSurfaceGraphDiagnostics(gtPts);
+  if(graphEval&&revisedGrid?.graphPropagationPoints?.length){
+    const propagated=computeWallMetrics(revisedGrid.graphPropagationPoints,gtPts);
+    graphEval.anchorPropagation={
+      p:propagated.precision,
+      r:propagated.recall,
+      f1:propagated.f1,
+      caMsd:propagated.caMsd,
+      caHd95:propagated.caHd95,
+      points:revisedGrid.graphPropagationPoints.length,
+    };
+  }
   setMetricDisplay(mGM, 'GM');
   document.getElementById('mCoverage').textContent=(100*mGM.coverage).toFixed(1)+'%';
 
@@ -2524,6 +3029,7 @@ function updateMetrics(){
     wallGM: parseInt(document.getElementById('sWallGM').textContent, 10) || 0,
     direct:{p:mDirect.precision,r:mDirect.recall,f1:mDirect.f1,caMsd:mDirect.caMsd,caHd95:mDirect.caHd95},
     revised:{p:mGM.precision,r:mGM.recall,f1:mGM.f1,caMsd:mGM.caMsd,caHd95:mGM.caHd95},
+    graphEval,
   });
   return { gm: mGM, direct: mDirect };
 }
@@ -2532,13 +3038,19 @@ function getPerfHistory(){
   return perfHistory.slice();
 }
 
-function runBenchmarkSteps(steps){
+function runBenchmarkSteps(steps,options={}){
   if(running) return { ok: false, msg: 'pause simulation before benchmark (running=true).' };
   if(!Number.isFinite(steps) || steps <= 0) return { ok: false, msg: 'steps must be a positive integer.' };
 
   const n = Math.floor(steps);
+  const finalOnlyExtraction=options.finalOnlyExtraction===true;
   const t0 = performance.now();
-  for(let i = 0; i < n; i++) simStep();
+  for(let i = 0; i < n; i++) simStep(finalOnlyExtraction?{
+    extractionStride:n+1,
+    extractAtStart:false,
+    forceExtract:i===n-1,
+    skipRender:i<n-1,
+  }:undefined);
   const t1 = performance.now();
   const last = perfHistory.length > 0 ? perfHistory[perfHistory.length - 1] : null;
 
@@ -3100,11 +3612,33 @@ function updateRevisedEstimator(allMeas,extractNow=true){
         if(wallMaskGM[dst]) ridgeCount++;
       }
     }
+    if(scenarioMode==='corridor'){
+      wallMaskGM.fill(0);
+      const corridorRidge=window.RevisedWallEstimator.extractCorridorOuterPeakRidge(
+        revisedGrid.evidence,GRID_G,WW,WH,0.60);
+      for(const point of corridorRidge){
+        const gi=GRID_G-1-point.gy;
+        wallMaskGM[gi*GRID_G+point.gx]=1;
+      }
+      revisedGrid.activeRidgePoints=corridorRidge;
+      ridgeCount=corridorRidge.length;
+    }else{
+      revisedGrid.activeRidgePoints=revisedGrid.ridgePoints;
+    }
     document.getElementById('sWallGM').textContent=ridgeCount;
   }
   document.getElementById('sCompGM').textContent=`${diagnostics.localModes}/${diagnostics.representedCells}`;
   document.getElementById('sAdmission').textContent=`${diagnostics.admittedPaths}/${diagnostics.nominallyRejectedPaths}`;
   document.getElementById('sConfirmed').textContent=diagnostics.confirmedModes;
+  if(getDiffuseSettings().enabled){
+    document.getElementById('sDiffuseTangency').textContent=
+      `${(diagnostics.meanSigmaTheta*180/Math.PI).toFixed(1)}°/${diagnostics.meanRhoTangency.toFixed(2)}`;
+    document.getElementById('sDiffuseCoherence').textContent=
+      `${diagnostics.meanGamma.toFixed(2)}/${diagnostics.meanCeff.toFixed(2)}`;
+  }else{
+    document.getElementById('sDiffuseTangency').textContent='—';
+    document.getElementById('sDiffuseCoherence').textContent='—';
+  }
   return diagnostics;
 }
 
@@ -3126,7 +3660,8 @@ function sanitizeEstimatorMeasurements(measurements){
 // ═══════════════════════════════════════
 let stepCount = 0; // for density/extract throttle
 
-function simStep(){
+function simStep(options){
+  options=options||{};
   // 1. Move vehicles
   moveBots();
   const pairBaseSeed = (+document.getElementById('seed').value || 1) >>> 0;
@@ -3148,7 +3683,9 @@ function simStep(){
 
   const estimatorMeas=sanitizeEstimatorMeasurements(allMeas);
   const N_feas = estimatorMeas.length;
-  const shouldExtract=stepCount===0 || (stepCount+1)%3===0;
+  const extractionStride=Math.max(1,Math.floor(options.extractionStride||3));
+  const shouldExtract=!!options.forceExtract ||
+    (options.extractAtStart!==false&&stepCount===0) || (stepCount+1)%extractionStride===0;
   stepTimeGrid=0;
   stepTimeGM=0;
 
@@ -3241,8 +3778,9 @@ function simStep(){
   if(!isRevisedMode()) document.getElementById('sCompGM').textContent = gmComponents.length;
   document.getElementById('sTimeGrid').textContent = runtimeLabel(runtimeHistoryGrid);
   document.getElementById('sTimeGM').textContent   = runtimeLabel(runtimeHistoryGM);
+  updateDiffuseDiagnosticDisplay();
 
-  renderAll();
+  if(!options.skipRender) renderAll();
 
   if(running) animId = setTimeout(simStep, _simDelayMs);
 }
@@ -3265,14 +3803,18 @@ let running=false, animId=null;
 function init(){
   const walls = scenarioMode==='torus' ? makeTorusWalls() : makeCorridorWalls();
   topWall=walls.topWall; botWall=walls.botWall; spine=walls.spineOut;
+  wallArcTables=[
+    window.DiffusePath.buildWallArcTable(topWall),
+    window.DiffusePath.buildWallArcTable(botWall),
+  ];
   wallSegs=buildWallSegments(topWall,botWall);
 
   if(scenarioMode==='torus'){
     const tw=topWall, bw=botWall;
     const tax=tw[tw.length-2].x,tay=tw[tw.length-2].y,tbx=tw[0].x,tby=tw[0].y;
     const bax=bw[bw.length-2].x,bay=bw[bw.length-2].y,bbx=bw[0].x,bby=bw[0].y;
-    wallSegs.push({ax:tax,ay:tay,bx:tbx,by:tby,wid:0,mx:(tax+tbx)*0.5,my:(tay+tby)*0.5});
-    wallSegs.push({ax:bax,ay:bay,bx:bbx,by:bby,wid:1,mx:(bax+bbx)*0.5,my:(bay+bby)*0.5});
+    wallSegs.push({ax:tax,ay:tay,bx:tbx,by:tby,wid:0,segmentIndex:tw.length-2,mx:(tax+tbx)*0.5,my:(tay+tby)*0.5});
+    wallSegs.push({ax:bax,ay:bay,bx:bbx,by:bby,wid:1,segmentIndex:bw.length-2,mx:(bax+bbx)*0.5,my:(bay+bby)*0.5});
   }
 
   partitionWallSegs();
@@ -3298,9 +3840,14 @@ function init(){
   recentMeas = [];
   ellipseCount = 0;
   _cachedGTWallPts = null;
+  _cachedGTWallCurvature = null;
+  _cachedGraphEval = null;
+  _cachedGraphEvalStep = -Infinity;
   metricObservedMask = null;
   _simDelayMs = Math.max(1, Math.floor(1000 / Math.max(1, PANEL_FPS)));
   perfHistory.length = 0;
+  diffuseDiagnostics=newDiffuseDiagnostics();
+  updateDiffuseDiagnosticDisplay();
   document.getElementById('mCoverage').textContent='0.0%';
 
   document.getElementById('sEll').textContent       = '0';
@@ -3313,6 +3860,8 @@ function init(){
   document.getElementById('sTimeGM').textContent    = '—';
   document.getElementById('sAdmission').textContent = '—';
   document.getElementById('sConfirmed').textContent = '—';
+  document.getElementById('sDiffuseTangency').textContent = '—';
+  document.getElementById('sDiffuseCoherence').textContent = '—';
   for(const sfx of ['', 'GM']){
     ['mValP','mValR','mValMCD','mScore'].forEach(id => {
       const el = document.getElementById(id+sfx);
@@ -3333,6 +3882,40 @@ function init(){
 // ═══════════════════════════════════════
 // UI WIRING
 // ═══════════════════════════════════════
+document.querySelectorAll('.control-group .sec-toggle').forEach(toggle=>{
+  toggle.addEventListener('click',()=>{
+    const group=toggle.closest('.control-group');
+    const collapsed=group.classList.toggle('collapsed');
+    toggle.setAttribute('aria-expanded',String(!collapsed));
+  });
+});
+
+function syncDiffuseControls(){
+  const checkbox=document.getElementById('useDiffusePaths');
+  const sigma=document.getElementById('diffuseSigma');
+  const mean=document.getElementById('diffuseMean');
+  const enabled=!!checkbox.checked;
+  if(enabled&&+sigma.value<=EPS&&+mean.value>1) mean.value='1';
+  sigma.disabled=!enabled;
+  mean.disabled=!enabled||+sigma.value<=EPS;
+  document.getElementById('diffuseParams').classList.toggle('disabled',!enabled);
+  document.getElementById('chipDiffuse').classList.toggle('checked',enabled);
+  document.getElementById('diffuseToggleText').textContent=`Material-aware diffuse · ${enabled?'ON':'OFF'}`;
+  document.getElementById('vDiffuseSigma').textContent=(+sigma.value).toFixed(2)+' m';
+  document.getElementById('vDiffuseMean').textContent=(+mean.value).toFixed(2);
+  document.documentElement.dataset.diffuseEnabled=String(enabled);
+}
+
+document.getElementById('useDiffusePaths').addEventListener('change',()=>{
+  syncDiffuseControls();
+  resetForEstimatorChange();
+});
+document.getElementById('diffuseSigma').addEventListener('input',syncDiffuseControls);
+document.getElementById('diffuseMean').addEventListener('input',syncDiffuseControls);
+document.getElementById('diffuseSigma').addEventListener('change',resetForEstimatorChange);
+document.getElementById('diffuseMean').addEventListener('change',resetForEstimatorChange);
+syncDiffuseControls();
+
 [['seed','vSeed',0],['rough','vRough',2],['curve','vCurve',2],
  ['gap','vGap',1,'m'],['torusR','vTR',1,'m'],
  ['nBots','vN',0],['speed','vSpeed',1],['spread','vSpread',1],
@@ -3409,11 +3992,18 @@ function resetForEstimatorChange(){
     btn.className='btn btn-primary';
   }
   const revised=isRevisedMode();
+  const diffuse=getDiffuseSettings();
   const densLabel=document.querySelector('#viewGMDens .vlabel-text');
   const wallLabel=document.querySelector('#viewGMWall .vlabel-text');
-  if(densLabel) densLabel.textContent=revised?'Revised — Evidence E':'Legacy GM — Density';
-  if(wallLabel) wallLabel.textContent=revised?'Revised — Thin Gated Ridge':'Legacy GM — Wall Mask';
-  document.querySelectorAll('.chdr-gm').forEach(el=>el.textContent=revised?'Revised':'Legacy GM');
+  if(densLabel) densLabel.textContent=revised
+    ?(diffuse.enabled?'Revised — Diffuse-Aware Evidence E':'Revised — Evidence E')
+    :'Legacy GM — Density';
+  if(wallLabel) wallLabel.textContent=revised
+    ?(scenarioMode==='corridor'
+      ?(diffuse.enabled?'Revised — Diffuse-Aware Causal Ridge':'Revised — Causal Evidence Ridge')
+      :(diffuse.enabled?'Revised — Diffuse-Aware Analytic Ridge':'Revised — Analytic Ridge'))
+    :'Legacy GM — Wall Mask';
+  document.querySelectorAll('.chdr-gm').forEach(el=>el.textContent=revised?(diffuse.enabled?'Revised + Diffuse':'Revised'):'Legacy GM');
   init();
 }
 document.getElementById('estimatorMode').addEventListener('change',resetForEstimatorChange);
@@ -3447,6 +4037,11 @@ function setScenario(mode){
   document.getElementById('torusParams').style.display    = mode==='torus'    ? '' : 'none';
   document.getElementById('btnScenCorridor').classList.toggle('active', mode==='corridor');
   document.getElementById('btnScenTorus').classList.toggle('active',    mode==='torus');
+  const wallLabel=document.querySelector('#viewGMWall .vlabel-text');
+  const diffuse=getDiffuseSettings();
+  if(wallLabel&&isRevisedMode()) wallLabel.textContent=mode==='corridor'
+    ?(diffuse.enabled?'Revised — Diffuse-Aware Causal Ridge':'Revised — Causal Evidence Ridge')
+    :(diffuse.enabled?'Revised — Diffuse-Aware Analytic Ridge':'Revised — Analytic Ridge');
   init();
 }
 document.getElementById('btnScenCorridor').addEventListener('click', ()=>setScenario('corridor'));

@@ -4,6 +4,9 @@ const assert = require('node:assert/strict');
 const {
   RevisedEstimator,
   makeKernel,
+  buildSurfaceContinuationGraph,
+  extractCorridorOuterPeakRidge,
+  regularizeCorridorOffsets,
 } = require('./revised_wall_estimator.js');
 
 const results = [];
@@ -426,6 +429,11 @@ run('18 simulation-oracle fields cannot affect estimator output', () => {
     const withOracleFields = {
       ...clean,
       hit: { x: 15, y: 10 },
+      specularHit: { x: 15.2, y: 10.1 },
+      deltaS: 2.3,
+      familyId: 91,
+      wallId: 0,
+      actualPathCount: 6,
       gtWallId: 1,
       futureSnapshot: snapshot + 100,
       futureHit: { x: 40, y: 20 },
@@ -440,6 +448,305 @@ run('18 simulation-oracle fields cannot affect estimator output', () => {
   assert.deepEqual(Array.from(oracleGrid.ridge), Array.from(cleanGrid.ridge));
   assert.deepEqual(oracleGrid.ridgePoints, cleanGrid.ridgePoints);
   return { modes: cleanEstimator.exportModes().length, ridgePoints: cleanGrid.ridgePoints.length };
+});
+
+run('19 surface graph follows cumulative curvature by adjacent continuation', () => {
+  const radius = 5;
+  const nodes = [];
+  let id = 1;
+  for (let angle = -0.70; angle <= 0.7001; angle += 0.14) {
+    nodes.push({
+      id: id++,
+      mx: 10 + radius * Math.cos(angle),
+      my: 10 + radius * Math.sin(angle),
+      nx: Math.cos(angle),
+      ny: Math.sin(angle),
+    });
+  }
+  const graph = buildSurfaceContinuationGraph(nodes, {
+    cellSize: 1,
+    graphLinkDistance: 1.5,
+    graphLinkAngle: Math.PI / 6,
+    graphSecantAngle: Math.PI / 8,
+  });
+  const endpointCompatibility = Math.abs(nodes[0].nx * nodes.at(-1).nx + nodes[0].ny * nodes.at(-1).ny);
+  assert.ok(endpointCompatibility < Math.cos(Math.PI / 6), 'fixture endpoints must fail direct seed-to-all orientation');
+  assert.equal(graph.groups.length, 1);
+  assert.ok(graph.groups[0].diameter > 6.5, `diameter=${graph.groups[0].diameter}`);
+  return { nodes: nodes.length, diameter: graph.groups[0].diameter, endpointCompatibility };
+});
+
+run('20 symmetric secant gate separates nearby parallel walls', () => {
+  const nodes = [];
+  let id = 1;
+  for (const y of [10, 12]) {
+    for (let x = 2; x <= 10; x += 1) nodes.push({ id: id++, mx: x, my: y, nx: 0, ny: 1 });
+  }
+  const graph = buildSurfaceContinuationGraph(nodes, {
+    cellSize: 1,
+    graphLinkDistance: 2.1,
+    graphLinkAngle: Math.PI / 6,
+    graphSecantAngle: Math.PI / 8,
+  });
+  assert.equal(graph.groups.length, 2);
+  assert.deepEqual(graph.groups.map((group) => group.nodeCount), [9, 9]);
+  assert.ok(graph.groups.every((group) => group.diameter >= 7.9));
+  return { groups: graph.groups.length, diameters: graph.groups.map((group) => group.diameter) };
+});
+
+run('21 shadow graph cannot alter evidence or ridge output', () => {
+  const build = (enableSurfaceGraphShadow) => {
+    const estimator = new RevisedEstimator({
+      HConf: 2,
+      KMode: 3,
+      enableSurfaceGraphShadow,
+      tauE: 0.005,
+      tauR: 0.04,
+      tauD: 0.45,
+    });
+    for (let snapshot = 0; snapshot < 4; snapshot++) ingestLine(estimator, snapshot, 10);
+    return { estimator, grid: estimator.extractGrid(120) };
+  };
+  const disabled = build(false);
+  const shadow = build(true);
+  assert.deepEqual(Array.from(shadow.grid.evidence), Array.from(disabled.grid.evidence));
+  assert.deepEqual(Array.from(shadow.grid.ridge), Array.from(disabled.grid.ridge));
+  assert.deepEqual(shadow.grid.ridgePoints, disabled.grid.ridgePoints);
+  assert.ok(shadow.estimator.getDiagnostics().graphGroups > 0);
+  return {
+    graphGroups: shadow.estimator.getDiagnostics().graphGroups,
+    graphMaxDiameter: shadow.estimator.getDiagnostics().graphMaxDiameter,
+  };
+});
+
+run('22 surface groups aggregate pair and temporal support without GT', () => {
+  const pairWords = (bits) => {
+    const words = new Array(14).fill(0);
+    for (const bit of bits) words[bit >>> 5] |= 1 << (bit & 31);
+    return words;
+  };
+  const nodes = [
+    { id: 1, mx: 0, my: 0, nx: 0, ny: 1, H: 3, coherence: 0.8, birthSnapshot: 2, lastSupportedSnapshot: 4, pairSupportWords: pairWords([0, 2]) },
+    { id: 2, mx: 1, my: 0, nx: 0, ny: 1, H: 5, coherence: 0.6, birthSnapshot: 1, lastSupportedSnapshot: 7, pairSupportWords: pairWords([2, 34]) },
+    { id: 3, mx: 2, my: 0, nx: 0, ny: 1, H: 4, coherence: 1.0, birthSnapshot: 3, lastSupportedSnapshot: 8, pairSupportWords: pairWords([65]) },
+  ];
+  const graph = buildSurfaceContinuationGraph(nodes, {
+    cellSize: 1,
+    graphLinkDistance: 1.1,
+    graphLinkAngle: Math.PI / 6,
+    graphSecantAngle: Math.PI / 8,
+  });
+  assert.equal(graph.groups.length, 1);
+  const group = graph.groups[0];
+  assert.equal(group.pairSupportCount, 4);
+  assert.equal(group.supportSpanSnapshots, 8);
+  assert.equal(group.maxSnapshotSupport, 5);
+  assert.ok(Math.abs(group.meanSnapshotSupport - 4) < 1e-12);
+  assert.ok(Math.abs(group.meanCoherence - 0.8) < 1e-12);
+  return {
+    pairSupportCount: group.pairSupportCount,
+    supportSpanSnapshots: group.supportSpanSnapshots,
+    meanSnapshotSupport: group.meanSnapshotSupport,
+  };
+});
+
+run('23 directional normal gate blocks Bhattacharyya over-merge', () => {
+  const build = (useDirectionalAssignment) => {
+    const estimator = new RevisedEstimator({
+      cellSize: 1,
+      HConf: 1,
+      KMode: 3,
+      useDirectionalAssignment,
+      assignmentNormalSigma: 2,
+      tauB: 2,
+    });
+    estimator.debugIngestKernels(0, [
+      makeKernel(4.5, 4.10, Math.PI / 2, 0.5, 0.20, 1),
+      makeKernel(4.5, 4.75, Math.PI / 2, 0.5, 0.20, 1),
+    ]);
+    return estimator.exportModes();
+  };
+  const directional = build(true);
+  const bhattacharyya = build(false);
+  assert.equal(directional.length, 2);
+  assert.equal(bhattacharyya.length, 1);
+  return { directionalModes: directional.length, bhattacharyyaModes: bhattacharyya.length };
+});
+
+run('24 neighboring-cell assignment is deterministically re-indexed', () => {
+  const estimator = new RevisedEstimator({
+    cellSize: 1,
+    HConf: 1,
+    KMode: 3,
+    useDirectionalAssignment: true,
+    assignmentSearchRadiusCells: 1,
+  });
+  estimator.debugIngestKernels(0, [
+    makeKernel(0.95, 4, 0, 0.5, 0.15, 1),
+    makeKernel(1.05, 4, 0, 0.5, 0.15, 1),
+  ]);
+  const modes = estimator.exportModes();
+  assert.equal(modes.length, 1);
+  assert.equal(modes[0].cellX, 1);
+  assert.ok(Math.abs(modes[0].mx - 1) < 1e-12);
+  return { modes: modes.length, meanX: modes[0].mx, cellX: modes[0].cellX };
+});
+
+run('25 corridor Evidence E extractor returns two thin curved walls', () => {
+  const G = 60;
+  const evidence = new Float32Array(G * G);
+  const expected = new Map();
+  for (let gx = 0; gx < G; gx++) {
+    const top = 12 + Math.round(3 * Math.sin(gx / 8));
+    const bottom = 45 + Math.round(2 * Math.sin(gx / 9 + 0.4));
+    expected.set(gx, [top, bottom]);
+    for (let gy = 0; gy < G; gy++) {
+      evidence[gy * G + gx] = Math.exp(-0.5 * ((gy - top) / 1.2) ** 2)
+        + 0.9 * Math.exp(-0.5 * ((gy - bottom) / 1.2) ** 2)
+        + 0.02 * ((gx * 17 + gy * 13) % 11) / 10;
+    }
+  }
+  const points = extractCorridorOuterPeakRidge(evidence, G, 60, 30, 0.60);
+  assert.equal(points.length, 2 * G);
+  let maxRowError = 0;
+  for (const point of points) {
+    const error = Math.min(...expected.get(point.gx).map((row) => Math.abs(row - point.gy)));
+    maxRowError = Math.max(maxRowError, error);
+  }
+  assert.ok(maxRowError <= 1, `max row error=${maxRowError}`);
+  return { points: points.length, maxRowError };
+});
+
+run('26 corridor Evidence E extractor rejects weak exterior false peaks', () => {
+  const G = 30;
+  const evidence = new Float32Array(G * G);
+  for (let gx = 0; gx < G; gx++) {
+    evidence[4 * G + gx] = 0.3;
+    evidence[9 * G + gx] = 1.0;
+    evidence[21 * G + gx] = 0.9;
+  }
+  const points = extractCorridorOuterPeakRidge(evidence, G, 60, 30, 0.60);
+  assert.equal(points.length, 2 * G);
+  assert.ok(points.every((point) => point.gy === 9 || point.gy === 21));
+  return { points: points.length, rows: [...new Set(points.map((point) => point.gy))] };
+});
+
+run('27 corridor extractor rejects converging parenthesis end caps', () => {
+  const G = 60;
+  const evidence = new Float32Array(G * G);
+  const expectedColumns = new Set();
+  for (let gx = 4; gx <= 55; gx++) {
+    let top = 14;
+    let bottom = 46;
+    if (gx < 10) {
+      const inward = 3 * (10 - gx);
+      top += inward;
+      bottom -= inward;
+    } else if (gx > 49) {
+      const inward = 3 * (gx - 49);
+      top += inward;
+      bottom -= inward;
+    } else {
+      expectedColumns.add(gx);
+    }
+    for (let gy = 0; gy < G; gy++) {
+      evidence[gy * G + gx] = Math.exp(-0.5 * ((gy - top) / 1.15) ** 2)
+        + 0.95 * Math.exp(-0.5 * ((gy - bottom) / 1.15) ** 2);
+    }
+  }
+  // Single-mode clutter must not be emitted as one side of a wall pair.
+  evidence[30 * G + 2] = 0.8;
+  const points = extractCorridorOuterPeakRidge(evidence, G, 60, 30, 0.60);
+  const outputColumns = new Set(points.map((point) => point.gx));
+  assert.ok(points.every((point) => point.gy === 14 || point.gy === 46));
+  assert.ok([...outputColumns].every((gx) => expectedColumns.has(gx)));
+  assert.equal(points.length, 2 * expectedColumns.size);
+  return { points: points.length, acceptedColumns: outputColumns.size };
+});
+
+run('28 corridor offsets remain below the parallel-curve cusp limit', () => {
+  const curvature = Float64Array.from([0, 0.08, 0.20, 0.50, 0.20, -0.45, -0.10, 0]);
+  const desiredTop = new Float64Array(curvature.length).fill(5);
+  const desiredBottom = new Float64Array(curvature.length).fill(5);
+  const arcLength = Float64Array.from(curvature, (_, index) => index);
+  const result = regularizeCorridorOffsets(desiredTop, desiredBottom, curvature, arcLength, {
+    safetyProduct: 0.72,
+    maxOffsetSlope: 0.35,
+  });
+  assert.ok(result.maxOffsetCurvatureProduct <= 0.72 + 1e-12);
+  assert.ok(curvature[3] * result.top[3] <= 0.72 + 1e-12);
+  assert.ok((-curvature[5]) * result.bottom[5] <= 0.72 + 1e-12);
+  assert.ok(result.top[3] < result.bottom[3]);
+  assert.ok(result.bottom[5] < result.top[5]);
+  for (const profile of [result.top, result.bottom]) {
+    for (let index = 1; index < profile.length; index++) {
+      assert.ok(Math.abs(profile[index] - profile[index - 1]) <= 0.35 + 1e-12);
+      assert.ok(profile[index] <= 5 + 1e-12);
+    }
+  }
+  return {
+    maxOffsetCurvatureProduct: result.maxOffsetCurvatureProduct,
+    minimumTopOffset: Math.min(...result.top),
+    minimumBottomOffset: Math.min(...result.bottom),
+  };
+});
+
+run('29 zero diffuse spread is regression-identical to fixed tangency', () => {
+  const fixed = new RevisedEstimator({ HConf: 2, KMode: 4, useMaterialAwareTangency: false });
+  const zeroDiffuse = new RevisedEstimator({ HConf: 2, KMode: 4, useMaterialAwareTangency: true, diffuseSigmaS: 0 });
+  for (let snapshot = 0; snapshot < 4; snapshot++) {
+    const measurements = [measurement(14 + 0.03 * snapshot), measurement(16 - 0.02 * snapshot)];
+    fixed.updateSnapshot(snapshot, measurements);
+    zeroDiffuse.updateSnapshot(snapshot, measurements);
+  }
+  assert.deepEqual(zeroDiffuse.exportModes(), fixed.exportModes());
+  const fixedGrid = fixed.extractGrid(90);
+  const zeroGrid = zeroDiffuse.extractGrid(90);
+  assert.deepEqual(Array.from(zeroGrid.evidence), Array.from(fixedGrid.evidence));
+  assert.deepEqual(Array.from(zeroGrid.ridge), Array.from(fixedGrid.ridge));
+  return { modes: fixed.exportModes().length, ridgePoints: fixedGrid.ridgePoints.length };
+});
+
+run('30 material-aware tangency widens acceptance and reduces orientation trust', () => {
+  const first = makeKernel(10, 10, 0, 0.75, 0.16, 1);
+  const second = makeKernel(10, 10, 40 * Math.PI / 180, 0.75, 0.16, 1);
+  const sigmaTheta = 0.60;
+  const theta0 = Math.PI / 6;
+  const rhoTangency = theta0 * theta0 / (theta0 * theta0 + sigmaTheta * sigmaTheta);
+  for (const kernel of [first, second]) {
+    kernel.sigmaTheta = sigmaTheta;
+    kernel.rhoTangency = rhoTangency;
+  }
+  const fixed = new RevisedEstimator({ HConf: 1, KMode: 3, cellSize: 2, useMaterialAwareTangency: false });
+  const adaptive = new RevisedEstimator({ HConf: 1, KMode: 3, cellSize: 2, useMaterialAwareTangency: true, diffuseSigmaS: 1 });
+  fixed.debugIngestKernels(0, [first, second]);
+  adaptive.debugIngestKernels(0, [first, second]);
+  assert.equal(fixed.exportModes().length, 2);
+  assert.equal(adaptive.exportModes().length, 1);
+  const mode = adaptive.exportModes()[0];
+  assert.ok(mode.gamma < 1 && mode.gamma > 0);
+  assert.ok(mode.effectiveCoherence > mode.coherence);
+  return {
+    fixedModes: fixed.exportModes().length,
+    adaptiveModes: adaptive.exportModes().length,
+    gamma: mode.gamma,
+    rawCoherence: mode.coherence,
+    effectiveCoherence: mode.effectiveCoherence,
+  };
+});
+
+run('31 sample-wise diffuse sensitivity diagnostics use only ellipse geometry and sigmaS', () => {
+  const estimator = new RevisedEstimator({ useMaterialAwareTangency: true, diffuseSigmaS: 2, KMode: 6 });
+  const diagnostics = estimator.updateSnapshot(0, [measurement(14)]);
+  assert.equal(diagnostics.materialAwareTangency, true);
+  assert.ok(diagnostics.tangencySamples > 0);
+  assert.ok(diagnostics.meanSigmaTheta > 0);
+  assert.ok(diagnostics.meanRhoTangency > 0 && diagnostics.meanRhoTangency < 1);
+  return {
+    samples: diagnostics.tangencySamples,
+    meanSigmaTheta: diagnostics.meanSigmaTheta,
+    meanRhoTangency: diagnostics.meanRhoTangency,
+  };
 });
 
 const failures = results.filter((result) => result.status !== 'PASS');

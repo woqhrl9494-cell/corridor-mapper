@@ -31,7 +31,7 @@ for (const [name, body] of [
   ['updateRevisedEstimator', revisedAdapter],
   ['makeEllipseComponents', gridKernelBuilder],
 ]) {
-  assert.doesNotMatch(body, /\bhit\b|\btopWall\b|\bbotWall\b|metricObservedMask|_cachedGTWallPts/, `${name} contains evaluator-only input`);
+  assert.doesNotMatch(body, /\bhit\b|\bspecularHit\b|\bdeltaS\b|\bfamilyId\b|\bwallId\b|\btopWall\b|\bbotWall\b|metricObservedMask|_cachedGTWallPts/, `${name} contains evaluator-only input`);
 }
 
 assert.match(sanitizer, /tx:\{x:meas\.tx\.x,y:meas\.tx\.y\}/);
@@ -46,8 +46,10 @@ assert.ok(simStep.indexOf('updateMetricObservation(allMeas)') > simStep.indexOf(
 
 // The standalone estimator must not know simulator GT/evaluator identifiers.
 assert.doesNotMatch(estimatorSource, /\btopWall\b|\bbotWall\b|metricObservedMask|_cachedGTWallPts|\bfutureHit\b/);
+assert.doesNotMatch(estimatorSource, /\bspecularHit\b|\bfamilyId\b|\bwallId\b|\bactualPathCount\b/);
+assert.doesNotMatch(estimatorSource, /meanPathCount|diffuseMean|\bMtarget\b/, 'actual or configured multiplicity must not alter Revised weights');
 
 console.log(JSON.stringify({
   summary: { passed: 1, failed: 0, total: 1 },
-  checked: ['whitelist', 'Grid input', 'Revised input', 'execution order', 'standalone estimator isolation'],
+  checked: ['whitelist', 'diffuse hidden-field isolation', 'multiplicity isolation', 'Grid input', 'Revised input', 'execution order', 'standalone estimator isolation'],
 }, null, 2));
