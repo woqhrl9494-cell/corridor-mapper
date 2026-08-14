@@ -370,6 +370,78 @@ run('16 evidence-dominance rejects trivial self-ridges', () => {
   };
 });
 
+run('17 normal NMS thins a multi-mode ridge band', () => {
+  const build = (useNormalNms) => {
+    const estimator = new RevisedEstimator({
+      cellSize: 0.5,
+      HConf: 2,
+      KMode: 3,
+      tauB: 0.01,
+      tauE: 0.001,
+      tauC: 0.35,
+      tauR: 0.03,
+      tauD: 0.60,
+      tauEDominance: 0,
+      useNormalNms,
+    });
+    for (let t = 0; t < 3; t++) {
+      const kernels = [];
+      for (let x = 4; x <= 56; x += 0.75) {
+        kernels.push(makeKernel(x, 9.8, Math.PI / 2, 0.75, 0.12, 0.80));
+        kernels.push(makeKernel(x, 10.0, Math.PI / 2, 0.75, 0.12, 1.00));
+        kernels.push(makeKernel(x, 10.2, Math.PI / 2, 0.75, 0.12, 0.90));
+      }
+      estimator.debugIngestKernels(t, kernels);
+    }
+    const grid = estimator.extractGrid(150);
+    const columnCounts = new Map();
+    for (const point of grid.ridgePoints) columnCounts.set(point.gx, (columnCounts.get(point.gx) || 0) + 1);
+    return {
+      grid,
+      diagnostics: estimator.getDiagnostics(),
+      maxColumnThickness: Math.max(0, ...columnCounts.values()),
+    };
+  };
+
+  const thick = build(false);
+  const thin = build(true);
+  assert.ok(thick.grid.ridgePoints.length > thin.grid.ridgePoints.length, `${thick.grid.ridgePoints.length} <= ${thin.grid.ridgePoints.length}`);
+  assert.ok(thin.maxColumnThickness < thick.maxColumnThickness, `${thin.maxColumnThickness} >= ${thick.maxColumnThickness}`);
+  assert.ok(thin.diagnostics.normalNmsRemoved > 0);
+  assert.ok(thin.grid.ridgePoints.some((point) => Math.abs(point.y - 10) <= 0.25));
+  return {
+    thickPoints: thick.grid.ridgePoints.length,
+    thinPoints: thin.grid.ridgePoints.length,
+    thickCellsPerColumn: thick.maxColumnThickness,
+    thinCellsPerColumn: thin.maxColumnThickness,
+    removed: thin.diagnostics.normalNmsRemoved,
+  };
+});
+
+run('18 simulation-oracle fields cannot affect estimator output', () => {
+  const cleanEstimator = new RevisedEstimator({ HConf: 2, KMode: 3 });
+  const oracleEstimator = new RevisedEstimator({ HConf: 2, KMode: 3 });
+  for (let snapshot = 0; snapshot < 4; snapshot++) {
+    const clean = measurement(14 + 0.05 * snapshot);
+    const withOracleFields = {
+      ...clean,
+      hit: { x: 15, y: 10 },
+      gtWallId: 1,
+      futureSnapshot: snapshot + 100,
+      futureHit: { x: 40, y: 20 },
+    };
+    cleanEstimator.updateSnapshot(snapshot, [clean]);
+    oracleEstimator.updateSnapshot(snapshot, [withOracleFields]);
+  }
+  assert.deepEqual(oracleEstimator.exportModes(), cleanEstimator.exportModes());
+  const cleanGrid = cleanEstimator.extractGrid(80);
+  const oracleGrid = oracleEstimator.extractGrid(80);
+  assert.deepEqual(Array.from(oracleGrid.evidence), Array.from(cleanGrid.evidence));
+  assert.deepEqual(Array.from(oracleGrid.ridge), Array.from(cleanGrid.ridge));
+  assert.deepEqual(oracleGrid.ridgePoints, cleanGrid.ridgePoints);
+  return { modes: cleanEstimator.exportModes().length, ridgePoints: cleanGrid.ridgePoints.length };
+});
+
 const failures = results.filter((result) => result.status !== 'PASS');
 console.log(JSON.stringify({ summary: { passed: results.length - failures.length, failed: failures.length, total: results.length }, results }, null, 2));
 if (failures.length) process.exitCode = 1;

@@ -312,6 +312,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
 /* mbar progress */
 .mbar-track { height: 3px; background: var(--border2); border-radius: 2px; margin-top: 5px; overflow: hidden; }
 .mbar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease, background 0.4s; }
+.metric-context { margin:0 0 5px; padding:5px 7px; border-radius:6px; background:var(--surface2); color:var(--text3); font:500 8px 'DM Mono',monospace; text-align:center; }
 .mval-good  { color: var(--green); }
 .mval-warn  { color: var(--amber); }
 .mval-bad   { color: var(--red); }
@@ -648,9 +649,9 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
       <div class="cinfo-cell">Comp: <b id="sComp">—</b></div>
       <div class="cinfo-cell">Comp: <b id="sCompGM">—</b></div>
     </div>
-    <div class="cinfo-row">
-      <div class="cinfo-cell">⏱ <b id="sTimeGrid">—</b></div>
-      <div class="cinfo-cell">⏱ <b id="sTimeGM">—</b></div>
+    <div class="cinfo-row" title="Estimator pipeline latency: rolling p50 / p95">
+      <div class="cinfo-cell">P50/P95: <b id="sTimeGrid">—</b></div>
+      <div class="cinfo-cell">P50/P95: <b id="sTimeGM">—</b></div>
     </div>
     <div class="cinfo-row">
       <div class="cinfo-cell">Paths: <b id="sAdmission">—</b></div>
@@ -665,15 +666,16 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
       <div class="compare-hdr-cell chdr-direct">Grid Direct</div>
       <div class="compare-hdr-cell chdr-gm">Revised</div>
     </div>
+    <div class="metric-context">Observed boundary · τ=0.4 m · GT coverage <b id="mCoverage">0.0%</b></div>
     <!-- F1 callout row -->
     <div class="callout-row" style="margin-bottom:5px;">
       <div class="callout">
-        <div class="callout-label">F1 Score</div>
+        <div class="callout-label">Boundary F1 @ 0.4 m</div>
         <div class="callout-value mval-na" id="mValF1">—</div>
         <div class="mbar-track"><div class="mbar-fill" id="mBarF1" style="width:0%"></div></div>
       </div>
       <div class="callout gm">
-        <div class="callout-label">F1 Score</div>
+        <div class="callout-label">Boundary F1 @ 0.4 m</div>
         <div class="callout-value mval-na" id="mValF1GM">—</div>
         <div class="mbar-track"><div class="mbar-fill" id="mBarF1GM" style="width:0%"></div></div>
       </div>
@@ -681,41 +683,41 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="compare-cols">
       <div class="compare-col">
         <div class="stat-card" style="margin-bottom:3px;">
-          <div class="stat-label">Precision</div>
+          <div class="stat-label">Precision @ 0.4 m</div>
           <div class="stat-value mval-na" id="mValP">—</div>
           <div class="mbar-track"><div class="mbar-fill" id="mBarP" style="width:0%"></div></div>
         </div>
         <div class="stat-card" style="margin-bottom:3px;">
-          <div class="stat-label">Recall</div>
+          <div class="stat-label">Observed recall</div>
           <div class="stat-value mval-na" id="mValR">—</div>
           <div class="mbar-track"><div class="mbar-fill" id="mBarR" style="width:0%"></div></div>
         </div>
         <div class="stat-card" style="margin-bottom:3px;">
-          <div class="stat-label">MCD (m)</div>
+          <div class="stat-label" title="Coverage-aware mean surface distance">CA-MSD (m)</div>
           <div class="stat-value mval-na" id="mValMCD">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Score</div>
+          <div class="stat-label" title="Coverage-aware 95th-percentile surface distance">CA-HD95 (m)</div>
           <div class="stat-value mval-na" id="mScore">—</div>
         </div>
       </div>
       <div class="compare-col">
         <div class="stat-card" style="margin-bottom:3px;">
-          <div class="stat-label">Precision</div>
+          <div class="stat-label">Precision @ 0.4 m</div>
           <div class="stat-value mval-na" id="mValPGM">—</div>
           <div class="mbar-track"><div class="mbar-fill" id="mBarPGM" style="width:0%"></div></div>
         </div>
         <div class="stat-card" style="margin-bottom:3px;">
-          <div class="stat-label">Recall</div>
+          <div class="stat-label">Observed recall</div>
           <div class="stat-value mval-na" id="mValRGM">—</div>
           <div class="mbar-track"><div class="mbar-fill" id="mBarRGM" style="width:0%"></div></div>
         </div>
         <div class="stat-card" style="margin-bottom:3px;">
-          <div class="stat-label">MCD (m)</div>
+          <div class="stat-label" title="Coverage-aware mean surface distance">CA-MSD (m)</div>
           <div class="stat-value mval-na" id="mValMCDGM">—</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Score</div>
+          <div class="stat-label" title="Coverage-aware 95th-percentile surface distance">CA-HD95 (m)</div>
           <div class="stat-value mval-na" id="mScoreGM">—</div>
         </div>
       </div>
@@ -774,7 +776,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="view" id="viewGMWall">
       <div class="vlabel">
         <span class="vlabel-badge vlabel-badge-e">E</span>
-        <span class="vlabel-text">Revised — Gated Analytic Ridge</span>
+        <span class="vlabel-text">Revised — Thin Gated Ridge</span>
       </div>
       <canvas id="cvsGMWall"></canvas>
     </div>
@@ -782,6 +784,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
 </div>
 
 </div><!-- /main -->
+<script src="./wall_metrics.js"></script>
 <script src="./revised_wall_estimator.js"></script>
 <script>
 'use strict';
@@ -881,9 +884,24 @@ const ctxGMWall = cvsGMWall.getContext('2d');
 let densGridGM   = null;
 let wallMaskGM   = null;
 let stepTimeGrid = 0, stepTimeGM = 0;
+const runtimeHistoryGrid = [], runtimeHistoryGM = [];
 let revisedGrid  = null;
 
+function recordRuntime(history,value){
+  history.push(Math.max(0,value));
+  if(history.length>120) history.shift();
+}
+function runtimePercentile(history,probability){
+  if(!history.length) return 0;
+  const sorted=history.slice().sort((a,b)=>a-b);
+  return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(probability*sorted.length)-1))];
+}
+function runtimeLabel(history){
+  return `${runtimePercentile(history,0.50).toFixed(1)}/${runtimePercentile(history,0.95).toFixed(1)}ms`;
+}
+
 if(!window.RevisedWallEstimator?.RevisedEstimator) throw new Error('revised_wall_estimator.js failed to load');
+if(!window.WallMetrics?.computeBoundaryMetrics) throw new Error('wall_metrics.js failed to load');
 
 function isRevisedMode(){ return document.getElementById('estimatorMode')?.value !== 'legacy'; }
 function revisedConfig(){
@@ -903,7 +921,11 @@ function revisedConfig(){
     tauR:0.10,
     tauD:0.35,
     evidenceQuantile:0.99,
-    tauEDominance:0.60,
+    tauEDominance:0.70,
+    tauEDominanceStart:0.60,
+    dominanceRampStart:60,
+    dominanceRampEnd:120,
+    useNormalNms:true,
   };
 }
 let revisedEstimator = new window.RevisedWallEstimator.RevisedEstimator(revisedConfig());
@@ -2297,14 +2319,17 @@ function extractWallFrom(src, mask, G, perColThresh=false) {
 // with equal seeds, observation counts, and grid resolution.
 function extractWall() {
   const G = densGridG;
-  if(G === 0) return;
+  if(G === 0) return {gridMs:0,revisedMs:0};
   if(!wallMask   || wallMask.length   !== G*G) wallMask   = new Uint8Array(G*G);
   if(!wallMaskGM || wallMaskGM.length !== G*G) wallMaskGM = new Uint8Array(G*G);
 
   // Grid Direct: unchanged — threshold / ridge / NMS on raw density grid
+  const gridT0=performance.now();
   const c1 = extractWallFrom(densGrid, wallMask, G, false);
   document.getElementById('sWall').textContent = c1;
+  const gridMs=performance.now()-gridT0;
 
+  const revisedT0=performance.now();
   if(isRevisedMode()){
     let count=0;
     if(wallMaskGM) for(let i=0;i<wallMaskGM.length;i++) if(wallMaskGM[i]) count++;
@@ -2312,6 +2337,7 @@ function extractWall() {
   }else{
     evaluateGMWallScore();
   }
+  return {gridMs,revisedMs:performance.now()-revisedT0};
 }
 
 // ═══════════════════════════════════════
@@ -2403,68 +2429,31 @@ function moveBots(){
 // METRICS
 // ═══════════════════════════════════════
 let _cachedGTWallPts = null;
-const METRIC_MATCH_TAU = 0.9; // metres
+let metricObservedMask = null;
+const METRIC_MATCH_TAU = 0.4;       // metres, primary boundary tolerance
+const METRIC_GT_SPACING = 0.2;      // metres, uniform arc-length sampling
+const METRIC_OBSERVATION_RADIUS = 1.0; // metres around simulation-only reflection hits
 const PERF_LOG_MAX = 400;
 const perfHistory = [];
 
-function sampleGTWall(nPerWall = 300) {
-  if(_cachedGTWallPts) return _cachedGTWallPts;
-  const pts = [];
-  for(const wall of [topWall, botWall]){
-    for(let i = 0; i < nPerWall; i++){
-      const t = i / (nPerWall - 1);
-      const j = Math.min(wall.length-2, Math.floor(t * (wall.length-1)));
-      const f = t * (wall.length-1) - j;
-      pts.push({
-        x: wall[j].x*(1-f) + wall[j+1].x*f,
-        y: wall[j].y*(1-f) + wall[j+1].y*f,
-      });
-    }
+function sampleGTWall() {
+  if(!_cachedGTWallPts){
+    _cachedGTWallPts=window.WallMetrics.sampleWallsArcLength([topWall,botWall],METRIC_GT_SPACING);
+    metricObservedMask=window.WallMetrics.createObservedMask(_cachedGTWallPts);
   }
-  _cachedGTWallPts = pts;
-  return pts;
+  return _cachedGTWallPts;
 }
 
-function nearestDist(pt, pts){
-  let best = Infinity;
-  for(const p of pts){
-    const d = Math.hypot(pt.x-p.x, pt.y-p.y);
-    if(d < best) best = d;
-  }
-  return best;
+// Simulation-only evaluation support. Exact reflection hits define which GT
+// wall arc has been illuminated, but they are never passed to either estimator.
+function updateMetricObservation(measurements){
+  const gtPts=sampleGTWall();
+  const hits=(measurements||[]).map(measurement=>measurement.hit).filter(Boolean);
+  window.WallMetrics.markObservedGT(gtPts,metricObservedMask,hits,METRIC_OBSERVATION_RADIUS);
 }
 
-function computeWallMetrics(wallPts, gtPts){
-  if(!wallPts.length || !gtPts.length)
-    return { precision:0, recall:0, f1:0, mcd:Infinity, wallScore:0 };
-
-  const tau = METRIC_MATCH_TAU;
-
-  // precision: each wallPt -> nearest GT
-  let tp_p = 0, sum_p = 0;
-  for(const wp of wallPts){
-    const d = nearestDist(wp, gtPts);
-    sum_p += d;
-    if(d <= tau) tp_p++;
-  }
-  const precision = tp_p / wallPts.length;
-  const avgP = sum_p / wallPts.length;
-
-  // recall: each gtPt -> nearest wall
-  let tp_r = 0, sum_r = 0;
-  for(const gp of gtPts){
-    const d = nearestDist(gp, wallPts);
-    sum_r += d;
-    if(d <= tau) tp_r++;
-  }
-  const recall = tp_r / gtPts.length;
-  const avgR = sum_r / gtPts.length;
-
-  const f1 = (precision + recall > 0) ? 2*precision*recall/(precision+recall) : 0;
-  const mcd = (avgP + avgR) / 2;
-  const wallScore = (mcd < tau) ? f1 * (1 - mcd/tau) : 0;
-
-  return { precision, recall, f1, mcd, wallScore };
+function computeWallMetrics(wallPts,gtPts){
+  return window.WallMetrics.computeBoundaryMetrics(wallPts,gtPts,metricObservedMask,METRIC_MATCH_TAU);
 }
 
 function getWallPtsFromMask(){
@@ -2483,9 +2472,10 @@ function getWallPtsFromMask(){
 }
 
 function updateMetrics(){
-  const gtPts = sampleGTWall(300);
+  const gtPts = sampleGTWall();
   function colorCls(v){ return v >= 0.7 ? 'mval-good' : v >= 0.4 ? 'mval-warn' : 'mval-bad'; }
   function barCls(v)  { return v >= 0.7 ? 'mbar-good' : v >= 0.4 ? 'mbar-warn' : 'mbar-bad'; }
+  function distanceCls(v,good,warn){ return Number.isFinite(v)?(v<=good?'mval-good':v<=warn?'mval-warn':'mval-bad'):'mval-na'; }
 
   function setMetricDisplay(m, sfx) {
     const el = id => document.getElementById(id + sfx);
@@ -2495,10 +2485,10 @@ function updateMetrics(){
     el('mValR').className      = 'stat-value ' + colorCls(m.recall);
     el('mValF1').textContent   = m.f1.toFixed(3);
     el('mValF1').className     = 'callout-value ' + colorCls(m.f1);
-    el('mScore').textContent   = m.wallScore.toFixed(3);
-    el('mScore').className     = 'stat-value ' + colorCls(m.wallScore);
-    el('mValMCD').textContent  = isFinite(m.mcd) ? m.mcd.toFixed(3) : '—';
-    el('mValMCD').className    = 'stat-value ' + (isFinite(m.mcd) ? colorCls(1-m.mcd/3) : 'mval-na');
+    el('mScore').textContent   = Number.isFinite(m.caHd95)?m.caHd95.toFixed(3):'—';
+    el('mScore').className     = 'stat-value '+distanceCls(m.caHd95,0.4,0.8);
+    el('mValMCD').textContent  = Number.isFinite(m.caMsd)?m.caMsd.toFixed(3):'—';
+    el('mValMCD').className    = 'stat-value '+distanceCls(m.caMsd,0.2,0.4);
     el('mBarP').style.width    = (m.precision*100).toFixed(1)+'%';
     el('mBarP').className      = 'mbar-fill ' + barCls(m.precision);
     el('mBarR').style.width    = (m.recall*100).toFixed(1)+'%';
@@ -2523,17 +2513,17 @@ function updateMetrics(){
   }
   const mGM = computeWallMetrics(wallPtsGM, gtPts);
   setMetricDisplay(mGM, 'GM');
+  document.getElementById('mCoverage').textContent=(100*mGM.coverage).toFixed(1)+'%';
 
   if(perfHistory.length >= PERF_LOG_MAX) perfHistory.shift();
   perfHistory.push({
     step: totalSteps,
+    coverage:mGM.coverage,
     compGM: isRevisedMode()?revisedEstimator.getDiagnostics().localModes:gmComponents.length,
     wallPtsGM: wallPtsGM.length,
     wallGM: parseInt(document.getElementById('sWallGM').textContent, 10) || 0,
-    p: mGM.precision,
-    r: mGM.recall,
-    f1: mGM.f1,
-    mcd: mGM.mcd,
+    direct:{p:mDirect.precision,r:mDirect.recall,f1:mDirect.f1,caMsd:mDirect.caMsd,caHd95:mDirect.caHd95},
+    revised:{p:mGM.precision,r:mGM.recall,f1:mGM.f1,caMsd:mGM.caMsd,caHd95:mGM.caHd95},
   });
   return { gm: mGM, direct: mDirect };
 }
@@ -3078,7 +3068,7 @@ function renderAll(){
   renderGMWall();
 }
 
-function updateRevisedEstimator(allMeas){
+function updateRevisedEstimator(allMeas,extractNow=true){
   revisedEstimator.configure(revisedConfig());
   const poseVariance=GM_POS_STD*GM_POS_STD;
   const onlineMeasurements=allMeas.map((meas,index)=>({
@@ -3093,27 +3083,42 @@ function updateRevisedEstimator(allMeas){
     sigmaD:GM_NOISE_STD,
   }));
   const diagnostics=revisedEstimator.updateSnapshot(totalSteps,onlineMeasurements);
-  revisedGrid=revisedEstimator.extractGrid(GRID_G);
-  densGridGM=new Float32Array(GRID_G*GRID_G);
-  wallMaskGM=new Uint8Array(GRID_G*GRID_G);
-  let ridgeCount=0;
-  // RevisedEstimator query arrays are screen-oriented (row 0 at world top),
-  // whereas the legacy simulator grids use row 0 at world bottom.
-  for(let gy=0;gy<GRID_G;gy++){
-    const gi=GRID_G-1-gy;
-    for(let gx=0;gx<GRID_G;gx++){
-      const src=gy*GRID_G+gx;
-      const dst=gi*GRID_G+gx;
-      densGridGM[dst]=revisedGrid.evidence[src];
-      wallMaskGM[dst]=revisedGrid.ridge[src];
-      if(wallMaskGM[dst]) ridgeCount++;
+  if(extractNow){
+    revisedGrid=revisedEstimator.extractGrid(GRID_G);
+    densGridGM=new Float32Array(GRID_G*GRID_G);
+    wallMaskGM=new Uint8Array(GRID_G*GRID_G);
+    let ridgeCount=0;
+    // RevisedEstimator query arrays are screen-oriented (row 0 at world top),
+    // whereas the legacy simulator grids use row 0 at world bottom.
+    for(let gy=0;gy<GRID_G;gy++){
+      const gi=GRID_G-1-gy;
+      for(let gx=0;gx<GRID_G;gx++){
+        const src=gy*GRID_G+gx;
+        const dst=gi*GRID_G+gx;
+        densGridGM[dst]=revisedGrid.evidence[src];
+        wallMaskGM[dst]=revisedGrid.ridge[src];
+        if(wallMaskGM[dst]) ridgeCount++;
+      }
     }
+    document.getElementById('sWallGM').textContent=ridgeCount;
   }
-  document.getElementById('sWallGM').textContent=ridgeCount;
   document.getElementById('sCompGM').textContent=`${diagnostics.localModes}/${diagnostics.representedCells}`;
   document.getElementById('sAdmission').textContent=`${diagnostics.admittedPaths}/${diagnostics.nominallyRejectedPaths}`;
   document.getElementById('sConfirmed').textContent=diagnostics.confirmedModes;
   return diagnostics;
+}
+
+// Hard estimator/evaluator boundary. Simulation-only fields such as `hit`
+// never cross this whitelist into Grid Direct, Revised, or legacy GM.
+function sanitizeEstimatorMeasurements(measurements){
+  return (measurements||[]).map(meas=>({
+    i:meas.i,
+    j:meas.j,
+    m:meas.m,
+    tx:{x:meas.tx.x,y:meas.tx.y},
+    rx:{x:meas.rx.x,y:meas.rx.y},
+    r:meas.r,
+  }));
 }
 
 // ═══════════════════════════════════════
@@ -3141,7 +3146,11 @@ function simStep(){
   }
   if(recentMeas.length > MAX_RECENT_MEAS * 3) recentMeas.splice(0, recentMeas.length - MAX_RECENT_MEAS);
 
-  const N_feas = allMeas.length;
+  const estimatorMeas=sanitizeEstimatorMeasurements(allMeas);
+  const N_feas = estimatorMeas.length;
+  const shouldExtract=stepCount===0 || (stepCount+1)%3===0;
+  stepTimeGrid=0;
+  stepTimeGM=0;
 
   if(N_feas > 0){
     // ── METHOD 1: Grid Direct ───────────────────────────────────
@@ -3157,7 +3166,7 @@ function simStep(){
       }
       const cellW = WW/G, cellH = WH/G;
       const INV2PI = 1/(2*Math.PI);
-      for(const m of allMeas){
+      for(const m of estimatorMeas){
         const comps = makeEllipseComponents(m, N_feas);
         for(const {w, mx, my, A, B, C} of comps){
           const det = A*C - B*B;
@@ -3188,10 +3197,10 @@ function simStep(){
     // ── METHOD 2: Revised estimator (default) / legacy GM ───────
     const _t2 = performance.now();
     if(isRevisedMode()){
-      updateRevisedEstimator(allMeas);
+      updateRevisedEstimator(estimatorMeas,shouldExtract);
     }else{
       const allNewComps = [];
-      for(const m of allMeas){
+      for(const m of estimatorMeas){
         for(const nc of makeEllipseComponents(m, N_feas)){
           allNewComps.push(nc);
         }
@@ -3202,18 +3211,26 @@ function simStep(){
     stepTimeGM = performance.now() - _t2;
   }else if(isRevisedMode()){
     const _t2=performance.now();
-    updateRevisedEstimator([]);
+    updateRevisedEstimator([],shouldExtract);
     stepTimeGM=performance.now()-_t2;
   }
+
+  // Evaluation runs only after both estimators have consumed their sanitized
+  // current-snapshot inputs. This state is read solely by updateMetrics().
+  updateMetricObservation(allMeas);
 
   totalSteps++;
   stepCount++;
 
   // Extract wall and update metrics every 3 steps
-  if(stepCount % 3 === 0 || stepCount === 1){
-    extractWall();
+  if(shouldExtract){
+    const extractionTimes=extractWall();
+    stepTimeGrid+=extractionTimes.gridMs;
+    stepTimeGM+=extractionTimes.revisedMs;
     updateMetrics();
   }
+  recordRuntime(runtimeHistoryGrid,stepTimeGrid);
+  recordRuntime(runtimeHistoryGM,stepTimeGM);
 
   // Update stats
   let nzGrid = 0;
@@ -3222,8 +3239,8 @@ function simStep(){
   document.getElementById('sStep').textContent     = totalSteps;
   document.getElementById('sComp').textContent     = nzGrid;
   if(!isRevisedMode()) document.getElementById('sCompGM').textContent = gmComponents.length;
-  document.getElementById('sTimeGrid').textContent = stepTimeGrid.toFixed(1) + 'ms';
-  document.getElementById('sTimeGM').textContent   = stepTimeGM.toFixed(1) + 'ms';
+  document.getElementById('sTimeGrid').textContent = runtimeLabel(runtimeHistoryGrid);
+  document.getElementById('sTimeGM').textContent   = runtimeLabel(runtimeHistoryGM);
 
   renderAll();
 
@@ -3274,13 +3291,17 @@ function init(){
   evaluateGMWallScore._refP99 = 0;     // reset robust p99 reference on reinit
   stepTimeGrid = 0;
   stepTimeGM = 0;
+  runtimeHistoryGrid.length=0;
+  runtimeHistoryGM.length=0;
   totalSteps = 0;
   stepCount = 0;
   recentMeas = [];
   ellipseCount = 0;
   _cachedGTWallPts = null;
+  metricObservedMask = null;
   _simDelayMs = Math.max(1, Math.floor(1000 / Math.max(1, PANEL_FPS)));
   perfHistory.length = 0;
+  document.getElementById('mCoverage').textContent='0.0%';
 
   document.getElementById('sEll').textContent       = '0';
   document.getElementById('sStep').textContent      = '0';
@@ -3391,7 +3412,7 @@ function resetForEstimatorChange(){
   const densLabel=document.querySelector('#viewGMDens .vlabel-text');
   const wallLabel=document.querySelector('#viewGMWall .vlabel-text');
   if(densLabel) densLabel.textContent=revised?'Revised — Evidence E':'Legacy GM — Density';
-  if(wallLabel) wallLabel.textContent=revised?'Revised — Gated Analytic Ridge':'Legacy GM — Wall Mask';
+  if(wallLabel) wallLabel.textContent=revised?'Revised — Thin Gated Ridge':'Legacy GM — Wall Mask';
   document.querySelectorAll('.chdr-gm').forEach(el=>el.textContent=revised?'Revised':'Legacy GM');
   init();
 }
@@ -3457,15 +3478,9 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
     document.getElementById('btnRun').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Start simulation';
     document.getElementById('btnRun').className='btn btn-primary';
   }
-  // Randomize seed & wall-shape params so each reset gives a fresh environment
-  const setSlider = (id, val) => {
-    const el = document.getElementById(id);
-    if(el){ el.value = val; el.dispatchEvent(new Event('input')); }
-  };
-  setSlider('seed',  1 + Math.floor(Math.random() * 99));                   // 1–99
-  setSlider('rough', +(Math.round(Math.random() * 20) * 0.05).toFixed(2)); // 0.00–1.00
-  setSlider('curve', +(Math.round(Math.random() * 10) * 0.05).toFixed(2)); // 0.00–0.50
-  setSlider('gap',   +(4 + Math.round(Math.random() * 32) * 0.5).toFixed(1)); // 4.0–20.0
+  // Reset is deliberately deterministic: preserve seed and environment
+  // parameters so repeated baseline/proposed comparisons use identical data.
+  // A new environment is selected explicitly with the sliders.
   init();
 });
 

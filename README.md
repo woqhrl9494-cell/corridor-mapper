@@ -1,215 +1,179 @@
 <div align="center">
 
-<h1>EchoMap — Corridor Mapper</h1>
+# EchoMap — Corridor Mapper
 
-<p><strong>Bistatic radar wall mapping, compared head-to-head: grid accumulation vs. paper-faithful Gaussian Mixture — in a single HTML file.</strong></p>
+**Interactive bistatic-radar wall mapping with a Grid Direct baseline and a causal local-mode ridge estimator.**
 
-<p>
-  <a href="https://woqhrl9494-cell.github.io/corridor-mapper/">
-    <img src="https://img.shields.io/badge/▶ Live Demo-007AFF?style=for-the-badge&logoColor=white" alt="Live Demo"/>
-  </a>
-  <img src="https://img.shields.io/github/stars/woqhrl9494-cell/corridor-mapper?style=for-the-badge&color=FFD700" alt="Stars"/>
-  <img src="https://img.shields.io/badge/Zero Dependencies-34C759?style=for-the-badge" alt="Zero Dependencies"/>
-  <img src="https://img.shields.io/badge/Single File-FF9500?style=for-the-badge" alt="Single File"/>
-  <img src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-8E8E93?style=for-the-badge" alt="CC BY-NC-ND 4.0"/>
-</p>
-
-<br/>
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-007AFF?style=for-the-badge)](https://woqhrl9494-cell.github.io/corridor-mapper/)
+![Vanilla JS](https://img.shields.io/badge/Vanilla%20JavaScript-34C759?style=for-the-badge)
+![License](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-8E8E93?style=for-the-badge)
 
 ![EchoMap Demo](assets/demo.gif)
 
-<br/>
-
 </div>
 
----
+## Live simulator
 
-## What is this?
+Open [woqhrl9494-cell.github.io/corridor-mapper](https://woqhrl9494-cell.github.io/corridor-mapper/), then press **Start simulation** or **Step x1**.
 
-Radars can't see through walls — but their reflections can.
+The page runs two estimators from the same noisy bistatic measurements:
 
-**EchoMap** simulates how bistatic radar nodes on moving vehicles reconstruct invisible corridor walls with no line-of-sight. Each vehicle pair acts as transmitter and receiver. When a pulse reflects off a surface, the set of all points consistent with that travel time traces a *bistatic ellipse* — an ellipsoid in 3D, an ellipse in 2D.
+| Method | State update | Wall extraction |
+|---|---|---|
+| **Grid Direct** | Raster Gaussian accumulation | Grid ridge/outer-peak extraction |
+| **Revised local modes** | Bounded per-cell anisotropic modes | Analytic `E/C/R/D` gates, evidence dominance, one-cell normal NMS |
 
-Where many ellipses intersect, there's likely a wall.
+The simulator provides Corridor and Torus environments. **Reset preserves the current seed and environment parameters** so baseline/proposed comparisons are reproducible. Change a slider explicitly to select another environment.
 
-EchoMap runs **two wall-estimation algorithms in parallel** and lets you compare them live:
+## Revised estimator
 
-| Method | Idea |
-|--------|------|
-| **Grid Direct** | Accumulate ellipse density on a spatial grid; extract walls by ridge/NMS detection |
-| **GM Paper** | Fit anisotropic 2D Gaussians to ellipse arc samples; fuse them online into a Gaussian Mixture; extract walls via Hessian ridge scoring |
+The default estimator receives transmitter/receiver position, position covariance, noisy bistatic range, and range standard deviation. Exact simulator reflection points and ground-truth wall geometry are not estimator inputs.
 
-**Open it. Press Start. Watch both methods converge.**
+### Online update
 
----
+1. Sample each bistatic ellipse at approximately equal arc-length spacing.
+2. Propagate pose/range uncertainty into an anisotropic Gaussian kernel.
+3. Assign kernels to local modes using axial-normal alignment and Bhattacharyya distance.
+4. Maintain sufficient statistics `(W,H,s,Q,O,lastSupportedSnapshot)`.
+5. Count persistence once per distinct snapshot and cap each spatial cell at `K_mode` modes.
 
-## 🚀 Try it now
+The persistent state is bounded by `O(B K_mode)`, where `B` is the number of occupied state cells.
 
-**→ [woqhrl9494-cell.github.io/corridor-mapper](https://woqhrl9494-cell.github.io/corridor-mapper/)**
+### Analytic ridge extraction
 
-No installation. No dependencies. One HTML file. Works in any modern browser.
+Compatible neighboring modes define a continuous Gaussian field. Its gradient and Hessian are evaluated analytically. For field density `g`, dominant axial normal `n`, normal variance `sigma_perp^2`, and normal curvature magnitude `A`, the extractor uses:
 
----
-
-## How it works
-
-```
-Moving vehicle pairs emit radar pulses
-         ↓
-Each reflected pulse → bistatic ellipse (path-length locus)
-         ↓
-Arc-length-equalized sampling → anisotropic 2D Gaussian components
-         ↓
-Online Gaussian Mixture fusion (frequency-normalized, locally-first)
-         ↓
-Hessian ridge scoring: S_T = −n̂_T^T ∇²g̃ n̂_T   (peak at wall center)
-         ↓
-Temporal EMA + integer-step NMS → single-cell-thin wall estimate
+```text
+E = 2*pi*sqrt(det(P))*g
+C = (lambda_1(M)-lambda_2(M))/(lambda_1(M)+lambda_2(M)+eps)
+R = sigma_perp^2*A/(g+eps)
+D = sigma_perp*abs(n^T grad(g))/(g+eps)
 ```
 
-The **Grid Direct** method runs the same ellipse accumulation but rasterises directly to a density grid, then applies threshold/ridge/NMS extraction. Both methods are evaluated against ground-truth wall geometry every 3 steps.
+A candidate must satisfy the `E`, `C`, `R`, `D`, and negative-normal-curvature gates.
 
----
+### Evidence dominance and causal warm-up
+
+A weak isolated Gaussian is a trivial ridge at its own mean. These self-ridges are rejected with:
+
+```text
+E_ref = Q_0.99({E(x) > 0})
+T_E   = max(tau_E, alpha(t)*E_ref)
+```
+
+`alpha(t)` is 0.60 through snapshot 60, increases linearly, and reaches 0.70 at snapshot 120. This fixed schedule uses only the current snapshot index. It does not use ground truth, metric values, coverage, or future observations.
+
+### One-cell normal NMS
+
+The analytic stationarity gate admits a finite band around a ridge. A normal-direction non-maximum suppression step compares each candidate with its two normal neighbors and retains the candidate with:
+
+1. larger `E`;
+2. smaller `D`;
+3. lower deterministic raster index as the final tie-break.
+
+The regression fixture reduces a two-cell band from 274 to 137 cells and reduces maximum per-column thickness from two cells to one.
 
 ## Five-panel layout
 
-| Panel | Label | What it shows |
-|-------|-------|--------------|
-| **A** | Map | Vehicle positions, bistatic ellipses, GT walls (black), Grid Direct estimate (blue), GM Paper estimate (teal) |
-| **B** | Grid Direct — Density | Raw ellipse accumulation heatmap |
-| **C** | GM Paper — Density | Gaussian Mixture density field evaluated on the grid |
-| **D** | Grid Direct — Wall | Extracted wall mask (blue cells) with GT overlay |
-| **E** | GM Paper — Wall | Hessian-ridge wall mask (teal cells) with GT overlay |
+| Panel | View |
+|---|---|
+| **A** | GT walls, vehicles, measurements, and both wall estimates |
+| **B** | Grid Direct density |
+| **C** | Revised Evidence `E` |
+| **D** | Grid Direct wall mask |
+| **E** | Revised thin gated ridge |
 
-Live **Precision / Recall / F1** scores are displayed for both methods simultaneously.
+Canvas backing-store size follows device pixel ratio while all overlays use logical CSS coordinates. This prevents the wall/graph displacement previously observed between Retina and external displays.
 
----
+## Evaluation metrics
 
-## ✨ Features
+Metrics are updated every three simulation steps.
 
-- **Dual-method real-time comparison** — Grid Direct and GM Paper run in parallel every step
-- **Paper-faithful GM algorithm** — arc-length equalization, χ̄ sensitivity weighting, γ anisotropy factor, structure tensor M_T, Hessian ridge A_T
-- **Hessian ridge wall scoring** — peaks exactly at the density ridge center; eliminates the double-line artifact that gradient-based scoring produces
-- **Integer-step NMS** — suppresses non-maximal Hessian values along the wall-normal direction without bilinear interpolation artifacts
-- **Robust p99 threshold** — EMA of per-step 99th-percentile score; immune to single-spike instability
-- **Dual scenarios** — straight *Corridor* and closed *Torus* environments
-- **Randomized reset** — each Reset draws new seed, roughness, curvature, and gap for instant environment variety
-- **Live evaluation** — Precision, Recall, F1, MCD, wall-cell count; updated every 3 steps
-- **Zero dependencies** — pure HTML5 + Canvas API
+- Ground-truth walls are sampled uniformly by arc length at 0.2 m spacing.
+- Simulator reflection hits mark the observed GT subset within a 1.0 m radius.
+- Boundary tolerance is 0.4 m.
+- Precision compares every prediction with the full GT wall.
+- Recall measures coverage of the observed GT subset.
+- Boundary F1 is the primary score.
+- CA-MSD and CA-HD95 are coverage-aware directed-distance combinations. They are not labeled standard ASSD/HD95 because the two directions use different GT support.
+- The UI displays observed GT coverage to expose partial-map conditions.
 
----
+Exact reflection hits are evaluator-only oracle data. They never enter Grid Direct or Revised estimation.
 
-## 🎮 Parameters
+## Data-leakage controls
 
-### Environment
+- `sanitizeEstimatorMeasurements` whitelists only `tx`, `rx`, noisy `r`, and pair/sample indices.
+- Grid Direct and Revised consume the same sanitized current-snapshot measurements.
+- Evaluator observation state is updated only after both estimators finish.
+- Evidence thresholds use current estimator state and snapshot index only.
+- Unknown fields such as `hit`, GT labels, or future fields do not change mode/evidence/ridge output in the regression test.
+- Seeds 42/7 were used during tuning. Parameters were frozen before testing seeds 31/87.
 
-| Parameter | Description |
-|-----------|-------------|
-| `Seed` | Corridor geometry seed (randomized on Reset) |
-| `Gap height` | Corridor width in metres |
-| `Roughness` | Wall surface irregularity amplitude |
-| `Curvature` | Wall curvature (0 = straight, 0.5 = max) |
-| `Vehicle Count` | Number of moving radar nodes |
-| `Speed` | Vehicle speed (m / step) |
-| `Spread` | Cross-corridor spread of vehicle formation |
-| `σ_noise` | Measurement range noise std-dev (m) |
-| `σ_p (position)` | Vehicle position noise std-dev (m) |
+## Fixed-condition test snapshot
 
-### GM Algorithm
+Configuration: `G=150`, 120 steps, gap 10 m, roughness 0.4, curvature 0.25, visibility OFF. Values below are from the four independent Corridor/Torus runs using test seeds 31/87.
 
-| Parameter | Description |
-|-----------|-------------|
-| `η (forgetting)` | Component weight decay per step |
-| `τ_p (prune)` | Minimum weight to keep a component |
-| `τ_m (merge B.)` | Bhattacharyya distance threshold for merging |
-| `σ_⊥ (normal)` | Initial covariance perpendicular to ellipse |
-| `σ_t (tangent)` | Initial covariance along ellipse tangent |
-| `Δs (arc spacing)` | Arc-length step between ellipse samples (m) |
+| Metric | Grid Direct mean | Revised mean |
+|---|---:|---:|
+| Boundary F1 @ 0.4 m | 0.782 | 0.892 |
+| Precision @ 0.4 m | 0.945 | 0.951 |
+| Observed recall | 0.670 | 0.841 |
+| CA-MSD | 0.640 m | 0.321 m |
+| CA-HD95 | 5.219 m | 2.031 m |
 
-### Wall Extraction
+This is a four-run test, not evidence of universal superiority. A paper-level result still requires a preregistered larger seed set, paired confidence intervals, and hardware-independent operation profiling.
 
-| Parameter | Description |
-|-----------|-------------|
-| `Threshold / Hessian Ridge / Outer Peak` | Grid Direct extraction mode |
-| `τ_w (threshold)` | Density threshold for *Threshold* mode |
-| `τ_r (ridge/NMS min)` | Ridge height minimum for *Hessian Ridge* and *Outer Peak* modes |
-| `ε_g (grad bound)` | Gradient lower-bound for *Outer Peak* mode |
+## Runtime limitation
 
-### Display
+The Revised non-extraction update p50 is lower than Grid Direct in the tested browser runs, but analytic extraction dominates its tail latency:
 
-| Parameter | Description |
-|-----------|-------------|
-| `Grid G` | Spatial resolution of both density grids |
-| `Panel FPS` | Rendering rate cap |
-
----
-
-## 📐 Scenarios
-
-### Corridor
-A randomly generated open-ended corridor. Wall roughness and curvature are independently controllable. Vehicles traverse back and forth; every opposite pair generates ellipses.
-
-### Torus
-A closed ring corridor. Tests algorithm robustness under highly curved, fully-wraparound geometry.
-
----
-
-## 📊 Evaluation Metrics
-
-Computed every 3 simulation steps against sampled ground-truth wall points (300 pts / wall, τ = 0.9 m matching radius):
-
-| Metric | Description |
-|--------|-------------|
-| **Precision** | Fraction of estimated wall cells within 0.9 m of GT |
-| **Recall** | Fraction of GT points covered within 0.9 m |
-| **F1 Score** | Harmonic mean of P and R |
-| **MCD** | Mean Chamfer Distance (bidirectional) |
-| **Wall cells** | Number of grid cells classified as wall |
-
----
-
-## 🛠 Tech stack
-
-| Layer | Technology |
-|-------|-----------|
-| Rendering | HTML5 Canvas 2D API |
-| Logic | Vanilla JavaScript (ES6+) |
-| Styling | CSS3 custom properties |
-| Fonts | DM Sans + DM Mono (Google Fonts) |
-| Dependencies | **None** |
-| Build step | **None** |
-
----
-
-## 📂 Structure
-
+```text
+Grid Direct pipeline p95: approximately 8–10 ms
+Revised pipeline p95:     approximately 200–273 ms
 ```
+
+The current implementation therefore demonstrates better tested wall-detection accuracy, not lower total computation or real-time extraction superiority. The main bottlenecks are repeated mode-neighborhood analytic raster evaluation and sorting the positive Evidence field for the 0.99 quantile.
+
+## Repository structure
+
+```text
 corridor-mapper/
-├── index.html      ← The entire simulator (HTML + CSS + JS, ~3300 lines)
-├── assets/
-│   ├── demo.gif   ← Animated demo
-│   └── demo.png   ← Screenshot for README
-└── README.md
+├── index.html
+├── revised_wall_estimator.js
+├── wall_metrics.js
+├── revised_wall_estimator.test.js
+├── wall_metrics.test.js
+├── data_leakage_audit.test.js
+├── REVISED_ESTIMATOR_MIGRATION.md
+├── ALGORITHM_UPDATE_PROMPT.md
+└── assets/
 ```
 
----
+`ALGORITHM_UPDATE_PROMPT.md` is a self-contained prompt for explaining the revised algorithm to another AI model without omitting causality, metric definitions, or runtime limitations.
 
-## 👤 Author
+## Validation
 
-**Jaebok Lee**
-Hanyang University
-📧 [ok7393@hanyang.ac.kr](mailto:ok7393@hanyang.ac.kr)
+With Node.js installed:
 
----
+```bash
+node revised_wall_estimator.test.js
+node wall_metrics.test.js
+node data_leakage_audit.test.js
+```
 
-## 📄 License
+Current local results:
 
-© 2026 Jaebok Lee, Hanyang University
+```text
+Estimator regression: 18/18 passed
+Metric regression:      5/5 passed
+Data-leakage audit:     passed
+```
 
-This project is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+## Author
 
-- ✅ Share with attribution
-- ❌ No commercial use
-- ❌ No modifications or derivatives
+Jaebok Lee, Hanyang University
+[ok7393@hanyang.ac.kr](mailto:ok7393@hanyang.ac.kr)
 
-For commercial or derivative licensing: [ok7393@hanyang.ac.kr](mailto:ok7393@hanyang.ac.kr)
+## License
+
+© 2026 Jaebok Lee, Hanyang University. Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).

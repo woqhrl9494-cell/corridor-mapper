@@ -40,7 +40,11 @@
     tauR: 0.10,
     tauD: 0.35,
     evidenceQuantile: 0.99,
-    tauEDominance: 0.60,
+    tauEDominance: 0.70,
+    tauEDominanceStart: 0.60,
+    dominanceRampStart: 60,
+    dominanceRampEnd: 120,
+    useNormalNms: true,
     useVisibility: false,
     visibilityAlpha: 1.0,
     visibilityMin: 0.05,
@@ -133,7 +137,13 @@
 
   class RevisedEstimator {
     constructor(config) {
-      this.config = this._validateConfig({ ...DEFAULT_CONFIG, ...(config || {}) });
+      const supplied = config || {};
+      const merged = { ...DEFAULT_CONFIG, ...supplied };
+      if (Object.prototype.hasOwnProperty.call(supplied, 'tauEDominance') &&
+          !Object.prototype.hasOwnProperty.call(supplied, 'tauEDominanceStart')) {
+        merged.tauEDominanceStart = supplied.tauEDominance;
+      }
+      this.config = this._validateConfig(merged);
       this.reset();
     }
 
@@ -160,16 +170,27 @@
       out.tauD = Math.max(0, finiteOr(out.tauD, DEFAULT_CONFIG.tauD));
       out.evidenceQuantile = clamp(finiteOr(out.evidenceQuantile, DEFAULT_CONFIG.evidenceQuantile), 0, 1);
       out.tauEDominance = Math.max(0, finiteOr(out.tauEDominance, DEFAULT_CONFIG.tauEDominance));
+      out.tauEDominanceStart = Math.max(0, finiteOr(out.tauEDominanceStart, DEFAULT_CONFIG.tauEDominanceStart));
+      out.dominanceRampStart = Math.max(0, Math.floor(finiteOr(out.dominanceRampStart, DEFAULT_CONFIG.dominanceRampStart)));
+      out.dominanceRampEnd = Math.max(out.dominanceRampStart + 1,
+        Math.floor(finiteOr(out.dominanceRampEnd, DEFAULT_CONFIG.dominanceRampEnd)));
       out.visibilityAlpha = Math.max(0, finiteOr(out.visibilityAlpha, DEFAULT_CONFIG.visibilityAlpha));
       out.visibilityMin = clamp(finiteOr(out.visibilityMin, DEFAULT_CONFIG.visibilityMin), 0, 1);
       out.visibilityCoherence = clamp(finiteOr(out.visibilityCoherence, DEFAULT_CONFIG.visibilityCoherence), 0, 1);
       out.outputDedupTolerance = Math.max(0, finiteOr(out.outputDedupTolerance, DEFAULT_CONFIG.outputDedupTolerance));
       out.useVisibility = !!out.useVisibility;
+      out.useNormalNms = out.useNormalNms !== false;
       return out;
     }
 
     configure(partial) {
-      this.config = this._validateConfig({ ...this.config, ...(partial || {}) });
+      const supplied = partial || {};
+      const merged = { ...this.config, ...supplied };
+      if (Object.prototype.hasOwnProperty.call(supplied, 'tauEDominance') &&
+          !Object.prototype.hasOwnProperty.call(supplied, 'tauEDominanceStart')) {
+        merged.tauEDominanceStart = supplied.tauEDominance;
+      }
+      this.config = this._validateConfig(merged);
     }
 
     reset() {
@@ -199,9 +220,12 @@
         stateBytesApprox: 0,
         supportPoints: 0,
         rawRidgePoints: 0,
+        dominanceRidgePoints: 0,
         ridgePoints: 0,
+        normalNmsRemoved: 0,
         evidenceReference: 0,
         evidenceDominanceThreshold: 0,
+        evidenceDominanceFactor: 0,
       };
     }
 
@@ -651,6 +675,8 @@
       ridgeOwner.fill(0x7fffffff);
       const ridgeScore = new Float32Array(size);
       ridgeScore.fill(-Infinity);
+      const ridgeD = new Float32Array(size);
+      ridgeD.fill(Infinity);
       const ridgeX = new Float32Array(size);
       const ridgeY = new Float32Array(size);
       const ridgeNX = new Float32Array(size);
@@ -693,6 +719,7 @@
               ridge[index] = 1;
               ridgeOwner[index] = seed.id;
               ridgeScore[index] = value.E;
+              ridgeD[index] = value.D;
               ridgeX[index] = x;
               ridgeY[index] = y;
               ridgeNX[index] = value.normalX;
@@ -715,6 +742,7 @@
             ridge[index] = 1;
             ridgeOwner[index] = seed.id;
             ridgeScore[index] = seedValue.E;
+            ridgeD[index] = seedValue.D;
             ridgeX[index] = seedStats.mx;
             ridgeY[index] = seedStats.my;
             ridgeNX[index] = seedValue.normalX;
@@ -739,13 +767,72 @@
         ? Math.min(positiveEvidence.length - 1, Math.floor(this.config.evidenceQuantile * (positiveEvidence.length - 1)))
         : 0;
       const evidenceReference = positiveEvidence.length ? positiveEvidence[quantileIndex] : 0;
-      const evidenceDominanceThreshold = Math.max(this.config.tauE, this.config.tauEDominance * evidenceReference);
+      // The high steady-state relative threshold is too aggressive before the
+      // evidence distribution has accumulated. Use a fixed causal schedule;
+      // snapshot count is estimator state, not GT or a future observation.
+      const rampProgress = clamp(
+        ((this.lastSnapshot + 1) - this.config.dominanceRampStart) /
+          (this.config.dominanceRampEnd - this.config.dominanceRampStart),
+        0,
+        1
+      );
+      const evidenceDominanceFactor = this.config.tauEDominanceStart +
+        rampProgress * (this.config.tauEDominance - this.config.tauEDominanceStart);
+      const evidenceDominanceThreshold = Math.max(this.config.tauE, evidenceDominanceFactor * evidenceReference);
       let rawRidgePoints = 0;
+      let dominanceRidgePoints = 0;
       for (let index = 0; index < size; index++) {
         if (!ridge[index]) continue;
         rawRidgePoints++;
         const candidateEvidence = Math.max(evidence[index], ridgeScore[index]);
         if (candidateEvidence + EPS < evidenceDominanceThreshold) ridge[index] = 0;
+        else dominanceRidgePoints++;
+      }
+
+      // One-cell normal-direction non-maximum suppression. The analytic D gate
+      // identifies a finite band around a stationary ridge; it does not force a
+      // unique raster cell. Compare only candidates on the same estimated
+      // normal line and retain the strongest E, then the smallest D, then the
+      // lowest deterministic cell index. This thins the display/output without
+      // using ground truth or changing the continuous estimator state.
+      let normalNmsRemoved = 0;
+      if (this.config.useNormalNms) {
+        const beforeNms = ridge.slice();
+        const betterCandidate = (candidateIndex, centerIndex) => {
+          if (candidateIndex < 0 || candidateIndex >= size || !beforeNms[candidateIndex]) return false;
+          const candidateScore = ridgeScore[candidateIndex];
+          const centerScore = ridgeScore[centerIndex];
+          const scoreTolerance = 1e-6 * Math.max(1, Math.abs(candidateScore), Math.abs(centerScore));
+          if (candidateScore > centerScore + scoreTolerance) return true;
+          if (Math.abs(candidateScore - centerScore) > scoreTolerance) return false;
+          const dTolerance = 1e-6 * Math.max(1, Math.abs(ridgeD[candidateIndex]), Math.abs(ridgeD[centerIndex]));
+          if (ridgeD[candidateIndex] < ridgeD[centerIndex] - dTolerance) return true;
+          if (Math.abs(ridgeD[candidateIndex] - ridgeD[centerIndex]) > dTolerance) return false;
+          return candidateIndex < centerIndex;
+        };
+
+        for (let gy = 0; gy < G; gy++) {
+          for (let gx = 0; gx < G; gx++) {
+            const index = gy * G + gx;
+            if (!beforeNms[index]) continue;
+            const scaledX = ridgeNX[index] / cellWidth;
+            const scaledY = -ridgeNY[index] / cellHeight;
+            const scale = Math.max(Math.abs(scaledX), Math.abs(scaledY));
+            if (!(scale > EPS)) continue;
+            const ox = Math.round(scaledX / scale);
+            const oy = Math.round(scaledY / scale);
+            const gxMinus = gx - ox;
+            const gyMinus = gy - oy;
+            const gxPlus = gx + ox;
+            const gyPlus = gy + oy;
+            const minusIndex = gxMinus >= 0 && gxMinus < G && gyMinus >= 0 && gyMinus < G ? gyMinus * G + gxMinus : -1;
+            const plusIndex = gxPlus >= 0 && gxPlus < G && gyPlus >= 0 && gyPlus < G ? gyPlus * G + gxPlus : -1;
+            if (betterCandidate(minusIndex, index) || betterCandidate(plusIndex, index)) {
+              ridge[index] = 0;
+              normalNmsRemoved++;
+            }
+          }
+        }
       }
 
       const ridgePoints = [];
@@ -768,9 +855,12 @@
 
       this.lastDiagnostics.supportPoints = supportPoints;
       this.lastDiagnostics.rawRidgePoints = rawRidgePoints;
+      this.lastDiagnostics.dominanceRidgePoints = dominanceRidgePoints;
       this.lastDiagnostics.ridgePoints = ridgePoints.length;
+      this.lastDiagnostics.normalNmsRemoved = normalNmsRemoved;
       this.lastDiagnostics.evidenceReference = evidenceReference;
       this.lastDiagnostics.evidenceDominanceThreshold = evidenceDominanceThreshold;
+      this.lastDiagnostics.evidenceDominanceFactor = evidenceDominanceFactor;
       return { G, cellWidth, cellHeight, evidence, coherence, concentration, stationarity, support, ridge, ridgePoints };
     }
 
