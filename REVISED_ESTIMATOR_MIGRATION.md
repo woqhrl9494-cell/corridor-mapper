@@ -81,7 +81,7 @@ Browser integration:
 
 ## F. 남은 제한
 
-- 공개 저장소 `woqhrl9494-cell/corridor-mapper`의 `main` commit `59f7226`을 읽기 전용 clone하여 기존 배포 `index.html`을 기준으로 수정했다. 현재 작업 폴더 자체에는 Git remote/commit history가 없어 GitHub Pages push는 수행하지 않았다.
+- 공개 저장소 `woqhrl9494-cell/corridor-mapper`의 기존 `main` commit `59f7226`을 기준으로 수정하고 commit `4e00707`로 push했다. GitHub Pages build 성공과 live/local `index.html`, `revised_wall_estimator.js` SHA-256 일치를 확인했다.
 - 실제 browser run의 DPR은 1이었다. DPR 2에서 문제가 생기는 코드 경로는 physical backing-store와 logical overlay transform을 통일해 제거했지만, 실제 MacBook Retina 화면에서의 최종 육안 검증은 수행하지 못했다.
 - 현재 web simulator는 corridor/torus만 UI로 노출한다. single wall/corner/branch/double-bounce는 deterministic test fixture에 구현되어 있으며 UI scenario로 추가하지 않았다.
 - visibility ray integral은 cellSize/2 이하 midpoint quadrature이다. exact DDA 경계 교차식은 아니지만 실제 segment length를 적분하며 endpoint cell을 제외한다.
