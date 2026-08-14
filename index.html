@@ -13,7 +13,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EchoMap — Ellipsoidal GM (Paper)</title>
+<title>EchoMap — Revised Local Surface Modes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -370,6 +370,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
 .callout-value.mval-warn { color: var(--amber); }
 .callout-value.mval-bad  { color: var(--red); }
 .callout-value.mval-na   { color: var(--text3); font-size: 12px; }
+.param-select { width:100%; height:25px; border:1px solid var(--border2); border-radius:6px; background:var(--surface2); color:var(--text); font:500 10px 'DM Sans',sans-serif; padding:0 7px; }
 </style>
 </head>
 <body>
@@ -383,7 +384,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
   <div class="header-divider"></div>
   <div class="logo-dot"></div>
   <span class="logo-text">EchoMap</span>
-  <span class="logo-sub">/ Ellipsoidal GM</span>
+  <span class="logo-sub">/ Revised Surface Mapper</span>
   <div class="header-sep"></div>
   <span class="header-badge">BISTATIC · RADAR · MAPPING</span>
   <div class="header-author">
@@ -501,7 +502,27 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
 
   <!-- GM PARAMETERS -->
   <div class="sec">
-    <div class="sec-title">GM Parameters</div>
+    <div class="sec-title">Estimator</div>
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label"><span class="param-name">Algorithm</span></div>
+        <select id="estimatorMode" class="param-select" aria-label="Estimator algorithm">
+          <option value="revised" selected>Revised modes</option>
+          <option value="legacy">Legacy GM</option>
+        </select>
+      </div>
+      <div class="param-row">
+        <div class="param-label"><span class="param-name">K_mode</span></div>
+        <select id="kMode" class="param-select" aria-label="Maximum local modes per cell">
+          <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option>
+        </select>
+      </div>
+      <div class="param-row">
+        <div class="param-label"><span class="param-name">Visibility</span></div>
+        <label class="toggle-chip" id="chipVisibility"><input type="checkbox" id="useVisibility"> Experimental, OFF</label>
+      </div>
+    </div>
+    <div class="sec-title" style="margin-top:7px;">Legacy GM Parameters</div>
     <div class="param-grid2">
       <div class="param-row">
         <div class="param-label">
@@ -617,7 +638,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     </div>
     <div class="compare-hdr">
       <div class="compare-hdr-cell chdr-direct">Grid Direct</div>
-      <div class="compare-hdr-cell chdr-gm">GM Paper</div>
+      <div class="compare-hdr-cell chdr-gm">Revised</div>
     </div>
     <div class="cinfo-row">
       <div class="cinfo-cell">Wall: <b id="sWall">—</b></div>
@@ -631,6 +652,10 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
       <div class="cinfo-cell">⏱ <b id="sTimeGrid">—</b></div>
       <div class="cinfo-cell">⏱ <b id="sTimeGM">—</b></div>
     </div>
+    <div class="cinfo-row">
+      <div class="cinfo-cell">Paths: <b id="sAdmission">—</b></div>
+      <div class="cinfo-cell">Confirmed: <b id="sConfirmed">—</b></div>
+    </div>
   </div>
 
   <!-- WALL METRICS -->
@@ -638,7 +663,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="sec-title">Wall Estimation Metrics</div>
     <div class="compare-hdr">
       <div class="compare-hdr-cell chdr-direct">Grid Direct</div>
-      <div class="compare-hdr-cell chdr-gm">GM Paper</div>
+      <div class="compare-hdr-cell chdr-gm">Revised</div>
     </div>
     <!-- F1 callout row -->
     <div class="callout-row" style="margin-bottom:5px;">
@@ -735,7 +760,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="view" id="viewGMDens">
       <div class="vlabel">
         <span class="vlabel-badge vlabel-badge-c">C</span>
-        <span class="vlabel-text">GM Paper — Density</span>
+        <span class="vlabel-text">Revised — Evidence E</span>
       </div>
       <canvas id="cvsGMDens"></canvas>
     </div>
@@ -749,7 +774,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
     <div class="view" id="viewGMWall">
       <div class="vlabel">
         <span class="vlabel-badge vlabel-badge-e">E</span>
-        <span class="vlabel-text">GM Paper — Wall Mask</span>
+        <span class="vlabel-text">Revised — Analytic Ridge</span>
       </div>
       <canvas id="cvsGMWall"></canvas>
     </div>
@@ -757,6 +782,7 @@ canvas { display: block; width: 100% !important; height: 100% !important; }
 </div>
 
 </div><!-- /main -->
+<script src="./revised_wall_estimator.js"></script>
 <script>
 'use strict';
 
@@ -855,20 +881,54 @@ const ctxGMWall = cvsGMWall.getContext('2d');
 let densGridGM   = null;
 let wallMaskGM   = null;
 let stepTimeGrid = 0, stepTimeGM = 0;
+let revisedGrid  = null;
+
+if(!window.RevisedWallEstimator?.RevisedEstimator) throw new Error('revised_wall_estimator.js failed to load');
+
+function isRevisedMode(){ return document.getElementById('estimatorMode')?.value !== 'legacy'; }
+function revisedConfig(){
+  return {
+    worldWidth:WW,
+    worldHeight:WH,
+    deltaS:GM_DS,
+    cS:0.5,
+    sigmaModel:Math.max(0.06,GM_SIGMA_PERP0),
+    KMode:Math.max(1,+(document.getElementById('kMode')?.value||3)),
+    useVisibility:!!document.getElementById('useVisibility')?.checked,
+    HConf:3,
+    TStale:12,
+    cellSize:1.0,
+    tauE:0.015,
+    tauC:0.45,
+    tauR:0.10,
+    tauD:0.35,
+  };
+}
+let revisedEstimator = new window.RevisedWallEstimator.RevisedEstimator(revisedConfig());
 
 function setupCanvas(canvas) {
-  const dpr  = window.devicePixelRatio || 1;
+  const dpr  = Math.max(1,window.devicePixelRatio || 1);
   const view = canvas.parentElement;
   const W    = view.clientWidth  || 200;
   const H    = view.clientHeight || 100;
-  canvas.width  = W * dpr; canvas.height = H * dpr;
+  const backingW=Math.max(1,Math.round(W*dpr));
+  const backingH=Math.max(1,Math.round(H*dpr));
+  if(canvas.width!==backingW||canvas.height!==backingH){canvas.width=backingW;canvas.height=backingH;}
   canvas.style.width  = W + 'px'; canvas.style.height = H + 'px';
   canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+  canvas.dataset.logicalWidth=String(W);
+  canvas.dataset.logicalHeight=String(H);
+  canvas.dataset.dpr=String(dpr);
+  return {W,H,dpr,backingW,backingH};
 }
 function resize() {
   [cvsMain, cvsDens, cvsWall, cvsGMDens, cvsGMWall].forEach(setupCanvas);
 }
 window.addEventListener('resize', () => { resize(); renderAll(); });
+if(typeof ResizeObserver!=='undefined'){
+  const canvasResizeObserver=new ResizeObserver(()=>{resize();renderAll();});
+  [cvsMain,cvsDens,cvsWall,cvsGMDens,cvsGMWall].forEach(canvas=>canvasResizeObserver.observe(canvas.parentElement));
+}
 
 // World → screen for a canvas
 function w2sC(canvas, wx, wy) {
@@ -2243,10 +2303,13 @@ function extractWall() {
   const c1 = extractWallFrom(densGrid, wallMask, G, false);
   document.getElementById('sWall').textContent = c1;
 
-  // GM Paper: [NEW] gradient-magnitude × local-normal-coherence wall score
-  // Replaces old per-column NMS heuristic with algorithm-derived S_T(x) = A_T · Ψ_T
-  // sWallGM count is updated inside evaluateGMWallScore()
-  evaluateGMWallScore();
+  if(isRevisedMode()){
+    let count=0;
+    if(wallMaskGM) for(let i=0;i<wallMaskGM.length;i++) if(wallMaskGM[i]) count++;
+    document.getElementById('sWallGM').textContent=count;
+  }else{
+    evaluateGMWallScore();
+  }
 }
 
 // ═══════════════════════════════════════
@@ -2462,7 +2525,7 @@ function updateMetrics(){
   if(perfHistory.length >= PERF_LOG_MAX) perfHistory.shift();
   perfHistory.push({
     step: totalSteps,
-    compGM: gmComponents.length,
+    compGM: isRevisedMode()?revisedEstimator.getDiagnostics().localModes:gmComponents.length,
     wallPtsGM: wallPtsGM.length,
     wallGM: parseInt(document.getElementById('sWallGM').textContent, 10) || 0,
     p: mGM.precision,
@@ -2805,7 +2868,7 @@ function renderMain(){
 function renderDensity(){
   const canvas = cvsDens;
   const ctx    = ctxDens;
-  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const {W,H,dpr,backingW,backingH}=setupCanvas(canvas);
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle = '#f7f7f9';
   ctx.fillRect(0,0,W,H);
@@ -2817,21 +2880,22 @@ function renderDensity(){
   for(let i=0;i<G*G;i++) if(densGrid[i]>maxD) maxD=densGrid[i];
   if(maxD < EPS){ drawWorldGridLight(ctx,W,H); return; }
 
-  const imgData = ctx.createImageData(W, H);
+  const imgData = ctx.createImageData(backingW, backingH);
   const d = imgData.data;
-  for(let py = 0; py < H; py++){
-    const wy_world = WH * (1 - py/H);
+  for(let py = 0; py < backingH; py++){
+    const wy_world = WH * (1 - py/backingH);
     const gi = Math.min(G-1, Math.floor(wy_world / cellH));
-    for(let px = 0; px < W; px++){
-      const wx_world = WW * px / W;
+    for(let px = 0; px < backingW; px++){
+      const wx_world = WW * px / backingW;
       const gj = Math.min(G-1, Math.floor(wx_world / cellW));
       const val = densGrid[gi*G+gj] / maxD;
-      const idx = (py*W+px)*4;
+      const idx = (py*backingW+px)*4;
       if(val < 0.005){ d[idx]=247;d[idx+1]=247;d[idx+2]=249;d[idx+3]=255; }
       else { const [r,g,b]=turboColor(val); d[idx]=r;d[idx+1]=g;d[idx+2]=b;d[idx+3]=255; }
     }
   }
-  ctx.putImageData(imgData, 0, 0);
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.putImageData(imgData,0,0);ctx.restore();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 
   drawWorldGridLight(ctx, W, H);
 
@@ -2907,7 +2971,7 @@ function renderWall(){
 function renderGMDensity(){
   const canvas = cvsGMDens;
   const ctx    = ctxGMDens;
-  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const {W,H,dpr,backingW,backingH}=setupCanvas(canvas);
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle = '#f7f7f9';
   ctx.fillRect(0,0,W,H);
@@ -2919,21 +2983,22 @@ function renderGMDensity(){
   for(let i=0;i<G*G;i++) if(densGridGM[i]>maxD) maxD=densGridGM[i];
   if(maxD < EPS){ drawWorldGridLight(ctx,W,H); return; }
 
-  const imgData = ctx.createImageData(W, H);
+  const imgData = ctx.createImageData(backingW, backingH);
   const d = imgData.data;
-  for(let py=0; py<H; py++){
-    const wy_world = WH * (1 - py/H);
+  for(let py=0; py<backingH; py++){
+    const wy_world = WH * (1 - py/backingH);
     const gi = Math.min(G-1, Math.floor(wy_world/cellH));
-    for(let px=0; px<W; px++){
-      const wx_world = WW * px / W;
+    for(let px=0; px<backingW; px++){
+      const wx_world = WW * px / backingW;
       const gj = Math.min(G-1, Math.floor(wx_world/cellW));
       const val = densGridGM[gi*G+gj] / maxD;
-      const idx = (py*W+px)*4;
+      const idx = (py*backingW+px)*4;
       if(val < 0.005){ d[idx]=247;d[idx+1]=247;d[idx+2]=249;d[idx+3]=255; }
       else { const [r,g,b]=turboColor(val); d[idx]=r;d[idx+1]=g;d[idx+2]=b;d[idx+3]=255; }
     }
   }
-  ctx.putImageData(imgData, 0, 0);
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.putImageData(imgData,0,0);ctx.restore();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 
   drawWorldGridLight(ctx, W, H);
 
@@ -2950,7 +3015,7 @@ function renderGMDensity(){
 
   drawColorBar(ctx, W, H);
   drawLegendBox(ctx, W, H, [
-    {type:'grad', label:'Density'},
+    {type:'grad', label:isRevisedMode()?'Evidence E':'Density'},
     {type:'line', color:'rgba(0,0,0,0.40)', dash:true, label:'GT Wall'},
   ], 'bl');
 }
@@ -3011,6 +3076,44 @@ function renderAll(){
   renderGMWall();
 }
 
+function updateRevisedEstimator(allMeas){
+  revisedEstimator.configure(revisedConfig());
+  const poseVariance=GM_POS_STD*GM_POS_STD;
+  const onlineMeasurements=allMeas.map((meas,index)=>({
+    i:meas.i,
+    j:meas.j,
+    m:index,
+    pI:{x:meas.tx.x,y:meas.tx.y},
+    pJ:{x:meas.rx.x,y:meas.rx.y},
+    SigmaI:[poseVariance,0,poseVariance],
+    SigmaJ:[poseVariance,0,poseVariance],
+    d:meas.r,
+    sigmaD:GM_NOISE_STD,
+  }));
+  const diagnostics=revisedEstimator.updateSnapshot(totalSteps,onlineMeasurements);
+  revisedGrid=revisedEstimator.extractGrid(GRID_G);
+  densGridGM=new Float32Array(GRID_G*GRID_G);
+  wallMaskGM=new Uint8Array(GRID_G*GRID_G);
+  let ridgeCount=0;
+  // RevisedEstimator query arrays are screen-oriented (row 0 at world top),
+  // whereas the legacy simulator grids use row 0 at world bottom.
+  for(let gy=0;gy<GRID_G;gy++){
+    const gi=GRID_G-1-gy;
+    for(let gx=0;gx<GRID_G;gx++){
+      const src=gy*GRID_G+gx;
+      const dst=gi*GRID_G+gx;
+      densGridGM[dst]=revisedGrid.evidence[src];
+      wallMaskGM[dst]=revisedGrid.ridge[src];
+      if(wallMaskGM[dst]) ridgeCount++;
+    }
+  }
+  document.getElementById('sWallGM').textContent=ridgeCount;
+  document.getElementById('sCompGM').textContent=`${diagnostics.localModes}/${diagnostics.representedCells}`;
+  document.getElementById('sAdmission').textContent=`${diagnostics.admittedPaths}/${diagnostics.nominallyRejectedPaths}`;
+  document.getElementById('sConfirmed').textContent=diagnostics.confirmedModes;
+  return diagnostics;
+}
+
 // ═══════════════════════════════════════
 // SIM STEP — Paper Algorithm
 // ═══════════════════════════════════════
@@ -3029,7 +3132,10 @@ function simStep(){
     const noiseRng = simPairNoiseRng(pairBaseSeed, stepCount, pairCounter, bots[i].pos, bots[j].pos);
     const ms = simulatePair(bots[i].pos, bots[j].pos, noiseRng);
     pairCounter++;
-    for(const m of ms){ allMeas.push(m); recentMeas.push(m); ellipseCount++; }
+    for(let mIndex=0;mIndex<ms.length;mIndex++){
+      const stamped={...ms[mIndex],i,j,m:mIndex};
+      allMeas.push(stamped); recentMeas.push(stamped); ellipseCount++;
+    }
   }
   if(recentMeas.length > MAX_RECENT_MEAS * 3) recentMeas.splice(0, recentMeas.length - MAX_RECENT_MEAS);
 
@@ -3077,13 +3183,11 @@ function simStep(){
     }
     stepTimeGrid = performance.now() - _t1;
 
-    // ── METHOD 2: GM Paper ──────────────────────────────────────
-    // Paper-core GM maintenance:
-    //   1) build all new measurements at time t
-    //   2) normalize by ζ_{t-1}, 3) local-first incrementally fuse
-    //   3) periodic regional consolidation every L_c steps
+    // ── METHOD 2: Revised estimator (default) / legacy GM ───────
     const _t2 = performance.now();
-    {
+    if(isRevisedMode()){
+      updateRevisedEstimator(allMeas);
+    }else{
       const allNewComps = [];
       for(const m of allMeas){
         for(const nc of makeEllipseComponents(m, N_feas)){
@@ -3094,6 +3198,10 @@ function simStep(){
       evaluateDensityGrid();
     }
     stepTimeGM = performance.now() - _t2;
+  }else if(isRevisedMode()){
+    const _t2=performance.now();
+    updateRevisedEstimator([]);
+    stepTimeGM=performance.now()-_t2;
   }
 
   totalSteps++;
@@ -3111,7 +3219,7 @@ function simStep(){
   document.getElementById('sEll').textContent      = ellipseCount;
   document.getElementById('sStep').textContent     = totalSteps;
   document.getElementById('sComp').textContent     = nzGrid;
-  document.getElementById('sCompGM').textContent   = gmComponents.length;
+  if(!isRevisedMode()) document.getElementById('sCompGM').textContent = gmComponents.length;
   document.getElementById('sTimeGrid').textContent = stepTimeGrid.toFixed(1) + 'ms';
   document.getElementById('sTimeGM').textContent   = stepTimeGM.toFixed(1) + 'ms';
 
@@ -3152,6 +3260,8 @@ function init(){
   computeSpineArc();
 
   gmComponents = [];
+  revisedEstimator = new window.RevisedWallEstimator.RevisedEstimator(revisedConfig());
+  revisedGrid = null;
   zetaMap = new Map();          // [NEW] reset frequency accumulator
   consolidationCounter = 0;    // reset compatibility counter
   densGrid = null;
@@ -3178,6 +3288,8 @@ function init(){
   document.getElementById('sWallGM').textContent    = '—';
   document.getElementById('sTimeGrid').textContent  = '—';
   document.getElementById('sTimeGM').textContent    = '—';
+  document.getElementById('sAdmission').textContent = '—';
+  document.getElementById('sConfirmed').textContent = '—';
   for(const sfx of ['', 'GM']){
     ['mValP','mValR','mValMCD','mScore'].forEach(id => {
       const el = document.getElementById(id+sfx);
@@ -3263,6 +3375,29 @@ document.getElementById('panelFps').addEventListener('input', function(){
   PANEL_FPS = Math.max(1, parseInt(this.value, 10) || 20);
   document.getElementById('vPanelFps').textContent = PANEL_FPS;
   _simDelayMs = Math.max(1, Math.floor(1000 / Math.max(1, PANEL_FPS)));
+});
+
+function resetForEstimatorChange(){
+  if(running){
+    running=false;
+    clearTimeout(animId);
+    const btn=document.getElementById('btnRun');
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg> Start simulation';
+    btn.className='btn btn-primary';
+  }
+  const revised=isRevisedMode();
+  const densLabel=document.querySelector('#viewGMDens .vlabel-text');
+  const wallLabel=document.querySelector('#viewGMWall .vlabel-text');
+  if(densLabel) densLabel.textContent=revised?'Revised — Evidence E':'Legacy GM — Density';
+  if(wallLabel) wallLabel.textContent=revised?'Revised — Analytic Ridge':'Legacy GM — Wall Mask';
+  document.querySelectorAll('.chdr-gm').forEach(el=>el.textContent=revised?'Revised':'Legacy GM');
+  init();
+}
+document.getElementById('estimatorMode').addEventListener('change',resetForEstimatorChange);
+document.getElementById('kMode').addEventListener('change',resetForEstimatorChange);
+document.getElementById('useVisibility').addEventListener('change',function(){
+  document.getElementById('chipVisibility').classList.toggle('checked',this.checked);
+  resetForEstimatorChange();
 });
 
 // Wall mode pills
