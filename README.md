@@ -1,3 +1,24 @@
+# EchoMap — TSRI-S Solver Comparison
+
+[시뮬레이터 열기](https://woqhrl9494-cell.github.io/corridor-mapper/)
+
+기존 동굴 / 차량 / 반사거리 생성 환경에서 TSRI-S 접점 역산을 비교한다.
+
+- Levenberg–Marquardt, Trust-region GN (Dogleg), Variable projection + LM
+- 같은 입력, 초기값, 시간창과 고정 공분산을 사용한 paired 비교
+- 지연된 접점, 법선, 공분산과 출력 보류 원인 표시
+- 여러 seed 반복 비교, seed 수준 95% CI, CSV / JSON 내보내기
+- 기존 환경과 거리 생성기의 원본 일치 검사, 미래 관측과 oracle 입력 차단 검사
+
+`index.html`을 직접 열거나, 이 폴더에서 `python3 -m http.server 8877`을 실행한다. 외부 연산 서비스나 MATLAB은 필요하지 않다.
+
+[수식과 구현 범위](TSRI_METHOD.md), [검증 결과](TSRI_RESULTS.md), [반복 실험 원자료](tsri_validation.json)
+
+검증 명령: `node --test tests/*.test.js`. DOM 통합 검증은 별도로 설치된 jsdom가 필요하다. 기존 알고리즘 파일은 이전 버전 참고용으로 보존했으며 현재 HTML에서는 로드하지 않는다.
+
+---
+
+## Previous EchoMap documentation
 <div align="center">
 
 # EchoMap — Corridor Mapper
