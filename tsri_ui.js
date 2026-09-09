@@ -94,16 +94,16 @@ function canvasSetup(canvas,width,height){
 }
 function drawMap(canvas,selected,overview,width,height){
   const {ctx,W,H}=canvasSetup(canvas,width,height);ctx.fillStyle='#fbfbfd';ctx.fillRect(0,0,W,H);
-  const margin=overview?26:22,scale=Math.min((W-2*margin)/60,(H-2*margin)/30),ox=(W-60*scale)/2,oy=(H-30*scale)/2;
+  const margin=width?90:overview?26:22,scale=Math.min((W-2*margin)/60,(H-2*margin)/30),ox=(W-60*scale)/2,oy=(H-30*scale)/2;
   const x=v=>ox+v*scale,y=v=>H-oy-v*scale;
-  ctx.font=`${width?24:10}px -apple-system,sans-serif`;ctx.lineWidth=1.5;
+  ctx.font=`${width?36:10}px -apple-system,sans-serif`;ctx.lineWidth=1.5;
   for(let xx=0;xx<=60;xx+=10){ctx.strokeStyle='#e8e8ee';ctx.beginPath();ctx.moveTo(x(xx),y(0));ctx.lineTo(x(xx),y(30));ctx.stroke();ctx.fillStyle='#93939d';ctx.fillText(String(xx),x(xx)-5,y(0)+14);}
   for(let yy=0;yy<=30;yy+=10){ctx.strokeStyle='#e8e8ee';ctx.beginPath();ctx.moveTo(x(0),y(yy));ctx.lineTo(x(60),y(yy));ctx.stroke();}
   ctx.fillStyle='#777783';ctx.fillText('m',x(60)+5,y(0)+14);
   if(!state)return;
-  if($('showGT').checked)for(const wall of state.walls){ctx.beginPath();wall.forEach((p,i)=>i?ctx.lineTo(x(p.x),y(p.y)):ctx.moveTo(x(p.x),y(p.y)));ctx.lineWidth=width?4:1.5;ctx.strokeStyle='#73737e';ctx.stroke();}
+  if($('showGT').checked)for(const wall of state.walls){ctx.beginPath();wall.forEach((p,i)=>i?ctx.lineTo(x(p.x),y(p.y)):ctx.moveTo(x(p.x),y(p.y)));ctx.lineWidth=width?6.25:1.5;ctx.strokeStyle='#73737e';ctx.stroke();}
   if(overview&&$('showPaths').checked){ctx.strokeStyle='#879ab32e';ctx.lineWidth=1.5;for(const p of state.paths){ctx.beginPath();ctx.moveTo(x(p.tx.x),y(p.tx.y));ctx.lineTo(x(p.hit.x),y(p.hit.y));ctx.lineTo(x(p.rx.x),y(p.rx.y));ctx.stroke();}}
-  for(const m of selected){ctx.fillStyle=colors[m];ctx.strokeStyle=colors[m];ctx.lineWidth=width?3:1.5;
+  for(const m of selected){ctx.fillStyle=colors[m];ctx.strokeStyle=colors[m];ctx.lineWidth=width?6.25:1.5;
     if($('showCandidates').checked){ctx.save();ctx.globalAlpha=.28;for(const p of state.candidates[m]){ctx.beginPath();ctx.arc(x(p.x),y(p.y),width?5:2.5,0,Math.PI*2);ctx.stroke();}ctx.restore();}
     for(const p of state.maps[m]){
       ctx.beginPath();ctx.arc(x(p.x),y(p.y),width?4:2,0,Math.PI*2);ctx.fill();
@@ -121,7 +121,7 @@ function drawMap(canvas,selected,overview,width,height){
     }
   }
   for(const p of state.bots){ctx.beginPath();ctx.arc(x(p.x),y(p.y),width?8:3.5,0,Math.PI*2);ctx.fillStyle='#314761';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#fff';ctx.stroke();}
-  if(overview){ctx.font=`${width?26:11}px -apple-system,sans-serif`;selected.forEach((m,i)=>{ctx.fillStyle=colors[m];ctx.fillText({lm:'LM',tr:'TR-GN',vp:'VP + LM'}[m],x(0)+i*(width?130:74),y(30)-8);});}
+  if(overview){ctx.font=`${width?44:11}px -apple-system,sans-serif`;selected.forEach((m,i)=>{ctx.fillStyle=colors[m];ctx.fillText({lm:'LM',tr:'TR-GN',vp:'VP + LM'}[m],x(0)+i*(width?210:74),y(30)-8);});}
 }
 function drawCost(){
   const canvas=$('cvsCost');if(!canvas.clientWidth)return;
@@ -145,7 +145,15 @@ async function exportFigure(){
   const blob=await new Promise(r=>c.toBlob(r,'image/png')),bytes=new Uint8Array(await blob.arrayBuffer());
   // PNG pHYs: 300 dots/inch = round(300/0.0254) pixels/metre.
   const chunk=new Uint8Array(21),v=new DataView(chunk.buffer);v.setUint32(0,9);chunk.set([112,72,89,115],4);v.setUint32(8,11811);v.setUint32(12,11811);chunk[16]=1;v.setUint32(17,crc32(chunk.slice(4,17)));
-  download(new Blob([bytes.slice(0,33),chunk,bytes.slice(33)],{type:'image/png'}),'tsri-map-300dpi.png');
+  const parts=[bytes.slice(0,8)];
+  for(let offset=8;offset+12<=bytes.length;){
+    const length=new DataView(bytes.buffer,bytes.byteOffset+offset,4).getUint32(0),end=offset+12+length;
+    if(end>bytes.length)throw Error('Invalid PNG chunk');
+    const type=String.fromCharCode(...bytes.slice(offset+4,offset+8));
+    if(type!=='pHYs')parts.push(bytes.slice(offset,end));
+    if(type==='IHDR')parts.push(chunk);offset=end;
+  }
+  download(new Blob(parts,{type:'image/png'}),'tsri-map-300dpi.png');
 }
 document.querySelectorAll('.control-group .sec-toggle').forEach(b=>b.addEventListener('click',()=>{const group=b.closest('.control-group');b.setAttribute('aria-expanded',String(!group.classList.toggle('collapsed')));}));
 for(const [id,label,d] of [['seed','vSeed',0],['gap','vGap',1],['rough','vRough',2],['curve','vCurve',2],['torusR','vTR',1],['nBots','vN',0],['speed','vSpeed',1],['spread','vSpread',1],['noiseSigma','vNoiseSigma',2],['posSigma','vPosSigma',2]])$(id).addEventListener('input',()=>{$(label).textContent=f(+$(id).value,d);});
