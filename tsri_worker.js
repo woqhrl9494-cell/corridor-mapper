@@ -20,7 +20,7 @@ self.onmessage=async({data})=>{
         }
         if(cancel)break;trials.push({seed:e.config.seed,summary:e.summary(),diagnostics:{...e.pipeline.diagnostics}});
       }
-      self.postMessage({type:'benchmark',trials,aggregate:TSRIExperiment.aggregate(trials),cancelled:cancel,config:data.config,steps:data.steps});
+      self.postMessage({type:'benchmark',trials,aggregate:TSRIExperiment.aggregate(trials),cancelled:cancel,config:{...data.config,reflectionModel:EchoEnvironment.REFLECTION_MODEL},steps:data.steps});
     }
   }catch(error){self.postMessage({type:'error',message:error.stack||String(error)});}
 };

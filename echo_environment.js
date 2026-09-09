@@ -1,14 +1,87 @@
 /* Environment extracted from the public EchoMap 5b03dc7 source.
- * Corridor/Torus geometry, vehicle motion, range RNG and reflection generator
- * retain their original implementations. Pose reports additionally receive a
+ * Corridor/Torus geometry, vehicle motion and RNG algorithms are preserved.
+ * Reflection uses the exact planar solution on the existing finite segments;
+ * corrected path selection changes observations and RNG consumption.
+ * Pose reports additionally receive a
  * reproducible per-vehicle constant Gaussian bias, shared across time/pairs.
  * This is a pose-error model for GLS validation, not an IMU/GNSS simulator.
  */
 (function(root,factory){const api=factory(typeof module==='object'?require('./diffuse_path.js'):root.DiffusePath);if(typeof module==='object')module.exports=api;else root.EchoEnvironment=api;})(globalThis,(DiffusePath)=>{
 'use strict';
-const defaults={seed:42,gap:10,rough:0.4,curve:0.25,torusR:10,nBots:8,speed:5,spread:6,noiseSigma:0.1,posSigma:0.1,useDiffusePaths:false,diffuseSigma:1,diffuseMean:2,scenario:'corridor'};
+const REFLECTION_MODEL='specular-segment-v2';
+const REFLECTION_TOL=1e-10;
+// Physical distance tolerance [m], including coordinate roundoff. This is not
+// an incidence-angle bandwidth or a sensor-noise-dependent acceptance gate.
+function geometryTolerance(a,b,c,d){
+  return 1e-9+64*Number.EPSILON*Math.max(1,Math.abs(a.x),Math.abs(a.y),Math.abs(b.x),Math.abs(b.y),Math.abs(c.x),Math.abs(c.y),Math.abs(d.x),Math.abs(d.y));
+}
+// Cache static facet frames once per environment; do not allocate arrays or
+// recompute wall normals for every pair on every frame. Storage O(S).
+function prepareFacet(seg){
+  const dx=seg.bx-seg.ax,dy=seg.by-seg.ay,length=Math.hypot(dx,dy);
+  return {seg,dx,dy,length,ux:dx/length,uy:dy/length,
+    minX:Math.min(seg.ax,seg.bx),maxX:Math.max(seg.ax,seg.bx),minY:Math.min(seg.ay,seg.by),maxY:Math.max(seg.ay,seg.by)};
+}
+/** Exact single specular reflection on a finite planar segment in 2D.
+ * Input: tx/rx {x,y} [m], seg {ax,ay,bx,by} [m]. Output: null or
+ * {hit:{x,y},u,length,residual}; u is dimensionless, length is total range [m].
+ * Mirror method: s* = (h_rx*s_tx + h_tx*s_rx)/(h_tx+h_rx), using positive
+ * heights above the SAME face. Tx/Rx must not lie on the supporting line.
+ * Require an interior hit: corner diffraction and grazing paths are outside
+ * this model. Reflection residual tests the full outgoing direction vector.
+ * Cost O(1), memory O(1). No estimator or TSRI approximation is used here.
+ */
+function specularOnSegment(tx,rx,seg){
+  if(![tx.x,tx.y,rx.x,rx.y,seg.ax,seg.ay,seg.bx,seg.by].every(Number.isFinite))return null;
+  const a={x:seg.ax,y:seg.ay},b={x:seg.bx,y:seg.by},tol=geometryTolerance(tx,rx,a,b);
+  return specularOnFacet(tx,rx,prepareFacet(seg),tol);
+}
+function specularOnFacet(tx,rx,facet,tol){
+  const {seg,length,ux,uy}=facet,nx=-uy,ny=ux;
+  if(length<=2*tol)return null;
+  const st=(tx.x-seg.ax)*ux+(tx.y-seg.ay)*uy,sr=(rx.x-seg.ax)*ux+(rx.y-seg.ay)*uy;
+  const ht=(tx.x-seg.ax)*nx+(tx.y-seg.ay)*ny,hr=(rx.x-seg.ax)*nx+(rx.y-seg.ay)*ny;
+  if(Math.abs(ht)<=tol||Math.abs(hr)<=tol||Math.sign(ht)!==Math.sign(hr))return null;
+  const s=st+(sr-st)*(Math.abs(ht)/(Math.abs(ht)+Math.abs(hr)));
+  if(s<=tol||s>=length-tol)return null;
+  const hit={x:seg.ax+s*ux,y:seg.ay+s*uy};
+  const d1=Math.hypot(hit.x-tx.x,hit.y-tx.y),d2=Math.hypot(rx.x-hit.x,rx.y-hit.y);
+  const ix=(hit.x-tx.x)/d1,iy=(hit.y-tx.y)/d1,ox=(rx.x-hit.x)/d2,oy=(rx.y-hit.y)/d2;
+  const dn=ix*nx+iy*ny,residual=Math.hypot(ox-(ix-2*dn*nx),oy-(iy-2*dn*ny));
+  if(!Number.isFinite(residual)||residual>REFLECTION_TOL)return null;
+  return {hit,u:s/length,length:d1+d2,residual};
+}
+/** Does a CLOSED wall segment intersect the OPEN propagation leg?
+ * Input in metres. Includes obstacle vertices and collinear overlaps;
+ * excludes only numerical endpoint contact, not the old 5 cm blind region.
+ * Cost O(1), memory O(1). The caller checks every obstacle (O(S) per leg).
+ */
+function prepareLeg(origin,target,tol){
+  const dx=target.x-origin.x,dy=target.y-origin.y,len=Math.hypot(dx,dy);
+  return {origin,dx,dy,len,tol,endpoint:tol/len,
+    minX:Math.min(origin.x,target.x),maxX:Math.max(origin.x,target.x),minY:Math.min(origin.y,target.y),maxY:Math.max(origin.y,target.y)};
+}
+function facetBlocksLeg(leg,facet){
+  const {origin,dx,dy,len,tol,endpoint}=leg,{seg,dx:ex,dy:ey,length:sl}=facet;
+  if(len<=2*tol)return true;
+  if(sl<=tol)return false;
+  if(leg.maxX<facet.minX-tol||leg.minX>facet.maxX+tol||leg.maxY<facet.minY-tol||leg.minY>facet.maxY+tol)return false;
+  const ax=seg.ax-origin.x,ay=seg.ay-origin.y,cross=dx*ey-dy*ex;
+  if(Math.abs(cross)>32*Number.EPSILON*len*sl){
+    const t=(ax*ey-ay*ex)/cross,u=(ax*dy-ay*dx)/cross;
+    return t>endpoint&&t<1-endpoint&&u>=-tol/sl&&u<=1+tol/sl;
+  }
+  if(Math.abs(ax*dy-ay*dx)>tol*len)return false;
+  const ta=(ax*dx+ay*dy)/(len*len),tb=ta+(ex*dx+ey*dy)/(len*len);
+  return Math.min(ta,tb)<1-endpoint&&Math.max(ta,tb)>endpoint;
+}
+function segmentBlocksLeg(origin,target,seg){
+  const tol=geometryTolerance(origin,target,{x:seg.ax,y:seg.ay},{x:seg.bx,y:seg.by});
+  return facetBlocksLeg(prepareLeg(origin,target,tol),prepareFacet(seg));
+}
+const defaults={reflectionModel:REFLECTION_MODEL,seed:42,gap:10,rough:0.4,curve:0.25,torusR:10,nBots:8,speed:5,spread:6,noiseSigma:0.1,posSigma:0.1,useDiffusePaths:false,diffuseSigma:1,diffuseMean:2,scenario:'corridor'};
 function create(supplied={}){
-const config={...defaults,...supplied};
+const config={...defaults,...supplied,reflectionModel:REFLECTION_MODEL};
 const document={getElementById:id=>({value:config[id],checked:!!config[id]}),documentElement:{dataset:{}}};
 const window={DiffusePath};
 const WW=60,WH=30,EPS=1e-9,DT=0.05,K_PER_WALL=4,GM_NOISE_STD=config.noiseSigma;
@@ -364,49 +437,15 @@ function buildWallSegments(topWall, botWall){
   return segs;
 }
 
-let wallSegsW0 = [];
-let wallSegsW1 = [];
-let wallArcTables = [];
-function partitionWallSegs() {
-  wallSegsW0 = wallSegs.filter(s => (s.wid ?? 0) === 0);
-  wallSegsW1 = wallSegs.filter(s => (s.wid ?? 0) === 1);
+let wallArcTables = [],wallFacets=[],wallMin={x:0,y:0},wallMax={x:0,y:0};
+function isPathOccluded(origin,target,ignoreSegment=null){
+  const leg=prepareLeg(origin,target,geometryTolerance(origin,target,wallMin,wallMax));
+  return wallFacets.some(facet=>facet.seg!==ignoreSegment&&facetBlocksLeg(leg,facet));
 }
-
-function _topKSegs(wallArr, txPos, rxPos) {
-  const top = [];
-  for (const seg of wallArr) {
-    const lb = Math.hypot(txPos.x - seg.mx, txPos.y - seg.my)
-             + Math.hypot(rxPos.x - seg.mx, rxPos.y - seg.my);
-    if (top.length < K_PER_WALL || lb < top[top.length - 1].lb) {
-      let lo = 0, hi = top.length;
-      while (lo < hi) { const m = (lo + hi) >> 1; top[m].lb <= lb ? lo = m+1 : hi = m; }
-      top.splice(lo, 0, { seg, lb });
-      if (top.length > K_PER_WALL) top.length = K_PER_WALL;
-    }
-  }
-  return top;
+function newReflectionDiagnostics(){
+  return {testedSegments:0,stationaryCandidates:0,occludedPaths:0,cappedPaths:0,retainedPaths:0,maxResidual:0};
 }
-
-function raySegIntersect(ox,oy,dx,dy,ax,ay,bx,by){
-  const ex=bx-ax,ey=by-ay,denom=dx*ey-dy*ex;
-  if(Math.abs(denom)<EPS) return null;
-  const t=((ax-ox)*ey-(ay-oy)*ex)/denom;
-  const u=((ax-ox)*dy-(ay-oy)*dx)/denom;
-  if(t>0.001&&u>1e-4&&u<1-1e-4) return {t,x:ox+t*dx,y:oy+t*dy};
-  return null;
-}
-
-function isPathOccluded(origin,target){
-  const dx=target.x-origin.x,dy=target.y-origin.y;
-  const length=Math.hypot(dx,dy);
-  if(!(length>EPS)) return true;
-  const ux=dx/length,uy=dy/length;
-  for(const segment of wallSegs){
-    const hit=raySegIntersect(origin.x,origin.y,ux,uy,segment.ax,segment.ay,segment.bx,segment.by);
-    if(hit&&hit.t<length-0.05) return true;
-  }
-  return false;
-}
+let reflectionDiagnostics=newReflectionDiagnostics();
 
 function newDiffuseDiagnostics(){
   return {
@@ -430,57 +469,33 @@ function simulatePair(txPos, rxPos, noiseRng){
   const localNoiseRng = noiseRng || seededRNG(1);
   const diffuse=getDiffuseSettings();
 
-  const topSegs = [
-    ..._topKSegs(wallSegsW0, txPos, rxPos),
-    ..._topKSegs(wallSegsW1, txPos, rxPos),
-  ];
-
-  const candidates = [];
-  for(const {seg} of topSegs){
-    const {ax,ay,bx,by} = seg;
-    const ex=bx-ax, ey=by-ay, sl=Math.hypot(ex,ey);
-    if(sl<EPS) continue;
-    const wnx=-ey/sl, wny=ex/sl;
-
-    let t=0.5;
-    for(let iter=0;iter<25;iter++){
-      const px=ax+t*ex, py=ay+t*ey;
-      const d1=Math.hypot(txPos.x-px,txPos.y-py)+EPS;
-      const d2=Math.hypot(rxPos.x-px,rxPos.y-py)+EPS;
-      const grad=((px-txPos.x)*ex+(py-txPos.y)*ey)/d1
-                +((px-rxPos.x)*ex+(py-rxPos.y)*ey)/d2;
-      t=Math.max(0.01,Math.min(0.99,t-0.25*grad));
+  // Examine every facet BEFORE applying the existing four-path-per-wall cap.
+  // Ranking facet midpoints first can omit the actual stationary reflection.
+  // Geometry O(S), visibility O(V*S), memory O(V): S facets, V valid roots.
+  const roots=[],tol=geometryTolerance(txPos,rxPos,wallMin,wallMax);
+  for(const facet of wallFacets){
+    const seg=facet.seg;
+    reflectionDiagnostics.testedSegments++;
+    const root=specularOnFacet(txPos,rxPos,facet,tol);
+    if(!root)continue;
+    reflectionDiagnostics.stationaryCandidates++;
+    if(isPathOccluded(txPos,root.hit,seg)||isPathOccluded(root.hit,rxPos,seg)){
+      reflectionDiagnostics.occludedPaths++;continue;
     }
-    if(t<0.02||t>0.98) continue;
-
-    const hx=ax+t*ex, hy=ay+t*ey;
-    const iL=Math.hypot(hx-txPos.x,hy-txPos.y); if(iL<EPS) continue;
-    const iDx=(hx-txPos.x)/iL, iDy=(hy-txPos.y)/iL;
-    const rDx=rxPos.x-hx, rDy=rxPos.y-hy;
-    const rL=Math.hypot(rDx,rDy); if(rL<EPS) continue;
-    const cosIn =Math.abs(iDx*wnx+iDy*wny);
-    const cosOut=Math.abs((rDx/rL)*wnx+(rDy/rL)*wny);
-    if(Math.abs(cosIn-cosOut)>0.04) continue;
-
-    let blocked=false;
-    for(const s2 of wallSegs){
-      if(s2===seg) continue;
-      const chk=raySegIntersect(txPos.x,txPos.y,iDx,iDy,s2.ax,s2.ay,s2.bx,s2.by);
-      if(chk&&chk.t<iL-0.05){blocked=true;break;}
-    }
-    if(blocked) continue;
-
-    let blocked2=false;
-    const rUx=rDx/rL, rUy=rDy/rL;
-    for(const s2 of wallSegs){
-      if(s2===seg) continue;
-      const chk=raySegIntersect(hx,hy,rUx,rUy,s2.ax,s2.ay,s2.bx,s2.by);
-      if(chk&&chk.t<rL-0.05){blocked2=true;break;}
-    }
-    if(blocked2) continue;
+    roots.push({seg,...root});
+  }
+  roots.sort((a,b)=>(a.seg.wid-b.seg.wid)||(a.length-b.length)||(a.seg.segmentIndex-b.seg.segmentIndex));
+  const counts=new Map(),candidates=[];
+  for(const root of roots){
+    const {seg,hit:{x:hx,y:hy},u:t}=root,wall=seg.wid??0;
+    if((counts.get(wall)||0)>=K_PER_WALL){reflectionDiagnostics.cappedPaths++;continue;}
+    counts.set(wall,(counts.get(wall)||0)+1);
+    reflectionDiagnostics.retainedPaths++;
+    reflectionDiagnostics.maxResidual=Math.max(reflectionDiagnostics.maxResidual,root.residual);
+    const iL=Math.hypot(hx-txPos.x,hy-txPos.y),rL=Math.hypot(rxPos.x-hx,rxPos.y-hy);
 
     if(!diffuse.enabled){
-      // Regression path: keep the original RNG call order and measurement fields.
+      // Noise is added only AFTER the physical reflection is computed.
       const eps = randn(localNoiseRng) * noise;
       const r = (iL+rL) + eps;
       candidates.push({r, hit:{x:hx,y:hy}});
@@ -635,11 +650,15 @@ wallSegs=buildWallSegments(topWall,botWall);
 if(scenarioMode==='torus')for(const [wid,w] of [[0,topWall],[1,botWall]]){
  const a=w[w.length-2],b=w[0];wallSegs.push({ax:a.x,ay:a.y,bx:b.x,by:b.y,wid,segmentIndex:w.length-2,mx:(a.x+b.x)/2,my:(a.y+b.y)/2});
 }
-partitionWallSegs();computeSpineArc();spawnRobots();
+wallFacets=wallSegs.map(prepareFacet);
+wallMin={x:Math.min(...wallFacets.map(f=>f.minX)),y:Math.min(...wallFacets.map(f=>f.minY))};
+wallMax={x:Math.max(...wallFacets.map(f=>f.maxX)),y:Math.max(...wallFacets.map(f=>f.maxY))};
+computeSpineArc();spawnRobots();
 const poseRng=seededRNG((config.seed^0x5a871bcd)>>>0);
 const biases=bots.map(()=>({x:randn(poseRng)*config.posSigma,y:randn(poseRng)*config.posSigma}));
 let stepIndex=0;
 function step(){
+ reflectionDiagnostics=newReflectionDiagnostics();
  moveBots();const t=(stepIndex+1)*DT,truth=[],observations=[];
  const poses=bots.map((b,i)=>({x:b.pos.x+biases[i].x,y:b.pos.y+biases[i].y}));
  let pair=0;for(let i=0;i<bots.length;i++)for(let j=i+1;j<bots.length;j++){
@@ -651,9 +670,9 @@ function step(){
   });
  }
  stepIndex++;
- return {t,step:stepIndex,observations,truth,poses,bots:bots.map(b=>({...b.pos})),diffuse:{...diffuseDiagnostics}};
+ return {t,step:stepIndex,observations,truth,poses,bots:bots.map(b=>({...b.pos})),diffuse:{...diffuseDiagnostics},reflection:{...reflectionDiagnostics}};
 }
 return {config,step,walls:[topWall,botWall],segments:wallSegs,spine,bots:()=>bots.map(b=>({...b.pos})),DT,geometryDiagnostics:window.lastCorridorGeometryDiagnostics};
 }
-return {create,defaults};
+return {create,defaults,specularOnSegment,segmentBlocksLeg,REFLECTION_MODEL,REFLECTION_TOL};
 });

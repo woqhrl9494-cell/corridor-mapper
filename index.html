@@ -638,7 +638,7 @@ label{font-size:12px}.btn{min-height:31px}.tsri-views{overflow:auto;gap:8px}.top
   <div class="sec"><details><summary>모형과 판정 기준</summary>
     <p class="micro-note">ρ ≈ F(x,t) + b₂τ². b₂는 곡률이 아닌 거리의 2차 보정계수. LM, Trust-region GN (Dogleg), Variable projection + LM 비교.</p>
     <p class="micro-note">채택: 수렴, 분리된 대안 해 없음, 위치 조건수 &lt; 10⁴, 95% 장반경 &lt; 2 m, 잔차 검사 통과. 같은 관측을 공유하는 출력점은 독립으로 융합하지 않음.</p>
-    <p class="micro-note">오차는 참 접점 대비 계산. 낮은 거리 잔차만으로 지도 성공으로 판정하지 않음. 반사기에는 기존 사이트의 다각선 벽, 상위 segment 후보, 근사 정상성 판정이 사용됨.</p>
+    <p class="micro-note">오차는 참 접점 대비 계산. 낮은 거리 잔차만으로 지도 성공으로 판정하지 않음. 기존 다각선 벽의 각 선분에서 정확한 정반사점 계산. 방향 잔차와 가시성 검사 후 벽마다 짧은 경로 최대 4개. 모서리와 산란점은 정반사로 취급하지 않음.</p>
     <p class="micro-note">거리 군집 중앙값은 편향 보정기가 아님. 상관은 창 내부 공유 위치오차만 반영. 선택, 연관 오류와 고차 모형 오차는 공분산 보장 범위 밖.</p>
     <a href="TSRI_METHOD.md" target="_blank" rel="noopener">수식, 재현 조건, 검증 기록</a>
   </details></div>
@@ -656,6 +656,7 @@ label{font-size:12px}.btn{min-height:31px}.tsri-views{overflow:auto;gap:8px}.top
     <div class="result-title"><strong>같은 관측값에서의 성능 비교</strong><span id="runStatus" role="status">0 frames</span></div>
     <div id="errorStatus" role="alert" hidden></div>
     <div class="table-wrap"><table id="comparison"><thead><tr><th>평가 항목</th><th class="lm-text">LM</th><th class="tr-text">TR-GN</th><th class="vp-text">VP + LM</th></tr></thead><tbody id="comparisonBody"></tbody></table></div>
+    <div class="diagnostics" id="reflectionStatus" role="status">선분별 정확한 정반사 / 반사 법칙과 가시성 검사</div>
     <div class="diagnostics" id="diagnostics">시간 간격 0.05 s. 완성된 창부터 비교 시작.</div>
     <details id="windowDetail"><summary>마지막 창의 수렴과 식별 가능성</summary><div class="detail-grid"><canvas id="cvsCost" aria-label="최적 목적함수 수렴 이력"></canvas><div id="windowInfo"></div></div></details>
     <div id="trialResults" hidden></div>

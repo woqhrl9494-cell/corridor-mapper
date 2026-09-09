@@ -21,6 +21,7 @@ class Experiment{
     this.config.rangeSigma=this.config.noiseSigma;this.config.poseSigma=this.config.posSigma;
     this.config.preprocess=this.config.useDiffusePaths?(this.config.scatteringMode==='withhold'?'withhold':'stress'):'raw';
     this.environment=E.create(this.config);this.pipeline=new P.Pipeline(this.config);this.truth=new Map();this.last=null;
+    this.config.reflectionModel=this.environment.config.reflectionModel;
     this.stats=Object.fromEntries(methods.map(m=>[m,accumulator()]));this.exportRows=[];this.frontendMs=0;this.elapsedMs=0;
     this.gt=WM.sampleWallsArcLength(this.environment.walls,0.2);this.observed=WM.createObservedMask(this.gt);
   }
@@ -63,6 +64,7 @@ class Experiment{
   snapshot(){return {config:this.config,walls:this.environment.walls,bots:this.last?.bots||this.environment.bots(),poses:this.last?.poses||[],
     paths:(this.last?.truth||[]).slice(0,250).map(m=>({tx:m.tx,rx:m.rx,hit:m.hit})),step:this.last?.step||0,time:this.last?.t||0,
     maps:this.pipeline.map,candidates:this.pipeline.candidates,diagnostics:this.pipeline.diagnostics,summary:this.summary(),lastComparison:this.pipeline.lastComparison,
+    reflection:this.last?.reflection||null,
     coverage:this.observed.length?this.observed.reduce((s,v)=>s+v,0)/this.observed.length:0,elapsedMs:this.elapsedMs,frontendMs:this.frontendMs};}
 }
 // Seed-level intervals, not falsely independent overlapping-window intervals.

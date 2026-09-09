@@ -1,0 +1,650 @@
+{
+  "createdAt": "2026-09-09T07:58:04.794Z",
+  "baseline": "e7e55a4e94b1d807a11f12b6700fd61bb12f6765",
+  "reflectionModel": "specular-segment-v2",
+  "node": "v26.7.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "runMs": 9638.21225,
+  "sources": {
+    "echo_environment.js": "6bc093a8f22c96c411378b0f1822ab1e5d3dc256077e430c95ec19423c912a52",
+    "tsri_solver.js": "e0eb2001d792060275c83d095391d38c33cd5371600f770eb0fc26b5271655a2",
+    "tsri_pipeline.js": "00fccdc116960f03752f828df02581f3186e570ac2e5550336bbbcf7469fe6d1",
+    "tsri_experiment.js": "e4c8b13f4704cceeb0db6ff4b691501236b3b5b81b1a2c43df32b12ab29177c0"
+  },
+  "cases": [
+    {
+      "config": {
+        "scenario": "corridor",
+        "seed": 7,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 19930,
+        "noInteriorRoot": 15790,
+        "maxTangentResidual": 0.25833604723985015,
+        "generationMs": 321.9315830000006
+      },
+      "after": {
+        "paths": 5219,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 2.220446049250313e-15,
+        "generationMs": 149.98883600000008
+      }
+    },
+    {
+      "config": {
+        "scenario": "corridor",
+        "seed": 31,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 16199,
+        "noInteriorRoot": 12979,
+        "maxTangentResidual": 0.3427248849611987,
+        "generationMs": 282.3612560000006
+      },
+      "after": {
+        "paths": 5295,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 2.0556473190325164e-15,
+        "generationMs": 143.81541000000038
+      }
+    },
+    {
+      "config": {
+        "scenario": "corridor",
+        "seed": 42,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 19644,
+        "noInteriorRoot": 15339,
+        "maxTangentResidual": 0.36492113256745196,
+        "generationMs": 277.17299500000126
+      },
+      "after": {
+        "paths": 5330,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 1.7763568394002505e-15,
+        "generationMs": 130.2677530000019
+      }
+    },
+    {
+      "config": {
+        "scenario": "corridor",
+        "seed": 87,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 17316,
+        "noInteriorRoot": 13914,
+        "maxTangentResidual": 0.3049056346755382,
+        "generationMs": 260.74300299999913
+      },
+      "after": {
+        "paths": 5499,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 2.220446049250313e-15,
+        "generationMs": 134.25729700000056
+      }
+    },
+    {
+      "config": {
+        "scenario": "torus",
+        "seed": 7,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 21236,
+        "noInteriorRoot": 15680,
+        "maxTangentResidual": 0.20849321487988448,
+        "generationMs": 337.1198739999991
+      },
+      "after": {
+        "paths": 5627,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 3.9968028886505635e-15,
+        "generationMs": 234.83549299999777
+      }
+    },
+    {
+      "config": {
+        "scenario": "torus",
+        "seed": 31,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 18152,
+        "noInteriorRoot": 13175,
+        "maxTangentResidual": 0.3550420101820726,
+        "generationMs": 300.38108799999554
+      },
+      "after": {
+        "paths": 5370,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 4.9960036108132044e-15,
+        "generationMs": 227.4105040000013
+      }
+    },
+    {
+      "config": {
+        "scenario": "torus",
+        "seed": 42,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 21140,
+        "noInteriorRoot": 15269,
+        "maxTangentResidual": 0.1903759756538944,
+        "generationMs": 355.04953800000567
+      },
+      "after": {
+        "paths": 5916,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 5.329070518200751e-15,
+        "generationMs": 249.9255430000012
+      }
+    },
+    {
+      "config": {
+        "scenario": "torus",
+        "seed": 87,
+        "nBots": 8,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false
+      },
+      "frames": 100,
+      "geometryAndMotionIdentical": true,
+      "before": {
+        "paths": 20928,
+        "noInteriorRoot": 15159,
+        "maxTangentResidual": 0.1727143412109784,
+        "generationMs": 322.21896100000413
+      },
+      "after": {
+        "paths": 5914,
+        "noInteriorRoot": 0,
+        "maxTangentResidual": 3.3306690738754696e-15,
+        "generationMs": 243.64396099999612
+      }
+    }
+  ],
+  "pipeline": [
+    {
+      "config": {
+        "reflectionModel": "specular-segment-v2",
+        "seed": 42,
+        "gap": 10,
+        "rough": 0.4,
+        "curve": 0.25,
+        "torusR": 10,
+        "nBots": 8,
+        "speed": 5,
+        "spread": 6,
+        "noiseSigma": 0.1,
+        "posSigma": 0.1,
+        "useDiffusePaths": false,
+        "diffuseSigma": 1,
+        "diffuseMean": 2,
+        "scenario": "corridor",
+        "window": 21,
+        "stride": 10,
+        "starts": 4,
+        "maxIter": 60,
+        "maxCondition": 10000,
+        "maxRadius": 2,
+        "weighting": "gls",
+        "rangeSigma": 0.1,
+        "poseSigma": 0.1,
+        "beam": 8,
+        "maxSurfels": 12000,
+        "preprocess": "raw",
+        "clusterWidth": 0.25
+      },
+      "frames": 100,
+      "summary": {
+        "lm": {
+          "windows": 191,
+          "convergence": 1,
+          "outputRate": 0.16230366492146597,
+          "accepted": 31,
+          "contactRMSE": 7.637339183988026,
+          "acceptedRMSE": 7.07834874051399,
+          "normalRMSE": 8.010837987900635,
+          "rangeRMSE": 0.22723969205230718,
+          "meanMs": 0.15796118324610284,
+          "p95Ms": 0.2391669999997248,
+          "iterations": 9.612565445026178,
+          "evaluations": 9.612565445026178,
+          "conditionMedian": 1.1429330364678936,
+          "reasons": {
+            "association_ambiguity": 32,
+            "accepted": 31,
+            "multiple_solutions": 72,
+            "model_residual": 56
+          },
+          "mapPrecision": 0.3870967741935484,
+          "mapRecall": 0.10828025477707007,
+          "mapF1": 0.16922438822065533
+        },
+        "tr": {
+          "windows": 191,
+          "convergence": 1,
+          "outputRate": 0.16230366492146597,
+          "accepted": 31,
+          "contactRMSE": 7.637339183552184,
+          "acceptedRMSE": 7.078348740330118,
+          "normalRMSE": 8.010837991297798,
+          "rangeRMSE": 0.22723969215630108,
+          "meanMs": 0.16822230366495644,
+          "p95Ms": 0.2689589999990858,
+          "iterations": 9.654450261780104,
+          "evaluations": 9.654450261780104,
+          "conditionMedian": 1.142933036459181,
+          "reasons": {
+            "association_ambiguity": 32,
+            "accepted": 31,
+            "multiple_solutions": 72,
+            "model_residual": 56
+          },
+          "mapPrecision": 0.3870967741935484,
+          "mapRecall": 0.10828025477707007,
+          "mapF1": 0.16922438822065533
+        },
+        "vp": {
+          "windows": 191,
+          "convergence": 1,
+          "outputRate": 0.16230366492146597,
+          "accepted": 31,
+          "contactRMSE": 7.6373391839149845,
+          "acceptedRMSE": 7.078348740499214,
+          "normalRMSE": 8.01083798782373,
+          "rangeRMSE": 0.22723969206188685,
+          "meanMs": 0.14074173298426512,
+          "p95Ms": 0.22800000000097498,
+          "iterations": 9.612565445026178,
+          "evaluations": 9.612565445026178,
+          "conditionMedian": 1.142933036467465,
+          "reasons": {
+            "association_ambiguity": 32,
+            "accepted": 31,
+            "multiple_solutions": 72,
+            "model_residual": 56
+          },
+          "mapPrecision": 0.3870967741935484,
+          "mapRecall": 0.10828025477707007,
+          "mapF1": 0.16922438822065533
+        }
+      },
+      "wrongAcceptedOver04m": {
+        "lm": 21,
+        "tr": 21,
+        "vp": 21
+      }
+    },
+    {
+      "config": {
+        "reflectionModel": "specular-segment-v2",
+        "seed": 42,
+        "gap": 10,
+        "rough": 0.4,
+        "curve": 0.25,
+        "torusR": 10,
+        "nBots": 8,
+        "speed": 5,
+        "spread": 6,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false,
+        "diffuseSigma": 1,
+        "diffuseMean": 2,
+        "scenario": "corridor",
+        "window": 21,
+        "stride": 10,
+        "starts": 4,
+        "maxIter": 60,
+        "maxCondition": 10000,
+        "maxRadius": 2,
+        "weighting": "gls",
+        "rangeSigma": 0,
+        "poseSigma": 0,
+        "beam": 8,
+        "maxSurfels": 12000,
+        "preprocess": "raw",
+        "clusterWidth": 0.25
+      },
+      "frames": 100,
+      "summary": {
+        "lm": {
+          "windows": 187,
+          "convergence": 1,
+          "outputRate": 0,
+          "accepted": 0,
+          "contactRMSE": 7.848729560619833,
+          "acceptedRMSE": null,
+          "normalRMSE": 7.2487433561015875,
+          "rangeRMSE": 0.15357900224147378,
+          "meanMs": 0.12834335828891316,
+          "p95Ms": 0.1617499999993015,
+          "iterations": 8.401069518716577,
+          "evaluations": 8.401069518716577,
+          "conditionMedian": 2.1150415886024927,
+          "reasons": {
+            "model_residual": 187
+          },
+          "mapPrecision": 0,
+          "mapRecall": 0,
+          "mapF1": 0
+        },
+        "tr": {
+          "windows": 187,
+          "convergence": 1,
+          "outputRate": 0,
+          "accepted": 0,
+          "contactRMSE": 7.848729560399951,
+          "acceptedRMSE": null,
+          "normalRMSE": 7.248743364734383,
+          "rangeRMSE": 0.15357900209877182,
+          "meanMs": 0.5861302887699914,
+          "p95Ms": 0.7387920000001031,
+          "iterations": 36.31550802139037,
+          "evaluations": 36.32085561497326,
+          "conditionMedian": 2.1150415889078555,
+          "reasons": {
+            "model_residual": 187
+          },
+          "mapPrecision": 0,
+          "mapRecall": 0,
+          "mapF1": 0
+        },
+        "vp": {
+          "windows": 187,
+          "convergence": 1,
+          "outputRate": 0,
+          "accepted": 0,
+          "contactRMSE": 7.848729560582807,
+          "acceptedRMSE": null,
+          "normalRMSE": 7.24874335217644,
+          "rangeRMSE": 0.15357900231714466,
+          "meanMs": 0.11713725668436926,
+          "p95Ms": 0.14037500000085856,
+          "iterations": 8.39572192513369,
+          "evaluations": 8.39572192513369,
+          "conditionMedian": 2.1150415885768887,
+          "reasons": {
+            "model_residual": 187
+          },
+          "mapPrecision": 0,
+          "mapRecall": 0,
+          "mapF1": 0
+        }
+      },
+      "wrongAcceptedOver04m": {
+        "lm": 0,
+        "tr": 0,
+        "vp": 0
+      }
+    },
+    {
+      "config": {
+        "reflectionModel": "specular-segment-v2",
+        "seed": 42,
+        "gap": 10,
+        "rough": 0.4,
+        "curve": 0.25,
+        "torusR": 10,
+        "nBots": 8,
+        "speed": 5,
+        "spread": 6,
+        "noiseSigma": 0.1,
+        "posSigma": 0.1,
+        "useDiffusePaths": false,
+        "diffuseSigma": 1,
+        "diffuseMean": 2,
+        "scenario": "torus",
+        "window": 21,
+        "stride": 10,
+        "starts": 4,
+        "maxIter": 60,
+        "maxCondition": 10000,
+        "maxRadius": 2,
+        "weighting": "gls",
+        "rangeSigma": 0.1,
+        "poseSigma": 0.1,
+        "beam": 8,
+        "maxSurfels": 12000,
+        "preprocess": "raw",
+        "clusterWidth": 0.25
+      },
+      "frames": 100,
+      "summary": {
+        "lm": {
+          "windows": 293,
+          "convergence": 1,
+          "outputRate": 0.3924914675767918,
+          "accepted": 115,
+          "contactRMSE": 7.624541875109225,
+          "acceptedRMSE": 7.266994876190598,
+          "normalRMSE": 8.135445041474213,
+          "rangeRMSE": 0.17775655632916926,
+          "meanMs": 0.17803196587029707,
+          "p95Ms": 0.39400000000023283,
+          "iterations": 12.744027303754267,
+          "evaluations": 12.747440273037542,
+          "conditionMedian": 1.1330521462414005,
+          "reasons": {
+            "association_ambiguity": 47,
+            "accepted": 115,
+            "multiple_solutions": 100,
+            "model_residual": 31
+          },
+          "mapPrecision": 0.41739130434782606,
+          "mapRecall": 0.2222222222222222,
+          "mapF1": 0.29003021148036257
+        },
+        "tr": {
+          "windows": 293,
+          "convergence": 1,
+          "outputRate": 0.3924914675767918,
+          "accepted": 115,
+          "contactRMSE": 7.624541873984752,
+          "acceptedRMSE": 7.26699487634717,
+          "normalRMSE": 8.135445032287068,
+          "rangeRMSE": 0.17775655630284237,
+          "meanMs": 0.18746772696248296,
+          "p95Ms": 0.4327919999996084,
+          "iterations": 12.569965870307167,
+          "evaluations": 12.57679180887372,
+          "conditionMedian": 1.1330521462621619,
+          "reasons": {
+            "association_ambiguity": 47,
+            "accepted": 115,
+            "multiple_solutions": 100,
+            "model_residual": 31
+          },
+          "mapPrecision": 0.41739130434782606,
+          "mapRecall": 0.2222222222222222,
+          "mapF1": 0.29003021148036257
+        },
+        "vp": {
+          "windows": 293,
+          "convergence": 1,
+          "outputRate": 0.3924914675767918,
+          "accepted": 115,
+          "contactRMSE": 7.624541874498864,
+          "acceptedRMSE": 7.266994876062167,
+          "normalRMSE": 8.135445032890408,
+          "rangeRMSE": 0.17775655646723657,
+          "meanMs": 0.15681997952217466,
+          "p95Ms": 0.34041699999943376,
+          "iterations": 12.754266211604095,
+          "evaluations": 12.757679180887372,
+          "conditionMedian": 1.133052146240783,
+          "reasons": {
+            "association_ambiguity": 47,
+            "accepted": 115,
+            "multiple_solutions": 100,
+            "model_residual": 31
+          },
+          "mapPrecision": 0.41739130434782606,
+          "mapRecall": 0.2222222222222222,
+          "mapF1": 0.29003021148036257
+        }
+      },
+      "wrongAcceptedOver04m": {
+        "lm": 78,
+        "tr": 78,
+        "vp": 78
+      }
+    },
+    {
+      "config": {
+        "reflectionModel": "specular-segment-v2",
+        "seed": 42,
+        "gap": 10,
+        "rough": 0.4,
+        "curve": 0.25,
+        "torusR": 10,
+        "nBots": 8,
+        "speed": 5,
+        "spread": 6,
+        "noiseSigma": 0,
+        "posSigma": 0,
+        "useDiffusePaths": false,
+        "diffuseSigma": 1,
+        "diffuseMean": 2,
+        "scenario": "torus",
+        "window": 21,
+        "stride": 10,
+        "starts": 4,
+        "maxIter": 60,
+        "maxCondition": 10000,
+        "maxRadius": 2,
+        "weighting": "gls",
+        "rangeSigma": 0,
+        "poseSigma": 0,
+        "beam": 8,
+        "maxSurfels": 12000,
+        "preprocess": "raw",
+        "clusterWidth": 0.25
+      },
+      "frames": 100,
+      "summary": {
+        "lm": {
+          "windows": 283,
+          "convergence": 1,
+          "outputRate": 0,
+          "accepted": 0,
+          "contactRMSE": 8.832746751001489,
+          "acceptedRMSE": null,
+          "normalRMSE": 7.774547113883867,
+          "rangeRMSE": 0.07769785810699653,
+          "meanMs": 0.1359304805653266,
+          "p95Ms": 0.22870900000089023,
+          "iterations": 10.579505300353357,
+          "evaluations": 10.583038869257951,
+          "conditionMedian": 2.1761956811909324,
+          "reasons": {
+            "model_residual": 282,
+            "association_ambiguity": 1
+          },
+          "mapPrecision": 0,
+          "mapRecall": 0,
+          "mapF1": 0
+        },
+        "tr": {
+          "windows": 283,
+          "convergence": 1,
+          "outputRate": 0,
+          "accepted": 0,
+          "contactRMSE": 8.832746750901428,
+          "acceptedRMSE": null,
+          "normalRMSE": 7.7745471218508335,
+          "rangeRMSE": 0.0776978584968296,
+          "meanMs": 0.5547901660777796,
+          "p95Ms": 0.7948749999995925,
+          "iterations": 39.14134275618375,
+          "evaluations": 39.18374558303887,
+          "conditionMedian": 2.1761956811781364,
+          "reasons": {
+            "model_residual": 282,
+            "association_ambiguity": 1
+          },
+          "mapPrecision": 0,
+          "mapRecall": 0,
+          "mapF1": 0
+        },
+        "vp": {
+          "windows": 283,
+          "convergence": 1,
+          "outputRate": 0,
+          "accepted": 0,
+          "contactRMSE": 8.832746750816112,
+          "acceptedRMSE": null,
+          "normalRMSE": 7.774547112720658,
+          "rangeRMSE": 0.07769785781244012,
+          "meanMs": 0.12087733215554991,
+          "p95Ms": 0.19291599999996834,
+          "iterations": 10.250883392226148,
+          "evaluations": 10.275618374558304,
+          "conditionMedian": 2.176195681173443,
+          "reasons": {
+            "model_residual": 282,
+            "association_ambiguity": 1
+          },
+          "mapPrecision": 0,
+          "mapRecall": 0,
+          "mapF1": 0
+        }
+      },
+      "wrongAcceptedOver04m": {
+        "lm": 0,
+        "tr": 0,
+        "vp": 0
+      }
+    }
+  ],
+  "notes": [
+    "Geometry and true/reported poses are exactly matched before/after. Reflection observations intentionally differ.",
+    "Physical residuals are checked against the actual containing segment, independently of the generator diagnostics.",
+    "No estimator, association, initializers, covariance model or acceptance thresholds were changed.",
+    "No claim of continuous smooth-wall branch validity across facet boundaries or calibrated scattering correction."
+  ]
+}

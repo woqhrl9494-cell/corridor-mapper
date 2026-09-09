@@ -4,7 +4,7 @@ const Env=require('../echo_environment'),root=path.resolve(__dirname,'..');
 const original=cp.execFileSync('git',['show','5b03dc7:index.html'],{cwd:root,encoding:'utf8',maxBuffer:5e6});
 const inline=original.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
 function context(){return new Proxy({measureText:s=>({width:String(s).length*6}),createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)})},{get(o,k){return k in o?o[k]:()=>{};}});}
-const plain=v=>JSON.parse(JSON.stringify(v));let frames=0;
+const plain=v=>JSON.parse(JSON.stringify(v));let frames=0,changedFrames=0;const counts={old:0,corrected:0};
 for(const config of [{scenario:'corridor',seed:42,useDiffusePaths:false},{scenario:'torus',seed:31,useDiffusePaths:false},{scenario:'corridor',seed:51,useDiffusePaths:true}]){
  const dom=new JSDOM(original,{runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
  w.HTMLCanvasElement.prototype.getContext=context;w.requestAnimationFrame=()=>0;w.ResizeObserver=class{observe(){}};
@@ -15,8 +15,12 @@ for(const config of [{scenario:'corridor',seed:42,useDiffusePaths:false},{scenar
  const e=Env.create(cfg);assert.deepEqual(plain(w.originalSim.walls()),e.walls);
  for(let k=0;k<5;k++){
   const old=w.originalSim.snapshot(config.seed,k);
-  const current=e.step();assert.deepEqual(plain(old.bots),current.bots);assert.deepEqual(plain(old.ranges),current.truth.map(m=>({i:m.i,j:m.j,r:m.r,tx:m.tx,rx:m.rx,hit:m.hit})));frames++;
+  const current=e.step();assert.deepEqual(plain(old.bots),current.bots);
+  const corrected=current.truth.map(m=>({i:m.i,j:m.j,r:m.r,tx:m.tx,rx:m.rx,hit:m.hit}));
+  counts.old+=old.ranges.length;counts.corrected+=corrected.length;
+  if(JSON.stringify(plain(old.ranges))!==JSON.stringify(corrected))changedFrames++;frames++;
  }
  dom.window.close();
 }
-console.log(JSON.stringify({passed:true,reference:'5b03dc7',scenarios:3,frames,checks:['exact walls','exact true vehicle poses','exact ranges and hit points','diffuse RNG order']}));
+assert.ok(changedFrames>0,'The corrected physical generator must not retain the old invalid paths');
+console.log(JSON.stringify({passed:true,reference:'5b03dc7',scenarios:3,frames,changedFrames,counts,checks:['exact walls','exact true vehicle poses','intentional range/path changes after reflection correction']}));

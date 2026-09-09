@@ -42,7 +42,7 @@ function message(data){
         for(let k=0;k<data.steps&&benchmarking&&taskEpoch===epoch;k++){e.step();if(k%10===9){receive({type:'progress',trial:i+1,seeds:data.seeds,step:k+1,steps:data.steps});await new Promise(r=>setTimeout(r,0));}}
         if(benchmarking)trials.push({seed:e.config.seed,summary:e.summary(),diagnostics:{...e.pipeline.diagnostics}});
       }
-      if(taskEpoch===epoch)receive({type:'benchmark',trials,aggregate:TSRIExperiment.aggregate(trials),cancelled:!benchmarking,config:data.config,steps:data.steps});
+      if(taskEpoch===epoch)receive({type:'benchmark',trials,aggregate:TSRIExperiment.aggregate(trials),cancelled:!benchmarking,config:{...data.config,reflectionModel:EchoEnvironment.REFLECTION_MODEL},steps:data.steps});
     }
   }catch(error){receive({type:'error',message:error.stack||String(error)});}},0);
 }
@@ -67,8 +67,8 @@ function receive(data){
     $('btnTrialExport').hidden=false;renderTrials();
   }else if(data.type==='export'){
     const fields=['seed','frame','key','pair','method','t0','availableAt','lag','accepted','converged','reason','b2','cost','rmse','contactError','normalError','condition','fullCondition','radius95','totalIterations','totalEvaluations','ms','starts'];
-    const header=[...fields,'x_m','y_m','cov_xx','cov_xy','cov_yy','weighting','window','rangeSigma','poseSigma'];
-    const rows=data.data.rows.map(r=>[...fields.map(k=>r[k]),...r.x,r.covariance?.[0][0],r.covariance?.[0][1],r.covariance?.[1][1],data.data.config.weighting,data.data.config.window,data.data.config.noiseSigma,data.data.config.posSigma]);
+    const header=[...fields,'x_m','y_m','cov_xx','cov_xy','cov_yy','weighting','window','rangeSigma','poseSigma','reflectionModel'];
+    const rows=data.data.rows.map(r=>[...fields.map(k=>r[k]),...r.x,r.covariance?.[0][0],r.covariance?.[0][1],r.covariance?.[1][1],data.data.config.weighting,data.data.config.window,data.data.config.noiseSigma,data.data.config.posSigma,data.data.config.reflectionModel]);
     const csv=[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');
     download(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'tsri-windows.csv');
   }
@@ -76,6 +76,8 @@ function receive(data){
 function render(){
   if(!state)return;const d=state.diagnostics;
   $('runStatus').textContent=`${state.step} frames / ${f(state.time,2)} s / seed ${state.config.seed}`;
+  const reflection=state.reflection;
+  $('reflectionStatus').textContent=reflection?`정반사 기준 경로 ${reflection.retainedPaths}개 / 반사 방향 잔차 최대 ${reflection.retainedPaths?reflection.maxResidual.toExponential(1):'—'}`:'선분별 정확한 정반사 / 반사 법칙과 가시성 검사';
   $('mapStatus').textContent=`${d.windows} windows / ${d.tracks} track 후보 / 관측한 참 벽 ${pct(state.coverage)}`;
   const rows=[['풀이 수렴률','convergence',pct],['지도 채택률, 전체 창 기준','outputRate',pct],['접점 RMSE, 보류 포함 (m)','contactRMSE',f],['채택 접점 RMSE (m)','acceptedRMSE',f],['법선 RMSE, 보류 포함 (deg)','normalRMSE',f],['거리 잔차 RMSE (m)','rangeRMSE',f],['풀이 시간, 평균 / p95 (ms)',null,(s)=>f(s.meanMs,2)+' / '+f(s.p95Ms,2)],['총 반복 / 함수 평가, 창당',null,s=>f(s.iterations,1)+' / '+f(s.evaluations,1)],['위치 조건수 중앙값','conditionMedian',v=>f(v,1)],['누적 채택 수','accepted',v=>String(v)],['지도 P / R / F1 @ 0.4 m',null,s=>[s.mapPrecision,s.mapRecall,s.mapF1].map(v=>f(v,2)).join(' / ')]];
   $('comparisonBody').innerHTML=rows.map(([label,key,format])=>`<tr><td>${label}</td>${methods.map(m=>`<td>${format(key?state.summary[m][key]:state.summary[m])}</td>`).join('')}</tr>`).join('');
