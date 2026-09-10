@@ -1,0 +1,56 @@
+{
+  "state": "PASS",
+  "results": [
+    {
+      "run_id": "arc_4_0_3311001",
+      "passed": true,
+      "position": 7.993605777301127e-15,
+      "normal": 9.575673587391975e-16,
+      "coefficient": 8.881784197001252e-16,
+      "cost": 5.929230630780102e-19,
+      "curve": 3.552713678800501e-15,
+      "seconds": 28.024700000047684,
+      "runtime": {
+        "kind": "browser_computed",
+        "frozen_source_sha256": "e91f329b82dd13134e85d3a1773feb48b52b50da74fe774cbde3cb531df0d7ca",
+        "surface_sha256": "a9b5520c95b696620852ae5acd0e651a9dc1d950d920a6d778a6b3970e594792",
+        "runtime": "Pyodide 314.0.6",
+        "numpy": "2.4.6"
+      }
+    },
+    {
+      "run_id": "sine_5_0.05_3311001",
+      "passed": true,
+      "position": 7.638334409421077e-13,
+      "normal": 2.1038726316646716e-14,
+      "coefficient": 4.7569587158236004e-14,
+      "cost": 1.2434497875801753e-14,
+      "curve": 1.6342482922482304e-13,
+      "seconds": 39.24089999997616,
+      "runtime": {
+        "kind": "browser_computed",
+        "frozen_source_sha256": "e91f329b82dd13134e85d3a1773feb48b52b50da74fe774cbde3cb531df0d7ca",
+        "surface_sha256": "a9b5520c95b696620852ae5acd0e651a9dc1d950d920a6d778a6b3970e594792",
+        "runtime": "Pyodide 314.0.6",
+        "numpy": "2.4.6"
+      }
+    },
+    {
+      "run_id": "arc_5_0_92004",
+      "passed": true,
+      "position": 0,
+      "normal": 0,
+      "coefficient": 1.3766765505351941e-14,
+      "cost": 2.264886691619194e-19,
+      "curve": 3.552713678800501e-14,
+      "seconds": 40.586,
+      "runtime": {
+        "kind": "browser_computed",
+        "frozen_source_sha256": "e91f329b82dd13134e85d3a1773feb48b52b50da74fe774cbde3cb531df0d7ca",
+        "surface_sha256": "a9b5520c95b696620852ae5acd0e651a9dc1d950d920a6d778a6b3970e594792",
+        "runtime": "Pyodide 314.0.6",
+        "numpy": "2.4.6"
+      }
+    }
+  ]
+}

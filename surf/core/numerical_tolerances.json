@@ -1,0 +1,58 @@
+{
+  "created_utc": "2026-09-10T07:23:14.850757+00:00",
+  "fixed_before_modified_solver_runs": true,
+  "rule": "abs(new-old) <= atol + rtol*abs(old); shapes exact; finite required; null exact",
+  "exact": [
+    "run_id",
+    "target_id",
+    "method_id",
+    "hypothesis_id",
+    "status",
+    "valid",
+    "selected_ids",
+    "selected_id",
+    "alternative_ids",
+    "degree",
+    "lambda_m4",
+    "record IDs",
+    "branch counts",
+    "refinement",
+    "fallback"
+  ],
+  "numeric": {
+    "position_m": {
+      "atol": 1e-06,
+      "rtol": 0
+    },
+    "surface_coefficient_m": {
+      "atol": 1e-06,
+      "rtol": 0
+    },
+    "surface_height_m": {
+      "atol": 1e-06,
+      "rtol": 0
+    },
+    "normal_component": {
+      "atol": 1e-07,
+      "rtol": 0
+    },
+    "cost_m2": {
+      "atol": 1e-10,
+      "rtol": 1e-07
+    },
+    "normal_metric_deg": {
+      "atol": 1e-05,
+      "rtol": 1e-07
+    },
+    "local_float": {
+      "atol": 1e-09,
+      "rtol": 1e-10
+    },
+    "coverage": {
+      "atol": 0,
+      "rtol": 0
+    }
+  },
+  "final_gate": "Retained full-refit hypotheses, final predictions, chosen complexity, all fit status/ID and final branch counts. All nonretained/CV numeric differences reported diagnostically; optimizer termination/iteration histories and runtime are not output decisions. No tolerances changed after running.",
+  "runtime": "Measured, not equality-gated; same recorded input and environment."
+}

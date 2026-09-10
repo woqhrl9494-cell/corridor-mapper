@@ -1,0 +1,11 @@
+{
+  "inputs": [
+    "surf/vendor/legacy/tsri_surface_simulator_20260909/src/linalg.js",
+    "surf/vendor/legacy/tsri_surface_simulator_20260909/src/moments.js",
+    "surf/vendor/legacy/tsri_surface_simulator_20260909/root_geometry.js",
+    "surf/vendor/legacy/tsri_surface_simulator_20260909/cross_pair.js",
+    "surf/vendor/legacy/tsri-s-simulator/tsri_solver.js",
+    "surf/vendor/normal_events.js",
+    "surf/vendor/cross-entry.cjs"
+  ]
+}

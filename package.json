@@ -1,0 +1,32 @@
+{
+  "name": "corridor-mapper-surf-web",
+  "version": "1.0.0",
+  "description": "Frozen SURF with CROSS baseline and a browser-only scientific map",
+  "main": "benchmark_tsri.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test tests/*.test.js tests/surf/*.test.mjs",
+    "test:legacy-dom": "node tests/jsdom_smoke.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/woqhrl9494-cell/corridor-mapper.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "CC-BY-NC-ND-4.0",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/woqhrl9494-cell/corridor-mapper/issues"
+  },
+  "homepage": "https://github.com/woqhrl9494-cell/corridor-mapper#readme",
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "jsdom": "30.0.1"
+  },
+  "private": true
+}

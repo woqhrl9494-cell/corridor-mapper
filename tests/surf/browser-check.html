@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+  <meta charset="utf-8" /><title>SURF browser parity</title
+  ><style>
+    body {
+      font: 15px system-ui;
+      background: #f3f5f9;
+      color: #132044;
+      padding: 30px;
+    }
+    button {
+      padding: 14px 24px;
+    }
+    pre {
+      white-space: pre-wrap;
+    }
+  </style>
+  <h1>SURF browser parity</h1>
+  <p>동결된 개발 자료 3개만 실행. TEST-ID 없음.</p>
+  <button id="run">Run browser parity</button>
+  <pre id="output">Ready</pre>
+  <script type="module">
+    const output = document.querySelector("#output"),
+      button = document.querySelector("#run");
+    const assert = (v, msg) => {
+      if (!v) throw Error(msg);
+    };
+    const maxdiff = (a, b) =>
+      Math.max(0, ...a.map((x, i) => Math.abs(x - b[i])));
+    button.onclick = async () => {
+      button.disabled = true;
+      const worker = new Worker("../../surf/engine.worker.mjs", {
+          type: "module",
+        }),
+        results = [];
+      try {
+        const response = await fetch("fixtures.json.gz"),
+          json = await new Response(
+            response.body.pipeThrough(new DecompressionStream("gzip")),
+          ).json();
+        for (const [id, c] of json.entries()) {
+          const started = performance.now();
+          output.textContent = JSON.stringify(
+            { state: "RUNNING", run: c.run_id, completed: results },
+            null,
+            2,
+          );
+          const result = await new Promise((resolve, reject) => {
+            worker.onmessage = ({ data: d }) => {
+              if (d.kind === "error") reject(Error(d.error));
+              if (d.kind === "result") resolve(d.result);
+              if (d.kind === "progress")
+                output.textContent = JSON.stringify(
+                  {
+                    state: "RUNNING",
+                    run: c.run_id,
+                    progress: d,
+                    completed: results,
+                  },
+                  null,
+                  2,
+                );
+            };
+            worker.onerror = (e) => reject(Error(e.message));
+            worker.postMessage({ id, raw: c.raw, targets: c.targets });
+          });
+          const fit = result.fit,
+            e = c.expected;
+          assert(fit.status === e.status, "status");
+          assert(
+            JSON.stringify(fit.selected_ids) === JSON.stringify(e.selected_ids),
+            "selected branches",
+          );
+          assert(
+            fit.selected_complexity.degree === e.selected_complexity.degree,
+            "degree",
+          );
+          assert(
+            fit.selected_complexity.lambda_m4 ===
+              e.selected_complexity.lambda_m4,
+            "lambda",
+          );
+          let coefficient = 0,
+            position = 0,
+            normal = 0,
+            cost = 0,
+            curve = 0;
+          for (const [k, v] of Object.entries(e.chart))
+            assert(
+              typeof v === "string" ? fit.chart[k] === v : (Array.isArray(v)
+                ? maxdiff(fit.chart[k], v)
+                : Math.abs(fit.chart[k] - v)) <= 1e-6,
+              "chart geometry " + k,
+            );
+          const all = [...result.predictions, ...result.cross.predictions];
+          assert(all.length === e.predictions.length, "output row count");
+          assert(
+            new Set(all.map((p) => p.method_id + "/" + p.target_id)).size ===
+              all.length,
+            "duplicate output IDs",
+          );
+          assert(
+            result.curves.length === e.curves.length,
+            "retained curve count",
+          );
+          for (const c of result.curves) {
+            const old = e.curves.find((o) => o.id === c.id);
+            assert(old, "curve ID");
+            assert(c.points.length === old.points.length, "curve samples");
+            for (let j = 0; j < c.points.length; j++)
+              curve = Math.max(curve, maxdiff(c.points[j], old.points[j]));
+          }
+          assert(curve <= 1e-6, "final curve geometry");
+          for (const h of e.hypotheses) {
+            const n = fit.hypotheses.find(
+              (a) => a.hypothesis_id === h.hypothesis_id,
+            );
+            coefficient = Math.max(
+              coefficient,
+              maxdiff(n.coefficients, h.coefficients),
+            );
+            for (const k of ["raw_mse_m2", "raw_sse_m2", "penalty_m2"]) {
+              const d = Math.abs(n[k] - h[k]);
+              cost = Math.max(cost, d);
+              assert(d <= 1e-10 + 1e-7 * Math.abs(h[k]), "cost " + k);
+            }
+            assert(n.final_reflection_check.passed, "visibility");
+          }
+          assert(coefficient <= 1e-6, "coefficients");
+          for (const p of [
+            ...result.predictions,
+            ...result.cross.predictions,
+          ]) {
+            const old = e.predictions.find(
+              (o) => o.target_id === p.target_id && o.method_id === p.method_id,
+            );
+            assert(old, "target ID");
+            for (const k of [
+              "status",
+              "valid",
+              "selected_id",
+              "alternative_ids",
+            ])
+              assert(
+                JSON.stringify(p[k]) === JSON.stringify(old[k]),
+                p.method_id + " " + k,
+              );
+            if (p.valid) {
+              position = Math.max(position, maxdiff(p.x, old.x));
+              normal = Math.max(normal, maxdiff(p.normal, old.normal));
+            }
+          }
+          assert(position <= 1e-6, "position");
+          assert(normal <= 1e-7, "normal");
+          results.push({
+            run_id: c.run_id,
+            passed: true,
+            position,
+            normal,
+            coefficient,
+            cost,
+            curve,
+            seconds: (performance.now() - started) / 1000,
+            runtime: result.provenance,
+          });
+        }
+        output.textContent = JSON.stringify(
+          { state: "PASS", results },
+          null,
+          2,
+        );
+        output.dataset.status = "PASS";
+        const link=document.createElement("a");link.download="SURF_browser_parity.json";
+        link.href=URL.createObjectURL(new Blob([output.textContent],{type:"application/json"}));
+        link.click();setTimeout(()=>URL.revokeObjectURL(link.href),30000);
+      } catch (e) {
+        output.textContent = JSON.stringify(
+          { state: "FAIL", error: e.message, results },
+          null,
+          2,
+        );
+        output.dataset.status = "FAIL";
+      } finally {
+        worker.terminate();
+        button.disabled = false;
+      }
+    };
+  </script>
+</html>

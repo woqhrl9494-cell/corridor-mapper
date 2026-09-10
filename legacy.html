@@ -1,0 +1,667 @@
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║  EchoMap — Ellipsoidal GM (Paper Algorithm)             ║
+  ║  Bistatic Radar Tomography Simulator                    ║
+  ╠══════════════════════════════════════════════════════════╣
+  ║  Author : Jaebok Lee                                    ║
+  ║  Email  : ok7393@hanyang.ac.kr                          ║
+  ║  School : Hanyang University                            ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EchoMap — TSRI-S Solver Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #e4e4ea;
+  --surface:  #ffffff;
+  --surface2: #f5f5f7;
+  --surface3: #eaeaef;
+  --border:   rgba(0,0,0,0.07);
+  --border2:  rgba(0,0,0,0.12);
+  --text:     #1c1c1e;
+  --text2:    #48484a;
+  --text3:    #8e8e93;
+  --text4:    #c7c7cc;
+  --accent:   #007aff;
+  --accent2:  #0062cc;
+  --green:    #30d158;
+  --amber:    #ff9f0a;
+  --red:      #ff453a;
+  --indigo:   #5856d6;
+  --r:        10px;
+  --r-sm:     7px;
+  --sidebar:  300px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  font-size: 12.5px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ─────────────────────────────── */
+header {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  flex-shrink: 0;
+  gap: 10px;
+  position: relative;
+  z-index: 10;
+}
+.traffic-lights {
+  display: flex; gap: 6px; align-items: center; margin-right: 4px;
+}
+.tl-dot {
+  width: 12px; height: 12px; border-radius: 50%; cursor: default;
+  transition: filter 0.12s;
+}
+.tl-close    { background: #ff5f57; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); }
+.tl-minimize { background: #febc2e; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); }
+.tl-maximize { background: #28c840; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); }
+.tl-dot:hover { filter: brightness(0.85); }
+
+.header-divider {
+  width: 1px; height: 20px;
+  background: var(--border2);
+  margin: 0 2px;
+}
+.logo-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(0,122,255,0.5);
+  flex-shrink: 0;
+}
+.logo-text {
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 0.05em; color: var(--text);
+  text-transform: uppercase;
+}
+.logo-sub {
+  font-size: 11px; font-weight: 300;
+  color: var(--text3);
+  font-family: 'SF Mono', 'DM Mono', monospace;
+  margin-left: 2px;
+}
+.header-sep { flex: 1; }
+.header-badge {
+  font-family: 'SF Mono', 'DM Mono', monospace;
+  font-size: 9.5px; color: var(--text3);
+  letter-spacing: 0.07em;
+  border: 1px solid var(--border2);
+  padding: 3px 9px; border-radius: 20px;
+  background: rgba(0,0,0,0.025);
+}
+.header-author {
+  font-family: 'SF Mono', 'DM Mono', monospace;
+  font-size: 9.5px; color: var(--text3);
+  letter-spacing: 0.03em;
+  display: flex; align-items: center; gap: 7px;
+}
+.header-author a { color: var(--accent); text-decoration: none; opacity: 0.7; transition: opacity 0.15s; }
+.header-author a:hover { opacity: 1; }
+
+/* ── LAYOUT ─────────────────────────────── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar {
+  width: var(--sidebar);
+  min-width: var(--sidebar);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
+  padding-bottom: 12px;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Scenario pills */
+.scenario-bar {
+  display: flex; gap: 6px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.scen-pill {
+  flex: 1; padding: 6px 0;
+  border-radius: 100px;
+  border: 1px solid var(--border2);
+  background: transparent; color: var(--text2);
+  font-family: inherit; font-size: 11.5px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.scen-pill:hover { border-color: var(--accent); color: var(--accent); }
+.scen-pill.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  box-shadow: 0 2px 8px rgba(0,122,255,0.28);
+}
+
+/* Section */
+.sec { padding: 6px 14px 0; }
+.sec-title {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 7px;
+}
+.sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Collapsible parameter groups. All groups start closed so run controls stay visible. */
+.control-group { padding-top: 4px; }
+.sec-toggle {
+  width: 100%; min-height: 29px; padding: 5px 0;
+  border: 0; background: transparent; color: var(--text3);
+  display: flex; align-items: center; gap: 7px;
+  font: 700 9px/1 -apple-system, 'SF Pro Text', sans-serif;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  cursor: pointer; text-align: left;
+}
+.sec-toggle::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.sec-toggle:hover { color: var(--text2); }
+.sec-chevron {
+  width: 13px; height: 13px; flex: 0 0 auto;
+  transition: transform 0.22s ease;
+}
+.control-group:not(.collapsed) .sec-chevron { transform: rotate(180deg); }
+.sec-content {
+  max-height: 760px; opacity: 1; overflow: hidden;
+  padding-top: 3px;
+  transition: max-height 0.28s ease, opacity 0.18s ease, padding-top 0.28s ease;
+}
+.control-group.collapsed .sec-content {
+  max-height: 0; opacity: 0; padding-top: 0; pointer-events: none;
+}
+.run-controls { padding-top: 8px; padding-bottom: 1px; border-bottom: 1px solid var(--border); }
+.toggle-chip {
+  min-height: 25px; padding: 4px 7px; border: 1px solid var(--border2);
+  border-radius: 6px; background: var(--surface2); color: var(--text2);
+  display: flex; align-items: center; gap: 6px;
+  font: 500 10px 'DM Sans', sans-serif; cursor: pointer;
+}
+.toggle-chip input { accent-color: var(--accent); }
+.toggle-chip.checked { color: var(--accent); border-color: rgba(0,122,255,0.35); background: rgba(0,122,255,0.07); }
+.diffuse-params.disabled { opacity: 0.42; }
+.diffuse-params.disabled input { pointer-events: none; }
+.micro-note { margin: 0 0 5px; color: var(--text3); font: 500 8.5px/1.35 'DM Mono', monospace; }
+
+/* Slider row */
+.param-row { margin-bottom: 5px; }
+.param-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+.param-name { font-size: 11.5px; font-weight: 400; color: var(--text2); }
+.param-val {
+  font-family: 'SF Mono', 'DM Mono', monospace;
+  font-size: 10.5px; font-weight: 500; color: var(--text);
+  min-width: 38px; text-align: right;
+}
+
+/* Custom range */
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 3px;
+  border-radius: 2px; background: rgba(0,0,0,0.09);
+  outline: none; cursor: pointer; border: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  border-radius: 50%; background: #fff; border: none;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(0,0,0,0.10);
+  cursor: pointer; transition: transform 0.1s, box-shadow 0.1s;
+}
+input[type=range]:hover::-webkit-slider-thumb {
+  transform: scale(1.18);
+  box-shadow: 0 2px 10px rgba(0,122,255,0.38), 0 0 0 3px rgba(0,122,255,0.13);
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn {
+  width: 100%; padding: 9px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border2);
+  background: var(--surface); color: var(--text2);
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  cursor: pointer; letter-spacing: 0.02em;
+  transition: all 0.14s; margin-bottom: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+.btn:hover { border-color: rgba(0,0,0,0.2); background: var(--surface2); color: var(--text); }
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(0,122,255,0.32), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); box-shadow: 0 4px 18px rgba(0,122,255,0.42); }
+.btn-primary.running {
+  background: rgba(48,209,88,0.10); border-color: var(--green); color: var(--green);
+  box-shadow: 0 0 0 3px rgba(48,209,88,0.14);
+  animation: pulseGreen 2.2s ease-in-out infinite;
+}
+@keyframes pulseGreen {
+  0%,100% { box-shadow: 0 0 0 3px rgba(48,209,88,0.14); }
+  50%      { box-shadow: 0 0 0 6px rgba(48,209,88,0.26); }
+}
+.btn-danger { border-color: transparent; background: transparent; color: var(--text3); box-shadow: none; }
+.btn-danger:hover { border-color: rgba(255,69,58,0.3); color: var(--red); background: rgba(255,69,58,0.05); }
+.btn-row { display: flex; gap: 6px; }
+.btn-row .btn { flex: 1; }
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 3px; }
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 7px 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+}
+.stat-label {
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.11em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 4px;
+}
+.stat-value {
+  font-family: 'SF Mono', 'DM Mono', monospace;
+  font-size: 13px; font-weight: 500;
+  color: var(--text); line-height: 1;
+}
+
+/* 2-column param grid */
+.param-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.param-grid2 .param-row { margin-bottom: 4px; }
+.param-grid2 .param-name { font-size: 10.5px; }
+.param-grid2 .param-val  { font-size: 10.5px; }
+.param-grid2 input[type=range] { height: 2px; }
+.param-grid2 input[type=range]::-webkit-slider-thumb { width: 11px; height: 11px; }
+
+/* ── CANVAS AREA ─────────────────────────── */
+.views {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--bg); padding: 10px; gap: 8px; overflow: hidden;
+}
+.views-row { display: flex; gap: 8px; flex: 1; min-height: 0; }
+.view {
+  position: relative; flex: 1; min-width: 0;
+  border-radius: var(--r); overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.09);
+  background: #f7f7f9;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.07);
+}
+#viewMain { background: #f7f7f9; }
+canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* Panel label — frosted glass light pill (all panels) */
+.vlabel {
+  position: absolute;
+  top: 10px; left: 12px;
+  font-size: 10px; font-weight: 500;
+  color: rgba(0,0,0,0.55);
+  pointer-events: none;
+  letter-spacing: 0.04em;
+  font-family: 'SF Mono', 'DM Mono', monospace;
+  z-index: 2;
+  background: rgba(255,255,255,0.82);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.08);
+  padding: 4px 11px 4px 8px;
+  border-radius: 100px;
+  display: flex; align-items: center; gap: 6px;
+}
+.vlabel-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 5px;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+.vlabel-badge-a { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.6); }
+.vlabel-badge-b { background: rgba(0,122,255,0.8); color: #fff; }
+.vlabel-badge-c { background: rgba(48,209,88,0.8); color: #fff; }
+.vlabel-badge-d { background: rgba(0,122,255,0.8); color: #fff; }
+.vlabel-badge-e { background: rgba(48,209,88,0.8); color: #fff; }
+.vlabel-text { white-space: nowrap; font-size: 9.5px; color: rgba(0,0,0,0.55); letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* mbar progress */
+.mbar-track { height: 3px; background: var(--border2); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.mbar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease, background 0.4s; }
+.metric-context { margin:0 0 5px; padding:5px 7px; border-radius:6px; background:var(--surface2); color:var(--text3); font:500 8px 'DM Mono',monospace; text-align:center; }
+.mval-good  { color: var(--green); }
+.mval-warn  { color: var(--amber); }
+.mval-bad   { color: var(--red); }
+.mval-na    { color: var(--text3); }
+.mbar-good  { background: var(--green); }
+.mbar-warn  { background: var(--amber); }
+.mbar-bad   { background: var(--red); }
+
+/* Wall mode pills */
+.wall-mode-bar { display: flex; gap: 5px; margin-bottom: 6px; }
+.wall-pill {
+  flex: 1; padding: 5px 0;
+  border-radius: 100px;
+  border: 1px solid var(--border2);
+  background: transparent; color: var(--text2);
+  font-family: inherit; font-size: 10.5px; font-weight: 500;
+  cursor: pointer; transition: all 0.14s;
+}
+.wall-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 6px rgba(0,122,255,0.25); }
+
+/* ── COMPARISON LAYOUT ──────────────────── */
+.compare-hdr { display: flex; gap: 5px; margin-bottom: 5px; }
+.compare-hdr-cell {
+  flex: 1; font-size: 9.5px; font-weight: 700; text-align: center;
+  padding: 4px 0; border-radius: 6px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.chdr-direct { background: rgba(0,122,255,0.09); color: #007aff; border: 1px solid rgba(0,122,255,0.15); }
+.chdr-gm     { background: rgba(48,209,88,0.09);  color: #30d158; border: 1px solid rgba(48,209,88,0.18); }
+.compare-cols { display: flex; gap: 5px; }
+.compare-col  { flex: 1; min-width: 0; }
+.cinfo-row { display: flex; gap: 5px; margin-bottom: 4px; }
+.cinfo-cell {
+  flex: 1; font-family: 'SF Mono', 'DM Mono', monospace; font-size: 9.5px;
+  color: var(--text2); background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 6px; text-align: center;
+}
+
+/* Score / step callout */
+.callout-row { display: flex; gap: 5px; margin-top: 4px; }
+.callout {
+  flex: 1;
+  background: linear-gradient(135deg, rgba(0,122,255,0.07), rgba(0,122,255,0.03));
+  border: 1px solid rgba(0,122,255,0.14);
+  border-radius: 8px; padding: 6px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.callout.gm {
+  background: linear-gradient(135deg, rgba(48,209,88,0.07), rgba(48,209,88,0.03));
+  border-color: rgba(48,209,88,0.14);
+}
+.callout-label { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+.callout-value { font-family: 'SF Mono', 'DM Mono', monospace; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1; }
+.callout-value.mval-good { color: var(--green); }
+.callout-value.mval-warn { color: var(--amber); }
+.callout-value.mval-bad  { color: var(--red); }
+.callout-value.mval-na   { color: var(--text3); font-size: 12px; }
+.param-select { width:100%; height:25px; border:1px solid var(--border2); border-radius:6px; background:var(--surface2); color:var(--text); font:500 10px 'DM Sans',sans-serif; padding:0 7px; }
+
+/* Retain EchoMap's white panels, gray chrome, top overview and lower comparisons. */
+body{font-size:14px} :root{--sidebar:320px}.sidebar{min-width:var(--sidebar)}
+.sec-title,.param-name,.param-val,.sec-toggle,.btn,.param-label{font-size:13px}
+.micro-note{font-size:12px;line-height:1.6;margin:8px 0;color:#62626c;word-break:keep-all}
+.logo-sub{font-size:12px}.header-author{font-size:11px}.param-select,select{font:inherit;font-size:12px;min-height:30px;width:100%;margin:4px 0 8px;padding:4px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text)}
+label{font-size:12px}.btn{min-height:31px}.tsri-views{overflow:auto;gap:8px}.top-row{flex:1.2;min-height:240px}.solver-row{flex:1;min-height:200px}.view canvas{width:100%;height:100%;display:block}.vlabel-text{font-size:12px}.vlabel{z-index:2}.map-status,.panel-note{position:absolute;bottom:8px;left:12px;right:10px;font-size:12px;color:#60606b;background:#ffffffdc;width:fit-content;padding:4px 7px;border-radius:5px;pointer-events:none}
+.result-panel{background:white;border:1px solid var(--border);border-radius:10px;padding:12px 16px;flex:none}.result-title{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:10px}#runStatus{color:#73737c;font-size:12px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:7px 10px;border-bottom:1px solid #efeff2;white-space:nowrap}th:first-child,td:first-child{text-align:left}thead th{background:#f7f7f9}td{font-family:ui-monospace,'DM Mono',monospace}td:first-child{font-family:inherit;color:#60606c}.lm-text{color:#0072b2}.tr-text{color:#c35c00}.vp-text{color:#007d62}.method-dot{width:8px;height:8px;border-radius:50%;flex:none}.lm{background:#0072b2}.tr{background:#d55e00}.vp{background:#009e73}.diagnostics{font-size:12px;color:#666673;line-height:1.7;padding-top:8px}.display-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}.display-options input{accent-color:#007aff}summary{font-size:12px;color:#555560;cursor:pointer;padding:10px 0}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-grid canvas{width:100%;height:200px}#windowInfo{font-size:12px;line-height:1.8}#errorStatus{padding:12px;color:#a72c20;background:#fff0ed}#trialResults{margin-top:12px;padding-top:8px;border-top:1px solid #ddd}a{color:#0072b2}button:disabled{opacity:.45;cursor:wait}.result-panel [hidden]{display:none}
+@media(max-width:1050px){.header-author,.header-badge{display:none}.solver-row{flex-wrap:wrap;min-height:430px}.solver-row .view{min-width:45%;min-height:190px}}
+@media(max-width:720px){body{overflow:auto;height:auto}.main{display:block;overflow:visible}.sidebar{width:100%;max-height:none}.tsri-views{overflow:visible;padding:8px}.top-row{min-height:280px}.solver-row{display:block}.solver-row .view{height:230px;margin-bottom:8px}.header-sub{display:none}.detail-grid{grid-template-columns:1fr}.result-title{flex-wrap:wrap}}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="traffic-lights">
+    <div class="tl-dot tl-close"></div>
+    <div class="tl-dot tl-minimize"></div>
+    <div class="tl-dot tl-maximize"></div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="logo-dot"></div>
+  <span class="logo-text">EchoMap</span>
+  <span class="logo-sub">/ TSRI-S Solver Comparison</span>
+  <div class="header-sep"></div>
+  <span class="header-badge">BISTATIC · RADAR · MAPPING</span>
+  <div class="header-author">
+    <span>Jaebok Lee</span>
+    <span style="color:var(--border2)">·</span>
+    <a href="mailto:ok7393@hanyang.ac.kr">ok7393@hanyang.ac.kr</a>
+    <span style="color:var(--border2)">·</span>
+    <span>Hanyang Univ.</span>
+  </div>
+</header>
+
+<div class="main">
+<div class="sidebar">
+
+  <!-- SCENARIO -->
+  <div class="scenario-bar">
+    <button id="btnScenCorridor" class="scen-pill active">Corridor</button>
+    <button id="btnScenTorus"    class="scen-pill">Torus</button>
+  </div>
+
+  <!-- SIMULATION CONTROLS: kept at the top regardless of group state -->
+  <div class="sec run-controls">
+    <button class="btn btn-primary" id="btnRun">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M3 2l7 4-7 4V2z"/>
+      </svg>
+      Start simulation
+    </button>
+    <div class="btn-row">
+      <button class="btn" id="btnStep">Step ×1</button>
+      <button class="btn btn-danger" id="btnReset">Reset</button>
+    </div>
+  </div>
+
+  <!-- ENVIRONMENT -->
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupEnvironment">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Environment</span>
+    </button>
+    <div class="sec-content" id="groupEnvironment">
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Seed</span>
+          <span class="param-val" id="vSeed">42</span>
+        </div>
+        <input type="range" id="seed" min="1" max="99" value="42">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Gap height</span>
+          <span class="param-val" id="vGap">10 <span style="font-size:9px;color:var(--text3)">m</span></span>
+        </div>
+        <input type="range" id="gap" min="4" max="20" step="0.5" value="10">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Roughness</span>
+          <span class="param-val" id="vRough">0.40</span>
+        </div>
+        <input type="range" id="rough" min="0" max="1.0" step="0.05" value="0.40">
+      </div>
+      <div id="corridorParams">
+        <div class="param-row">
+          <div class="param-label">
+            <span class="param-name">Curvature</span>
+            <span class="param-val" id="vCurve">0.25</span>
+          </div>
+          <input type="range" id="curve" min="0.0" max="0.5" step="0.05" value="0.25">
+        </div>
+      </div>
+      <div id="torusParams" style="display:none;">
+        <div class="param-row">
+          <div class="param-label">
+            <span class="param-name">Radius</span>
+            <span class="param-val" id="vTR">10 <span style="font-size:9px;color:var(--text3)">m</span></span>
+          </div>
+          <input type="range" id="torusR" min="5" max="20" step="0.5" value="10">
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- VEHICLES -->
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupVehicles">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Vehicles</span>
+    </button>
+    <div class="sec-content" id="groupVehicles">
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Count</span>
+          <span class="param-val" id="vN">8</span>
+        </div>
+        <input type="range" id="nBots" min="2" max="30" step="1" value="8">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Speed</span>
+          <span class="param-val" id="vSpeed">5.0</span>
+        </div>
+        <input type="range" id="speed" min="0" max="10" step="0.1" value="5.0">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">Spread</span>
+          <span class="param-val" id="vSpread">6.0</span>
+        </div>
+        <input type="range" id="spread" min="1" max="15" step="0.5" value="6.0">
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- NOISE -->
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupNoise">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Measurement Noise</span>
+    </button>
+    <div class="sec-content" id="groupNoise">
+    <div class="param-grid2">
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">σ_range (m)</span>
+          <span class="param-val" id="vNoiseSigma">0.10</span>
+        </div>
+        <input type="range" id="noiseSigma" min="0" max="2.0" step="0.05" value="0.10">
+      </div>
+      <div class="param-row">
+        <div class="param-label">
+          <span class="param-name">σ_pose (m, shared bias)</span>
+          <span class="param-val" id="vPosSigma">0.10</span>
+        </div>
+        <input type="range" id="posSigma" min="0" max="1.0" step="0.05" value="0.10">
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- DIFFUSE PATHS -->
+  <div class="sec control-group collapsed">
+    <button class="sec-toggle" type="button" aria-expanded="false" aria-controls="groupDiffuse">
+      <svg class="sec-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Diffuse Paths</span>
+    </button>
+    <div class="sec-content" id="groupDiffuse">
+      <label class="toggle-chip" id="chipDiffuse"><input type="checkbox" id="useDiffusePaths"><span id="diffuseToggleText">Scattering stress test · OFF</span></label>
+      <div class="diffuse-params disabled" id="diffuseParams">
+        <p class="micro-note">Wall-arc spread and extracted paths per nominal reflection family</p>
+        <div class="param-grid2">
+          <div class="param-row">
+            <div class="param-label"><span class="param-name">σ_s (arc spread)</span><span class="param-val" id="vDiffuseSigma">1.00 m</span></div>
+            <input type="range" id="diffuseSigma" min="0" max="4" step="0.1" value="1.0" disabled>
+          </div>
+          <div class="param-row">
+            <div class="param-label"><span class="param-name">M̄_D (path mean)</span><span class="param-val" id="vDiffuseMean">2.00</span></div>
+            <input type="range" id="diffuseMean" min="1" max="6" step="0.25" value="2.0" disabled>
+          </div>
+        </div>
+        <label class="param-name" for="scatteringMode">산란 입력 처리</label>
+        <select id="scatteringMode" class="param-select"><option value="stress">분리 경로, 편향 미보정 시험</option><option value="withhold">병합 / 미보정 거리, 출력 보류</option></select>
+        <p class="micro-note">산란 편향 추정기는 미확정. 시험 후보는 점선 원으로 표시하며 확정 지도에 넣지 않음.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">TSRI-S 설정</div>
+    <div class="param-grid2">
+      <div><label for="windowSize">창 길이</label><select id="windowSize"><option value="11">11 / 0.50 s</option><option value="21" selected>21 / 1.00 s</option><option value="41">41 / 2.00 s</option><option value="61">61 / 3.00 s</option></select></div>
+      <div><label for="solveStride">풀이 간격</label><select id="solveStride"><option value="5">5 frames</option><option value="10" selected>10 frames</option><option value="20">20 frames</option></select></div>
+      <div><label for="weighting">목적함수</label><select id="weighting"><option value="gls">GLS, 공유 위치오차</option><option value="ols">OLS, 동일 가중치</option></select></div>
+      <div><label for="maxIter">반복 상한</label><select id="maxIter"><option>20</option><option selected>60</option><option>120</option></select></div>
+    </div>
+    <p class="micro-note" id="lagLabel">중심 시각 접점, 0.50 s 지연</p>
+    <p class="micro-note">동일 거리 track, 초기 후보 최대 4개, 동일 공분산. 모든 후보에서 3개 풀이기 실행.</p>
+    <div class="btn-row"><button class="btn" id="btn20">Step ×20</button><button class="btn" id="btnExport">결과 CSV</button></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">반복 성능 비교</div>
+    <div class="param-grid2">
+      <div><label for="trialCount">Seed 수</label><select id="trialCount"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option></select></div>
+      <div><label for="trialSteps">Seed당 프레임</label><select id="trialSteps"><option value="100" selected>100 / 5 s</option><option value="300">300 / 15 s</option><option value="600">600 / 30 s</option></select></div>
+    </div>
+    <button class="btn" id="btnBenchmark">같은 조건으로 반복 비교</button>
+    <p class="micro-note" id="benchmarkStatus" role="status">현재 seed부터 순차 실행, seed별 95% 신뢰구간</p>
+    <button class="btn" id="btnTrialExport" hidden>반복 비교 JSON</button>
+  </div>
+  <div class="sec">
+    <div class="sec-title">표시</div>
+    <div class="param-row"><div class="param-label"><span class="param-name">Panel FPS</span><span class="param-val" id="vPanelFps">20</span></div><input type="range" id="panelFps" min="1" max="30" step="1" value="20"></div>
+    <div class="display-options"><label><input type="checkbox" id="showGT" checked> 참 벽</label><label><input type="checkbox" id="showPaths"> 반사 경로</label><label><input type="checkbox" id="showCandidates" checked> 보류 후보</label><label><input type="checkbox" id="showCov"> 95% 타원</label></div>
+    <p class="micro-note">색 점 / 법선: 채택한 surfel<br>빈 원: 최근 보류 후보 최대 600개<br>회색 참 벽: 평가와 표시 전용</p>
+    <button class="btn" id="btnFigure">지도 PNG, 300 dpi</button>
+  </div>
+  <div class="sec"><details><summary>모형과 판정 기준</summary>
+    <p class="micro-note">ρ ≈ F(x,t) + b₂τ². b₂는 곡률이 아닌 거리의 2차 보정계수. LM, Trust-region GN (Dogleg), Variable projection + LM 비교.</p>
+    <p class="micro-note">채택: 수렴, 분리된 대안 해 없음, 위치 조건수 &lt; 10⁴, 95% 장반경 &lt; 2 m, 잔차 검사 통과. 같은 관측을 공유하는 출력점은 독립으로 융합하지 않음.</p>
+    <p class="micro-note">오차는 참 접점 대비 계산. 낮은 거리 잔차만으로 지도 성공으로 판정하지 않음. 기존 다각선 벽의 각 선분에서 정확한 정반사점 계산. 방향 잔차와 가시성 검사 후 벽마다 짧은 경로 최대 4개. 모서리와 산란점은 정반사로 취급하지 않음.</p>
+    <p class="micro-note">거리 군집 중앙값은 편향 보정기가 아님. 상관은 창 내부 공유 위치오차만 반영. 선택, 연관 오류와 고차 모형 오차는 공분산 보장 범위 밖.</p>
+    <a href="TSRI_METHOD.md" target="_blank" rel="noopener">수식, 재현 조건, 검증 기록</a>
+  </details></div>
+</div>
+<div class="views tsri-views">
+  <div class="views-row top-row">
+    <div class="view" id="viewMain"><div class="vlabel"><span class="vlabel-badge vlabel-badge-a">A</span><span class="vlabel-text">Map — 차량, 참 벽, TSRI-S 추정점</span></div><canvas id="cvsMain" aria-label="전체 동굴 지도"></canvas><div class="map-status" id="mapStatus">시뮬레이션 시작 또는 Step ×20 실행</div></div>
+  </div>
+  <div class="views-row solver-row">
+    <div class="view"><div class="vlabel"><span class="method-dot lm"></span><span class="vlabel-text">Levenberg–Marquardt</span></div><canvas id="cvsLM" aria-label="LM 추정 지도"></canvas><div class="panel-note" id="noteLM">3변수 동시 최적화</div></div>
+    <div class="view"><div class="vlabel"><span class="method-dot tr"></span><span class="vlabel-text">Trust-region GN</span></div><canvas id="cvsTR" aria-label="Trust-region GN 추정 지도"></canvas><div class="panel-note" id="noteTR">Dogleg, 열 크기 정규화</div></div>
+    <div class="view"><div class="vlabel"><span class="method-dot vp"></span><span class="vlabel-text">Variable projection + LM</span></div><canvas id="cvsVP" aria-label="Variable projection 추정 지도"></canvas><div class="panel-note" id="noteVP">b₂ 해석적 제거, 위치 2변수 최적화</div></div>
+  </div>
+  <div class="result-panel">
+    <div class="result-title"><strong>같은 관측값에서의 성능 비교</strong><span id="runStatus" role="status">0 frames</span></div>
+    <div id="errorStatus" role="alert" hidden></div>
+    <div class="table-wrap"><table id="comparison"><thead><tr><th>평가 항목</th><th class="lm-text">LM</th><th class="tr-text">TR-GN</th><th class="vp-text">VP + LM</th></tr></thead><tbody id="comparisonBody"></tbody></table></div>
+    <div class="diagnostics" id="reflectionStatus" role="status">선분별 정확한 정반사 / 반사 법칙과 가시성 검사</div>
+    <div class="diagnostics" id="diagnostics">시간 간격 0.05 s. 완성된 창부터 비교 시작.</div>
+    <details id="windowDetail"><summary>마지막 창의 수렴과 식별 가능성</summary><div class="detail-grid"><canvas id="cvsCost" aria-label="최적 목적함수 수렴 이력"></canvas><div id="windowInfo"></div></div></details>
+    <div id="trialResults" hidden></div>
+  </div>
+</div>
+</div>
+<script src="diffuse_path.js"></script><script src="wall_metrics.js"></script><script src="echo_environment.js"></script><script src="tsri_solver.js"></script><script src="tsri_pipeline.js"></script><script src="tsri_experiment.js"></script><script src="tsri_ui.js"></script>
+</body></html>

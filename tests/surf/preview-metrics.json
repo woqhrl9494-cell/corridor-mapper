@@ -1,0 +1,18 @@
+[
+  {
+    "method": "CROSS_E0",
+    "contact_m_rmse": 0.0008164572118168236,
+    "normal_deg_rmse": 0.005875740810681748,
+    "observed_coverage": 0.8515850144092219,
+    "unique_outputs": 214,
+    "targets": 220
+  },
+  {
+    "method": "SURF",
+    "contact_m_rmse": 0.00044267386985617297,
+    "normal_deg_rmse": 0.0029608895010753695,
+    "observed_coverage": 0.9178674351585014,
+    "unique_outputs": 220,
+    "targets": 220
+  }
+]

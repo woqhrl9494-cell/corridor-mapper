@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..');
 function context(){return new Proxy({measureText:s=>({width:String(s).length*6}),getImageData:()=>({data:new Uint8ClampedArray(16)})},{get(o,k){if(k in o)return o[k];return ()=>{};}});}
 async function until(fn,ms=20000){const start=Date.now();while(!fn()){if(Date.now()-start>ms)throw Error('timeout');await new Promise(r=>setTimeout(r,10));}}
 async function main(){
- const html=fs.readFileSync(path.join(root,'index.html'),'utf8');const dom=new JSDOM(html,{url:'file://'+path.join(root,'index.html'),runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window,errors=[];
+ const html=fs.readFileSync(path.join(root,'legacy.html'),'utf8');const dom=new JSDOM(html,{url:'file://'+path.join(root,'legacy.html'),runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window,errors=[];
  w.addEventListener('error',e=>errors.push(String(e.error)));w.HTMLCanvasElement.prototype.getContext=context;
  w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
  for(const name of ['diffuse_path.js','wall_metrics.js','echo_environment.js','tsri_solver.js','tsri_pipeline.js','tsri_experiment.js','tsri_ui.js'])w.eval(fs.readFileSync(path.join(root,name),'utf8'));

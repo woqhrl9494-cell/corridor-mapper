@@ -1,200 +1,57 @@
-# EchoMap — TSRI-S Solver Comparison
+# EchoMap — SURF 곡면 추정 실험실
 
-[시뮬레이터 열기](https://woqhrl9494-cell.github.io/corridor-mapper/)
+[시뮬레이터](https://woqhrl9494-cell.github.io/corridor-mapper/) / [이전 Corridor/Torus 비교판](https://woqhrl9494-cell.github.io/corridor-mapper/legacy.html)
 
-기존 동굴과 차량 운동을 유지하고, 선분별 정확한 정반사 거리에서 TSRI-S 접점 역산을 비교한다.
+기본 페이지는 동결된 SURF와 CROSS를 같은 12초 거리 기록으로 비교한다. 단일 원호 또는 사인 벽, 차량 4/5대, 거리 잡음 0/1/5 cm, 위치 오차 0 m의 기존 개발 조건을 제공한다. 이전 LM/TR-GN/VP 비교판은 `legacy.html`에서 보존한다.
 
-- Levenberg–Marquardt, Trust-region GN (Dogleg), Variable projection + LM
-- 같은 입력, 초기값, 시간창과 고정 공분산을 사용한 paired 비교
-- 지연된 접점, 법선, 공분산과 출력 보류 원인 표시
-- 여러 seed 반복 비교, seed 수준 95% CI, CSV / JSON 내보내기
-- 기존 벽과 차량 운동의 원본 일치 검사, 반사 법칙 / 가시성 검사, 미래 관측과 oracle 입력 차단 검사
+## 실행
 
-`index.html`을 직접 열거나, 이 폴더에서 `python3 -m http.server 8877`을 실행한다. 외부 연산 서비스나 MATLAB은 필요하지 않다.
-
-[수식과 구현 범위](TSRI_METHOD.md), [정반사 생성부 수정과 검증](REFLECTION_VALIDATION.md). 이전 근사 생성기로 실행한 [풀이기 비교](TSRI_RESULTS.md)와 [원자료](tsri_validation.json)는 과거 기록이다.
-
-검증 명령: `node --test tests/*.test.js`. DOM 통합 검증은 별도로 설치된 jsdom가 필요하다. 기존 알고리즘 파일은 이전 버전 참고용으로 보존했으며 현재 HTML에서는 로드하지 않는다.
-
----
-
-## Previous EchoMap documentation
-<div align="center">
-
-# EchoMap — Corridor Mapper
-
-**Interactive bistatic-radar wall mapping with a Grid Direct baseline and a causal local-mode ridge estimator.**
-
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-007AFF?style=for-the-badge)](https://woqhrl9494-cell.github.io/corridor-mapper/)
-![Vanilla JS](https://img.shields.io/badge/Vanilla%20JavaScript-34C759?style=for-the-badge)
-![License](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-8E8E93?style=for-the-badge)
-
-![EchoMap Demo](assets/demo.gif)
-
-</div>
-
-## Live simulator
-
-Open [woqhrl9494-cell.github.io/corridor-mapper](https://woqhrl9494-cell.github.io/corridor-mapper/), then press **Start simulation** or **Step x1**.
-
-The page runs two estimators from the same noisy bistatic measurements:
-
-| Method | State update | Wall extraction |
-|---|---|---|
-| **Grid Direct** | Raster Gaussian accumulation | Grid ridge/outer-peak extraction |
-| **Revised local modes** | Bounded per-cell anisotropic modes | Analytic `E/C/R/D` gates, evidence dominance, one-cell normal NMS |
-
-The simulator provides Corridor and Torus environments. **Reset preserves the current seed and environment parameters** so baseline/proposed comparisons are reproducible. Change a slider explicitly to select another environment.
-
-## Revised estimator
-
-The default estimator receives transmitter/receiver position, position covariance, noisy bistatic range, and range standard deviation. Exact simulator reflection points and ground-truth wall geometry are not estimator inputs.
-
-### Online update
-
-1. Sample each bistatic ellipse at approximately equal arc-length spacing.
-2. Propagate pose/range uncertainty into an anisotropic Gaussian kernel.
-3. Assign kernels to local modes using axial-normal alignment and Bhattacharyya distance.
-4. Maintain sufficient statistics `(W,H,s,Q,O,lastSupportedSnapshot)`.
-5. Count persistence once per distinct snapshot and cap each spatial cell at `K_mode` modes.
-
-The persistent state is bounded by `O(B K_mode)`, where `B` is the number of occupied state cells.
-
-### Analytic ridge extraction
-
-Compatible neighboring modes define a continuous Gaussian field. Its gradient and Hessian are evaluated analytically. For field density `g`, dominant axial normal `n`, normal variance `sigma_perp^2`, and normal curvature magnitude `A`, the extractor uses:
-
-```text
-E = 2*pi*sqrt(det(P))*g
-C = (lambda_1(M)-lambda_2(M))/(lambda_1(M)+lambda_2(M)+eps)
-R = sigma_perp^2*A/(g+eps)
-D = sigma_perp*abs(n^T grad(g))/(g+eps)
+```sh
+npm ci
+npm run build
+python3 -m http.server 8891 --bind 127.0.0.1
 ```
 
-A candidate must satisfy the `E`, `C`, `R`, `D`, and negative-normal-curvature gates.
+`http://127.0.0.1:8891/`을 연다. 초기 화면은 **저장된 개발 결과**이며, 실행 버튼을 누르면 해당 브라우저에서 관측 생성과 추정을 다시 수행한다. Python/NumPy는 Pyodide 314.0.6으로 module Web Worker 안에서 실행한다. 첫 실행에는 jsDelivr의 계산 엔진 다운로드가 필요하다. HTML을 `file://`로 직접 여는 방식은 지원하지 않는다. 기본 배포에는 빌드된 bundle도 포함된다.
 
-### Evidence dominance and causal warm-up
+## 동결된 방법
 
-A weak isolated Gaussian is a trivial ridge at its own mean. These self-ridges are rejected with:
+- `surf/core/surface.py`는 B4 준비 완료본과 byte 단위로 동일하다. augmented QR 풀이와 추정 곡면의 최종 reflection/visibility 검사를 포함한다.
+- 원시 거리 MSE + 기존 곡률 penalty. degree `{2,4,6,8}`, regularization `{0,1e-5}`. 기존 1초 시간 block validation, 관측 기반 chart와 초기값, 모호성 판정을 유지한다.
+- C와 CROSS의 두 함수 본문 및 필요한 모듈을 보존하고 Node 파일 입출력 부분만 browser bundle entry에서 분리한다. CROSS의 `0.3 mm + 3σ` 규칙은 동일하다.
+- SURF_ENV_E0 점 교체 보정은 웹 기본 경로에 없다. 동결 기록에는 과거 ablation 정의가 보존되어 있으나 이 페이지에서 실행하지 않는다.
+- 동결 source hash: `e91f329b82dd13134e85d3a1773feb48b52b50da74fe774cbde3cb531df0d7ca`.
+- 실행 core SHA-256: `a9b5520c95b696620852ae5acd0e651a9dc1d950d920a6d778a6b3970e594792`.
 
-```text
-E_ref = Q_0.99({E(x) > 0})
-T_E   = max(tau_E, alpha(t)*E_ref)
+`surf/core/browser_bridge.py`는 진행률과 결과 직렬화만 추가한다. solver의 결과를 재선택하거나 접점을 이동하지 않는다. 두 가설이 남으면 `AMBIGUOUS` 곡면들을 보여주고 단일 접점을 출력하지 않는다.
+
+## 정보 경계와 표시
+
+관측 생성 worker → 화면의 원시 기록 → **명시적 관측 필드만 복사** → 추정 worker → 최종 출력 → 참값 평가 순서다. 추정 worker에는 참 벽, 참 접점, 벽 모양, seed, 평가 자료를 보내지 않는다. 대상 ID의 seed 문자열은 추적용 이름이며 모델 계산에 쓰지 않는다. 전체 관측창의 위치는 알려진 공변량으로 사용하지만 validation 거리값은 training 초기 높이에 쓰지 않는다.
+
+이 페이지는 **12초 batch reconstruction**이다. 결과 사용 가능 시점은 12초 기록이 준비된 뒤의 계산 완료 시점이다. 재생 막대는 차량 기록만 재생하며 추정 곡면/접점을 온라인 출력으로 표시하지 않는다. 두 방법 모두 같은 기록과 요청 목록을 사용한다.
+
+지도는 x/y의 1 m를 같은 픽셀 길이로 그린다. 자동 범위에는 표시한 참 벽, 가설, 접점, 차량 궤적, 선택한 C/CROSS 자료를 모두 포함한다. 지도 범위는 역산에 들어가지 않는다. 확대/이동 시 자동 범위를 해제하고 전체 보기로 복구한다.
+
+coverage는 모든 참 접점에서 0.12 m 이내인 참 벽 표본 중 **선택된 요청 접점**에서 0.2 m 이내인 비율이다. 촘촘히 그린 추정 곡면 표본은 coverage 계산에 포함하지 않는다. 곡면 전체 선은 모형의 외삽을 포함하며 관측하지 않은 벽까지 복원했다는 의미가 아니다.
+
+JSON은 `input`, `measurement`, `result`, `Intended Point`를 분리한다. CSV는 미출력 요청도 남긴다. PNG는 현재 지도의 300 dpi 이미지와 물리 해상도 metadata를 저장한다.
+
+## 검증
+
+```sh
+npm test                  # legacy + SURF adapter, 60 tests
+npm run test:legacy-dom    # old UI handlers with jsdom
 ```
 
-`alpha(t)` is 0.60 through snapshot 60, increases linearly, and reaches 0.70 at snapshot 120. This fixed schedule uses only the current snapshot index. It does not use ground truth, metric values, coverage, or future observations.
+브라우저에서 `/tests/surf/browser-check.html`의 Run browser parity를 누르면 원호, 5 cm 잡음 사인, 정확 대칭의 **기존 개발 자료 3개**를 실제 WASM으로 계산한다. ID/status/branch/degree/λ는 exact, 좌표/coefficients/곡면은 1e-6 m, 법선 성분은 1e-7, cost는 1e-10 + 1e-7 relative로 비교한다. 기존 numerical tolerance를 변경하지 않는다.
 
-### One-cell normal NMS
+개발 기록 25개는 관측, 위치, 요청 시각, 참값, 벽 표본의 해시가 기존 B0–B3 원자료와 일치해야 한다. TEST-ID seed는 UI 생성기에서 거부한다. B4의 TEST-ID 600개는 실행하지 않았다.
 
-The analytic stationarity gate admits a finite band around a ridge. A normal-direction non-maximum suppression step compares each candidate with its two normal neighbors and retains the candidate with:
+[웹 변경과 검증 기록](SURF_WEB_VALIDATION.md), [동결 프로토콜](surf/core/B4_frozen_protocol.json), [이전 문서](LEGACY_README.md).
 
-1. larger `E`;
-2. smaller `D`;
-3. lower deterministic raster index as the final tie-break.
+## 계산 범위
 
-The regression fixture reduces a two-cell band from 274 to 137 cells and reduces maximum per-column thickness from two cells to one.
+SURF는 모델 8종에 두 초기면을 적용하고 최종 두 가설을 재적합한다. N개 관측, G개 root scan 구간, D개 coefficients, I번 반복에서 주 비용은 O(18 I N G D), 작업 배열은 O(N G + N D + 127 N)이다. 현재 최대 N=2400, G=256, D=9이며 worker에서 실행하여 지도 조작과 분리한다. 브라우저/기기에 따라 시간과 메모리 사용량은 달라진다.
 
-## Five-panel layout
-
-| Panel | View |
-|---|---|
-| **A** | GT walls, vehicles, measurements, and both wall estimates |
-| **B** | Grid Direct density |
-| **C** | Revised Evidence `E` |
-| **D** | Grid Direct wall mask |
-| **E** | Revised thin gated ridge |
-
-Canvas backing-store size follows device pixel ratio while all overlays use logical CSS coordinates. This prevents the wall/graph displacement previously observed between Retina and external displays.
-
-## Evaluation metrics
-
-Metrics are updated every three simulation steps.
-
-- Ground-truth walls are sampled uniformly by arc length at 0.2 m spacing.
-- Simulator reflection hits mark the observed GT subset within a 1.0 m radius.
-- Boundary tolerance is 0.4 m.
-- Precision compares every prediction with the full GT wall.
-- Recall measures coverage of the observed GT subset.
-- Boundary F1 is the primary score.
-- CA-MSD and CA-HD95 are coverage-aware directed-distance combinations. They are not labeled standard ASSD/HD95 because the two directions use different GT support.
-- The UI displays observed GT coverage to expose partial-map conditions.
-
-Exact reflection hits are evaluator-only oracle data. They never enter Grid Direct or Revised estimation.
-
-## Data-leakage controls
-
-- `sanitizeEstimatorMeasurements` whitelists only `tx`, `rx`, noisy `r`, and pair/sample indices.
-- Grid Direct and Revised consume the same sanitized current-snapshot measurements.
-- Evaluator observation state is updated only after both estimators finish.
-- Evidence thresholds use current estimator state and snapshot index only.
-- Unknown fields such as `hit`, GT labels, or future fields do not change mode/evidence/ridge output in the regression test.
-- Seeds 42/7 were used during tuning. Parameters were frozen before testing seeds 31/87.
-
-## Fixed-condition test snapshot
-
-Configuration: `G=150`, 120 steps, gap 10 m, roughness 0.4, curvature 0.25, visibility OFF. Values below are from the four independent Corridor/Torus runs using test seeds 31/87.
-
-| Metric | Grid Direct mean | Revised mean |
-|---|---:|---:|
-| Boundary F1 @ 0.4 m | 0.782 | 0.892 |
-| Precision @ 0.4 m | 0.945 | 0.951 |
-| Observed recall | 0.670 | 0.841 |
-| CA-MSD | 0.640 m | 0.321 m |
-| CA-HD95 | 5.219 m | 2.031 m |
-
-This is a four-run test, not evidence of universal superiority. A paper-level result still requires a preregistered larger seed set, paired confidence intervals, and hardware-independent operation profiling.
-
-## Runtime limitation
-
-The Revised non-extraction update p50 is lower than Grid Direct in the tested browser runs, but analytic extraction dominates its tail latency:
-
-```text
-Grid Direct pipeline p95: approximately 8–10 ms
-Revised pipeline p95:     approximately 200–273 ms
-```
-
-The current implementation therefore demonstrates better tested wall-detection accuracy, not lower total computation or real-time extraction superiority. The main bottlenecks are repeated mode-neighborhood analytic raster evaluation and sorting the positive Evidence field for the 0.99 quantile.
-
-## Repository structure
-
-```text
-corridor-mapper/
-├── index.html
-├── revised_wall_estimator.js
-├── wall_metrics.js
-├── revised_wall_estimator.test.js
-├── wall_metrics.test.js
-├── data_leakage_audit.test.js
-├── REVISED_ESTIMATOR_MIGRATION.md
-├── ALGORITHM_UPDATE_PROMPT.md
-└── assets/
-```
-
-`ALGORITHM_UPDATE_PROMPT.md` is a self-contained prompt for explaining the revised algorithm to another AI model without omitting causality, metric definitions, or runtime limitations.
-
-## Validation
-
-With Node.js installed:
-
-```bash
-node revised_wall_estimator.test.js
-node wall_metrics.test.js
-node data_leakage_audit.test.js
-```
-
-Current local results:
-
-```text
-Estimator regression: 18/18 passed
-Metric regression:      5/5 passed
-Data-leakage audit:     passed
-```
-
-## Author
-
-Jaebok Lee, Hanyang University
-[ok7393@hanyang.ac.kr](mailto:ok7393@hanyang.ac.kr)
-
-## License
-
-© 2026 Jaebok Lee, Hanyang University. Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+현재 검증 범위는 단일 그래프 곡면, 단일 정반사, 정확한 위치다. 다중 벽, 비그래프 폐곡선, 실제 센서 위치 bias, 통신 지연을 검증한 것으로 해석하지 않는다. 최종 가시성 검사는 열린 경로당 127개 표본이며 연속 곡면의 완전한 가시성 증명은 아니다. 무잡음 원호도 유한 차수 다항 곡면의 근사 오차 때문에 수치 오차 0을 보장하지 않는다.
