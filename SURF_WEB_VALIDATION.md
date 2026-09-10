@@ -66,4 +66,8 @@ ID/status/선택 branch/degree/λ/출력 개수는 exact comparison 통과. 동�
 
 기존 화면 DOM 통합 검사 8/8 통과(40 step, Torus, 산란 처리, reset, export 포함). 별도 실제 브라우저에서도 legacy.html의 초기 화면과 Step ×20을 확인했다.
 
-배포 방식은 기존 GitHub Pages의 main 루트 설정을 유지한다. 공개 페이지의 추가 실측 결과는 배포 후 기록한다.
+배포 방식은 기존 GitHub Pages의 main 루트 설정을 유지한다. 공개 페이지 빌드는 source commit `7702fc740108c2d0c4679b719bde8602751d2c64`에서 성공했다. 배포된 11개 실행/화면/기준 자료의 SHA-256이 로컬 검증본과 일치했다.
+
+공개 HTTPS 주소에서 실행 버튼을 눌러 원호 5대 무잡음을 다시 계산했다. 화면의 `이 브라우저에서 계산` 표시, UNIQUE, 접점 220/220, RMSE 0.443 mm, 법선 RMSE 0.0030°, coverage 91.8%를 확인했다. SURF 50.84 s, CROSS 0.34 s. 검사 탭의 console error/warning은 0개였다. 웹 실행 시간은 CPU 부하와 foreground/background 상태에 따라 달라지므로 앞의 측정과 차이가 있다. 네이티브 B0–B3와 같은 속도라고 주장하지 않는다.
+
+`tests/surf/deployment-proof.json`에 HTTP 해시와 공개 페이지 실행 증거를 기록했다. 배포 뒤 추가 변경은 이 검증 기록뿐이며 알고리즘/실행 파일은 동일하다.

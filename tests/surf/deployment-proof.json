@@ -1,0 +1,100 @@
+{
+  "url": "https://woqhrl9494-cell.github.io/corridor-mapper/",
+  "deployed_source_commit": "7702fc740108c2d0c4679b719bde8602751d2c64",
+  "http_files": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "sha256": "2fed84d00b629e648f76ed569c01d65b36824e64a51ec0db2ddd712a94354e7d",
+      "matches_local": true,
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "legacy.html",
+      "status": 200,
+      "sha256": "5e0417cfff29ef50e192813ac33205ce6889dab752e4a168bf2e9790e17ce3bf",
+      "matches_local": true,
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "surf/app.mjs",
+      "status": 200,
+      "sha256": "fc45a346a6e629555eb5ef810a6b62de3ccffe1eb6a027986857af7be4921036",
+      "matches_local": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "path": "surf/style.css",
+      "status": 200,
+      "sha256": "9a117f73e9ef772ec55582de8f061d81ac60281b44d757715d0748db325d4342",
+      "matches_local": true,
+      "content_type": "text/css; charset=utf-8"
+    },
+    {
+      "path": "surf/engine.worker.mjs",
+      "status": 200,
+      "sha256": "2dee4282b8dc1a57631a5ca85c15a95e7e055e5b56791a9d08f247e392562170",
+      "matches_local": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "path": "surf/scenario.worker.mjs",
+      "status": 200,
+      "sha256": "a11a77ef6f06e9fa71b1432174669b07070dbd680417a645e1dd341b1ce08088",
+      "matches_local": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "path": "surf/core/surface.py",
+      "status": 200,
+      "sha256": "a9b5520c95b696620852ae5acd0e651a9dc1d950d920a6d778a6b3970e594792",
+      "matches_local": true,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "path": "surf/core/browser_bridge.py",
+      "status": 200,
+      "sha256": "3bb427a2b2f932227c26693342c4b24b0d8a31004f130eb374d12b5b6ebce4a3",
+      "matches_local": true,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "path": "surf/cross.bundle.mjs",
+      "status": 200,
+      "sha256": "3cbe19511a50f2db89b6b79203003c76738ec8d7c977c9eca1fd42259f72c5ab",
+      "matches_local": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "path": "surf/core/protocol.json",
+      "status": 200,
+      "sha256": "b71e85350a62c75a1a3d2cba773aa2c38fdde1d7d62afdbc42c8e20a4c8f6397",
+      "matches_local": true,
+      "content_type": "application/json; charset=utf-8"
+    },
+    {
+      "path": "surf/reference/preview.json.gz",
+      "status": 200,
+      "sha256": "202ea28723926fbe1845f14e40318be5d1a085d6fe54cc8fdb473fcd92affa6b",
+      "matches_local": true,
+      "content_type": "application/gzip"
+    }
+  ],
+  "B4_TEST_ID_executed": false,
+  "browser_run": {
+    "scenario": "arc_5_0_3311001",
+    "source_badge": "이 브라우저에서 계산",
+    "status": "UNIQUE",
+    "surf_contact_rmse_mm_displayed": 0.443,
+    "surf_normal_rmse_deg_displayed": 0.003,
+    "surf_coverage_pct_displayed": 91.8,
+    "surf_count": 220,
+    "target_count": 220,
+    "surf_seconds": 50.84,
+    "cross_contact_rmse_mm_displayed": 0.816,
+    "cross_count": 214,
+    "cross_seconds": 0.34,
+    "console_errors": [],
+    "console_warnings": []
+  }
+}
