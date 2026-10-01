@@ -1,280 +1,188 @@
 {
-  "schema": "echomap-drf-layout-validation/1",
-  "date": "2026-10-01T12:06:25.399Z",
+  "schema": "echomap-drf-layout-validation/2",
+  "date": "2026-10-01T12:45:06.934Z",
   "url": "http://127.0.0.1:8871/drf.html#v1=%7B%22scene%22%3A%22reference%22%2C%22vehicles%22%3A3%2C%22snapshots%22%3A60%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22roughness%22%3A2%2C%22lambda0%22%3A10%2C%22cellStep%22%3A0.02%2C%22resolution%22%3A0%2C%22specular%22%3Atrue%2C%22grid%22%3A150%2C%22band%22%3A4%2C%22perimeter%22%3A%22exact%22%2C%22seed%22%3A1%7D",
+  "layout": "reference HTML: sidebar, one upper map, three lower graphs",
   "desktop": [
     {
+      "densityView": {
+        "auto": true,
+        "pixelsPerMetre": 7.427777777777779,
+        "plotHeight": 191,
+        "plotWidth": 191,
+        "xmax": 60.857142857142854,
+        "xmin": 35.142857142857146,
+        "ymax": 27.927087972886483,
+        "ymin": 2.2128022586007727
+      },
       "elements": {
         "#cancelButton": {
-          "bottom": 262.296875,
+          "bottom": 155.59375,
           "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.34375,
-          "x": 201.65625,
-          "y": 218.296875
-        },
-        "#mapCanvas": {
-          "bottom": 633.296875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 416,
-          "width": 643,
-          "x": 324,
-          "y": 217.296875
-        },
-        "#metricChart": {
-          "bottom": 718.046875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 300,
-          "width": 310,
-          "x": 1010,
-          "y": 418.046875
-        },
-        "#pauseButton": {
-          "bottom": 262.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.328125,
-          "x": 31,
-          "y": 218.296875
-        },
-        "#replayButton": {
-          "bottom": 705.1875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 59.453125,
-          "x": 323,
-          "y": 661.1875
-        },
-        "#runButton": {
-          "bottom": 212.296875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 164.65625,
-          "x": 31,
-          "y": 168.296875
-        },
-        "#stepButton": {
-          "bottom": 212.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.34375,
-          "x": 201.65625,
-          "y": 168.296875
-        },
-        "#timeSlider": {
-          "bottom": 718.890625,
-          "font": "16px",
           "fullyVisible": true,
           "height": 32,
-          "width": 505.546875,
-          "x": 390.453125,
-          "y": 686.890625
+          "width": 81.34375,
+          "x": 182.65625,
+          "y": 123.59375
         },
-        "#timingValue": {
-          "bottom": 766.34375,
+        "#contrastCanvas": {
+          "bottom": 786.984375,
           "font": "14px",
           "fullyVisible": true,
-          "height": 20,
-          "width": 195.984375,
-          "x": 1069.375,
-          "y": 746.34375
+          "height": 253.46875,
+          "width": 363.671875,
+          "x": 676.65625,
+          "y": 533.515625
+        },
+        "#densityCanvas": {
+          "bottom": 786.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 253.46875,
+          "width": 363.65625,
+          "x": 301,
+          "y": 533.515625
+        },
+        "#historyMetric": {
+          "bottom": 514.421875,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 150,
+          "x": 1255.984375,
+          "y": 484.421875
+        },
+        "#mapCanvas": {
+          "bottom": 467.421875,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 362.421875,
+          "width": 1114.984375,
+          "x": 301,
+          "y": 105
+        },
+        "#medianValue": {
+          "bottom": 790.28125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 19,
+          "y": 769.59375
+        },
+        "#metricChart": {
+          "bottom": 786.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 267.5625,
+          "width": 363.65625,
+          "x": 1052.328125,
+          "y": 519.421875
+        },
+        "#offwallValue": {
+          "bottom": 807.078125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 191,
+          "y": 786.390625
+        },
+        "#p95Value": {
+          "bottom": 790.28125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 105,
+          "y": 769.59375
+        },
+        "#pauseButton": {
+          "bottom": 155.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 32,
+          "width": 81.328125,
+          "x": 12,
+          "y": 123.59375
+        },
+        "#runButton": {
+          "bottom": 119.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 32,
+          "width": 166.65625,
+          "x": 12,
+          "y": 87.59375
+        },
+        "#stepButton": {
+          "bottom": 119.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 32,
+          "width": 81.34375,
+          "x": 182.65625,
+          "y": 87.59375
+        },
+        "#timeSlider": {
+          "bottom": 836,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 591.25,
+          "x": 485.328125,
+          "y": 806
         },
         "[name=lambda0]": {
-          "bottom": 675.859375,
-          "font": "16px",
+          "bottom": 542.53125,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 41,
-          "width": 121,
-          "x": 160,
-          "y": 634.859375
+          "height": 32,
+          "width": 122,
+          "x": 142,
+          "y": 510.53125
         },
         "[name=roughness]": {
-          "bottom": 675.859375,
-          "font": "16px",
+          "bottom": 542.53125,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 42,
-          "width": 121,
-          "x": 31,
-          "y": 633.859375
+          "height": 32,
+          "width": 122,
+          "x": 12,
+          "y": 510.53125
         },
         "[name=sigmaD]": {
-          "bottom": 518.375,
-          "font": "16px",
+          "bottom": 424.046875,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 40,
-          "width": 121,
-          "x": 160,
-          "y": 478.375
+          "height": 32,
+          "width": 122,
+          "x": 142,
+          "y": 392.046875
         },
         "[name=sigmaP]": {
-          "bottom": 518.375,
-          "font": "16px",
+          "bottom": 424.046875,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 40,
-          "width": 121,
-          "x": 31,
-          "y": 478.375
+          "height": 32,
+          "width": 122,
+          "x": 12,
+          "y": 392.046875
         }
       },
       "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
       "overflow": 0,
       "q": "2904",
-      "scrollY": 0,
+      "status": "계산 완료 · 측정 생성 0.53 s · 참조 .m 원본 대조 미완료",
       "view": {
         "auto": true,
-        "pixelsPerMetre": 7.173913043478261,
-        "plotHeight": 284,
-        "plotWidth": 495,
-        "xmax": 64.5,
-        "xmin": -4.5,
-        "ymax": 34.7939393939394,
-        "ymin": -4.793939393939393
-      },
-      "viewport": [
-        1366,
-        768
-      ]
-    },
-    {
-      "elements": {
-        "#cancelButton": {
-          "bottom": 282.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.34375,
-          "x": 201.65625,
-          "y": 238.296875
-        },
-        "#mapCanvas": {
-          "bottom": 695.296875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 458,
-          "width": 717,
-          "x": 324,
-          "y": 237.296875
-        },
-        "#metricChart": {
-          "bottom": 805.21875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 340,
-          "width": 310,
-          "x": 1084,
-          "y": 465.21875
-        },
-        "#pauseButton": {
-          "bottom": 282.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.328125,
-          "x": 31,
-          "y": 238.296875
-        },
-        "#replayButton": {
-          "bottom": 767.1875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 59.453125,
-          "x": 323,
-          "y": 723.1875
-        },
-        "#runButton": {
-          "bottom": 232.296875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 164.65625,
-          "x": 31,
-          "y": 188.296875
-        },
-        "#stepButton": {
-          "bottom": 232.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.34375,
-          "x": 201.65625,
-          "y": 188.296875
-        },
-        "#timeSlider": {
-          "bottom": 780.890625,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 32,
-          "width": 579.546875,
-          "x": 390.453125,
-          "y": 748.890625
-        },
-        "#timingValue": {
-          "bottom": 859.515625,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 20,
-          "width": 195.984375,
-          "x": 1143.375,
-          "y": 839.515625
-        },
-        "[name=lambda0]": {
-          "bottom": 695.859375,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 41,
-          "width": 121,
-          "x": 160,
-          "y": 654.859375
-        },
-        "[name=roughness]": {
-          "bottom": 695.859375,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 42,
-          "width": 121,
-          "x": 31,
-          "y": 653.859375
-        },
-        "[name=sigmaD]": {
-          "bottom": 538.375,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 40,
-          "width": 121,
-          "x": 160,
-          "y": 498.375
-        },
-        "[name=sigmaP]": {
-          "bottom": 538.375,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 40,
-          "width": 121,
-          "x": 31,
-          "y": 498.375
-        }
-      },
-      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
-      "overflow": 0,
-      "q": "2904",
-      "scrollY": 0,
-      "view": {
-        "auto": true,
-        "pixelsPerMetre": 8.246376811594203,
-        "plotHeight": 326,
-        "plotWidth": 569,
-        "xmax": 64.5,
-        "xmin": -4.5,
-        "ymax": 34.76625659050967,
-        "ymin": -4.766256590509666
+        "pixelsPerMetre": 14.34651097627349,
+        "plotHeight": 300,
+        "plotWidth": 922.2757056175814,
+        "xmax": 62.142857142857146,
+        "xmin": -2.142857142857139,
+        "ymax": 25.52927392129791,
+        "ymin": 4.618266325364294
       },
       "viewport": [
         1440,
@@ -282,158 +190,379 @@
       ]
     },
     {
+      "densityView": {
+        "auto": true,
+        "pixelsPerMetre": 7.972222222222224,
+        "plotHeight": 205,
+        "plotWidth": 205,
+        "xmax": 60.857142857142854,
+        "xmin": 35.142857142857146,
+        "ymax": 27.927087972886483,
+        "ymin": 2.2128022586007745
+      },
       "elements": {
         "#cancelButton": {
-          "bottom": 282.296875,
+          "bottom": 155.59375,
           "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.34375,
-          "x": 201.65625,
-          "y": 238.296875
-        },
-        "#mapCanvas": {
-          "bottom": 695.296875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 458,
-          "width": 1197,
-          "x": 324,
-          "y": 237.296875
-        },
-        "#metricChart": {
-          "bottom": 825.21875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 360,
-          "width": 310,
-          "x": 1564,
-          "y": 465.21875
-        },
-        "#pauseButton": {
-          "bottom": 282.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.328125,
-          "x": 31,
-          "y": 238.296875
-        },
-        "#replayButton": {
-          "bottom": 767.1875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 59.453125,
-          "x": 323,
-          "y": 723.1875
-        },
-        "#runButton": {
-          "bottom": 232.296875,
-          "font": "16px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 164.65625,
-          "x": 31,
-          "y": 188.296875
-        },
-        "#stepButton": {
-          "bottom": 232.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 44,
-          "width": 79.34375,
-          "x": 201.65625,
-          "y": 188.296875
-        },
-        "#timeSlider": {
-          "bottom": 780.890625,
-          "font": "16px",
           "fullyVisible": true,
           "height": 32,
-          "width": 1059.546875,
-          "x": 390.453125,
-          "y": 748.890625
+          "width": 81.34375,
+          "x": 182.65625,
+          "y": 123.59375
         },
-        "#timingValue": {
-          "bottom": 879.515625,
+        "#contrastCanvas": {
+          "bottom": 817,
           "font": "14px",
           "fullyVisible": true,
-          "height": 20,
-          "width": 195.984375,
-          "x": 1623.375,
-          "y": 859.515625
+          "height": 266.515625,
+          "width": 523.671875,
+          "x": 836.65625,
+          "y": 550.484375
+        },
+        "#densityCanvas": {
+          "bottom": 817,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 266.515625,
+          "width": 523.65625,
+          "x": 301,
+          "y": 550.484375
+        },
+        "#historyMetric": {
+          "bottom": 531.390625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 150,
+          "x": 1736,
+          "y": 501.390625
+        },
+        "#mapCanvas": {
+          "bottom": 484.390625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 379.390625,
+          "width": 1595,
+          "x": 301,
+          "y": 105
+        },
+        "#medianValue": {
+          "bottom": 790.28125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 19,
+          "y": 769.59375
+        },
+        "#metricChart": {
+          "bottom": 817,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 280.609375,
+          "width": 523.671875,
+          "x": 1372.328125,
+          "y": 536.390625
+        },
+        "#offwallValue": {
+          "bottom": 807.078125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 191,
+          "y": 786.390625
+        },
+        "#p95Value": {
+          "bottom": 790.28125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 105,
+          "y": 769.59375
+        },
+        "#pauseButton": {
+          "bottom": 155.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 32,
+          "width": 81.328125,
+          "x": 12,
+          "y": 123.59375
+        },
+        "#runButton": {
+          "bottom": 119.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 32,
+          "width": 166.65625,
+          "x": 12,
+          "y": 87.59375
+        },
+        "#stepButton": {
+          "bottom": 119.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 32,
+          "width": 81.34375,
+          "x": 182.65625,
+          "y": 87.59375
+        },
+        "#timeSlider": {
+          "bottom": 866,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 1071.25,
+          "x": 485.328125,
+          "y": 836
         },
         "[name=lambda0]": {
-          "bottom": 695.859375,
-          "font": "16px",
+          "bottom": 542.53125,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 41,
-          "width": 121,
-          "x": 160,
-          "y": 654.859375
+          "height": 32,
+          "width": 122,
+          "x": 142,
+          "y": 510.53125
         },
         "[name=roughness]": {
-          "bottom": 695.859375,
-          "font": "16px",
+          "bottom": 542.53125,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 42,
-          "width": 121,
-          "x": 31,
-          "y": 653.859375
+          "height": 32,
+          "width": 122,
+          "x": 12,
+          "y": 510.53125
         },
         "[name=sigmaD]": {
-          "bottom": 538.375,
-          "font": "16px",
+          "bottom": 424.046875,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 40,
-          "width": 121,
-          "x": 160,
-          "y": 498.375
+          "height": 32,
+          "width": 122,
+          "x": 142,
+          "y": 392.046875
         },
         "[name=sigmaP]": {
-          "bottom": 538.375,
-          "font": "16px",
+          "bottom": 424.046875,
+          "font": "14px",
           "fullyVisible": true,
-          "height": 40,
-          "width": 121,
-          "x": 31,
-          "y": 498.375
+          "height": 32,
+          "width": 122,
+          "x": 12,
+          "y": 392.046875
         }
       },
       "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
       "overflow": 0,
       "q": "2904",
-      "scrollY": 0,
+      "status": "계산 완료 · 측정 생성 0.53 s · 참조 .m 원본 대조 미완료",
       "view": {
         "auto": true,
-        "pixelsPerMetre": 8.246376811594203,
-        "plotHeight": 326,
-        "plotWidth": 1049,
-        "xmax": 93.603690685413,
-        "xmin": -33.60369068541301,
-        "ymax": 34.76625659050967,
-        "ymin": -4.766256590509666
+        "pixelsPerMetre": 15.159479931595651,
+        "plotHeight": 317,
+        "plotWidth": 974.5379956025776,
+        "xmax": 62.14285714285714,
+        "xmin": -2.142857142857139,
+        "ymax": 25.52927392129791,
+        "ymin": 4.618266325364292
       },
       "viewport": [
         1920,
         930
       ]
+    },
+    {
+      "densityView": {
+        "auto": true,
+        "pixelsPerMetre": 5.211111111111112,
+        "plotHeight": 134,
+        "plotWidth": 134,
+        "xmax": 60.857142857142854,
+        "xmin": 35.142857142857146,
+        "ymax": 27.927087972886483,
+        "ymin": 2.2128022586007745
+      },
+      "elements": {
+        "#cancelButton": {
+          "bottom": 143.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 81.34375,
+          "x": 182.65625,
+          "y": 115.59375
+        },
+        "#contrastCanvas": {
+          "bottom": 655,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 196.09375,
+          "width": 339,
+          "x": 652,
+          "y": 458.90625
+        },
+        "#densityCanvas": {
+          "bottom": 655,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 196.09375,
+          "width": 339,
+          "x": 301,
+          "y": 458.90625
+        },
+        "#historyMetric": {
+          "bottom": 439.8125,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 150,
+          "x": 1182,
+          "y": 409.8125
+        },
+        "#mapCanvas": {
+          "bottom": 392.8125,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 287.8125,
+          "width": 1041,
+          "x": 301,
+          "y": 105
+        },
+        "#medianValue": {
+          "bottom": 742.28125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 19,
+          "y": 721.59375
+        },
+        "#metricChart": {
+          "bottom": 655,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 210.1875,
+          "width": 339,
+          "x": 1003,
+          "y": 444.8125
+        },
+        "#offwallValue": {
+          "bottom": 759.078125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 191,
+          "y": 738.390625
+        },
+        "#p95Value": {
+          "bottom": 742.28125,
+          "font": "18px",
+          "fullyVisible": true,
+          "height": 20.6875,
+          "width": 66,
+          "x": 105,
+          "y": 721.59375
+        },
+        "#pauseButton": {
+          "bottom": 143.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 81.328125,
+          "x": 12,
+          "y": 115.59375
+        },
+        "#runButton": {
+          "bottom": 111.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 166.65625,
+          "x": 12,
+          "y": 83.59375
+        },
+        "#stepButton": {
+          "bottom": 111.59375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 81.34375,
+          "x": 182.65625,
+          "y": 83.59375
+        },
+        "#timeSlider": {
+          "bottom": 704,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 517.25,
+          "x": 485.328125,
+          "y": 674
+        },
+        "[name=lambda0]": {
+          "bottom": 506.53125,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 122,
+          "x": 142,
+          "y": 478.53125
+        },
+        "[name=roughness]": {
+          "bottom": 506.53125,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 122,
+          "x": 12,
+          "y": 478.53125
+        },
+        "[name=sigmaD]": {
+          "bottom": 394.046875,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 122,
+          "x": 142,
+          "y": 366.046875
+        },
+        "[name=sigmaP]": {
+          "bottom": 394.046875,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 122,
+          "x": 12,
+          "y": 366.046875
+        }
+      },
+      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+      "overflow": 0,
+      "q": "2904",
+      "status": "계산 완료 · 측정 생성 0.53 s · 참조 .m 원본 대조 미완료",
+      "view": {
+        "auto": true,
+        "pixelsPerMetre": 10.807704935459364,
+        "plotHeight": 226,
+        "plotWidth": 694.7810315652446,
+        "xmax": 62.14285714285714,
+        "xmin": -2.142857142857139,
+        "ymax": 25.52927392129791,
+        "ymin": 4.618266325364294
+      },
+      "viewport": [
+        1366,
+        768
+      ]
     }
   ],
   "mobile": {
     "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
-    "mapHeight": 278,
-    "mapView": {
-      "auto": true,
-      "pixelsPerMetre": 2.536231884057971,
-      "plotHeight": 146,
-      "plotWidth": 175,
-      "xmax": 64.5,
-      "xmin": -4.5,
-      "ymax": 43.78285714285714,
-      "ymin": -13.78285714285714
-    },
+    "mapHeight": 340,
     "minVisibleFont": 16,
     "overflow": 0,
     "viewport": [

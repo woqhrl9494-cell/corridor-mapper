@@ -18,8 +18,8 @@ test('DRF DOM contract and readable stylesheet', () => {
 });
 
 test('render keeps world row order, uses real DPR/300 dpi pixels, and charts execute', async () => {
-  const snapshots={},created=[],rectangles=[];
-  const context=() => new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{if (key==='fillText') assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=14,args[0]);if (key==='strokeRect') rectangles.push(args);};}});
+  const snapshots={},created=[],rectangles=[],labels=[];
+  const context=() => new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{if (key==='fillText') {assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=14,args[0]);labels.push(args[0]);}if (key==='strokeRect') rectangles.push(args);};}});
   const makeCanvas=()=>({clientWidth:700,clientHeight:540,width:0,height:0,dataset:{},getContext:()=>context(),addEventListener(){},toBlob(callback){callback(new Blob(['png']));}});
   const saved={};
   const stubs={document:{createElement:()=>{const c=makeCanvas();created.push(c);return c;},documentElement:{}},window:{devicePixelRatio:2},getComputedStyle:()=>({getPropertyValue:()=>'#111111'}),ResizeObserver:class{observe(){}},MutationObserver:class{observe(){}},matchMedia:()=>({addEventListener(){}}),requestAnimationFrame:()=>1};
@@ -28,15 +28,31 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     const canvas=makeCanvas(),map=new DrfMap(canvas),frame={Dbar:new Float32Array([0,1,2,3]),betaHat:new Float32Array([0,.2,.5,1])};
     map.set({grid:{nx:2,ny:2,domain:[0,60,0,30]},frame,heatField:'Dbar',scaleMode:'linear',layers:{}});
     assert.equal(snapshots.image.length,16);
-    assert.deepEqual([...snapshots.image.slice(4,7)],[253,231,37],'largest world y row must become top image row');
-    assert.deepEqual([...snapshots.image.slice(8,11)],[68,1,84],'world row 0 must become bottom image row');
+    assert.deepEqual([...snapshots.image.slice(4,7)],[184,41,20],'largest world y row must become top image row');
+    assert.deepEqual([...snapshots.image.slice(8,12)],[255,255,255,0],'zero values are transparent in the bottom world row');
+    assert.deepEqual([...frame.Dbar],[0,1,2,3],'presentation must not mutate field values');
     map.paint(canvas,2);assert.equal(canvas.width,1400);assert.equal(canvas.height,1080);
     const target=makeCanvas();map.paint(target,300/96);assert.equal(target.width,2188);assert.equal(target.height,1688);
     assert.ok(await map.png() instanceof Blob);
+    assert.ok(labels.includes('D̄ [1/m²]'));assert.ok(labels.some(text=>text.includes('linear color scale')));
     drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
     rectangles.length=0;canvas.clientHeight=360;
     drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
     assert.equal(rectangles.length,3);assert.ok(rectangles.every(([, , ,height])=>height>=50),'compact history plots must retain usable vertical space');
+    rectangles.length=0;canvas.clientHeight=240;
+    drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}],'p95');
+    assert.equal(rectangles.length,1);assert.ok(rectangles[0][3]>=170,'selected metric uses one large plot');
+    const display={grid:{nx:2,ny:2,domain:[0,60,0,30]},frame,layers:{showTruth:false},walls:[[[0,-100],[60,100]]],wire:{configs:[{pHat_i:[50,15],pHat_j:[52,15]}]},focus:true};
+    map.set(display);map.paint(canvas,2);const view=JSON.parse(canvas.dataset.view);
+    assert.equal(map.camera.cx,48);assert.equal(map.camera.cy,15);
+    assert.ok(view.xmax-view.xmin<40,'current-pose view must magnify the local field');
+    map.set({...display,walls:[[[0,-1000],[60,1000]]]});map.paint(canvas,2);
+    assert.deepEqual(JSON.parse(canvas.dataset.view),view,'hidden truth cannot change the view');
+    map.fit(true);map.paint(canvas,2);assert.equal(map.camera.cx,30,'full view returns to the public domain');
+    map.fit();canvas.clientWidth=1700;canvas.clientHeight=350;
+    map.set({...display,focus:false,mode:'geometry',layers:{showTruth:true},walls:[[[0,6],[60,24]]]});map.paint(canvas,2);
+    assert.ok(JSON.parse(canvas.dataset.view).xmax-JSON.parse(canvas.dataset.view).xmin<65,'a wide screen must not expand the corridor axes into empty space');
+    canvas.clientWidth=700;
     canvas.clientHeight=540;
     drawSweep(canvas,[{roughness:2,sigmaD:.1,medianError:{mean:.13,sd:.02}}],[{roughness:2,sigmaD:.1,medianError:.134}]);
     drawHistogram(canvas,[-.1,.1,.4,1,2]);

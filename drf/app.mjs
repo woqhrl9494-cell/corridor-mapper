@@ -2,7 +2,8 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261001-layout2';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261001-reference4';
+import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
@@ -61,6 +62,7 @@ function cancel(clear = false) {
   if (clear) {
     state.scenario = null; state.grid = null; state.frames = []; state.evaluations = []; state.selected = 0; state.next = 0; state.valid = false;
     $('mapCanvas').removeAttribute('data-field-hash');
+    for (const view of [map,densityMap,contrastMap]) view.fit();
   } else if (state.frames.length && state.scenario) {
     // Preserve inspection of completed prefixes after cancellation; no future wire is supplied.
     hoverWorker = makeWorker('field'); evalWorker = makeWorker('eval');
@@ -119,7 +121,7 @@ async function hashField(frame) {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
-const map = new DrfMap($('mapCanvas'), point => {
+const inspect = point => {
   clearTimeout(hoverTimer); const generation = ++hoverGeneration;
   const frame = state.frames[state.selected - 1];
   if (!frame || point.index < 0 || !hoverWorker) { $('inspector').textContent = '지도 위로 포인터를 이동하면 격자 값을 표시합니다.'; return; }
@@ -139,15 +141,29 @@ const map = new DrfMap($('mapCanvas'), point => {
       $('inspector').textContent = `snapshot ${value.t} · 격자 (${fmt(x, 2)}, ${fmt(y, 2)}) m · D ${fmt(value.D)} · A ${fmt(value.A)} [1/m²] · Q ${value.Q} · D̄ ${fmt(value.Dbar)} · β̂ ${fmt(value.betaHat)}${wallDistance}`;
     } catch (error) { if (error.message !== 'Cancelled') $('inspector').textContent = `조회 중단: ${error.message}`; }
   }, 100);
-});
+};
+const map = new DrfMap($('mapCanvas'),inspect),densityMap=new DrfMap($('densityCanvas'),inspect),contrastMap=new DrfMap($('contrastCanvas'),inspect);
+let previewKey='',preview=[];
+function previewWalls() {
+  if (!$('showTruth').checked) return [];
+  const scene=form.elements.namedItem('scene').value,seed=Number(form.elements.namedItem('seed').value),key=`${scene}:${seed}`;
+  if (!Number.isInteger(seed) || seed<0 || seed>0xffffffff) return [];
+  // Geometry preview belongs to display/evaluation only; no wire or inferred field is fabricated.
+  if (key!==previewKey) { preview=sampleWalls(createWalls({scene,seed}));previewKey=key; }
+  return preview;
+}
 function renderSelected() {
   hoverGeneration++;
   $('inspector').textContent = '지도 위로 포인터를 이동하면 격자 값을 표시합니다.';
   const frame = state.frames[state.selected - 1], evaluation = state.evaluations[state.selected - 1], scenario = state.scenario;
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
-  map.set({ grid: state.grid, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls,
+  const display={ grid: state.grid, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),
     proxy: evaluation?.proxy, observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
-    history: scenario?.wire.slice(0, state.selected) });
+    history: scenario?.wire.slice(0, state.selected) };
+  map.set({...display,mode:'geometry'});
+  const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
+  densityMap.set({...display,layers:fieldLayers,heatField:'Dbar',focus:true});
+  contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat',focus:true});
   $('snapshotLabel').textContent = `${frame?.t ?? 0} / ${scenario?.input.snapshots ?? form.elements.namedItem('snapshots').value}`;
   $('qValue').textContent = frame?.Q ?? 0; $('acceptedValue').textContent = frame?.admitted ?? 0; $('rejectedValue').textContent = frame?.rejected ?? 0;
   const metricIds = { medianValue: 'medianError', p95Value: 'p95', f1Value: 'f1', msdValue: 'caMsd', hd95Value: 'caHd95' };
@@ -157,7 +173,7 @@ function renderSelected() {
   $('pathValue').textContent = diag ? `정반사 ${diag.specularCount} / diffuse ${diag.diffuseCount}` : '—';
   const times = state.frames.slice(0, state.selected).map(f => f.ms);
   $('timingValue').textContent = `snapshot p50 ${fmt(percentile(times, .5), 1)} / p95 ${fmt(percentile(times, .95), 1)} ms`;
-  drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected));
+  drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected),$('historyMetric').value);
   if (diag) {
     $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · 거리 중복 ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: 평균 ${fmt(diag.theoremMean)}, 중앙 ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, 음수=${diag.theoremNegative} · field offset ${fmt(evaluation.offset)} m / fold 예측 ${fmt(diag.foldPrediction)} m`;
     if (!$('diagnosticPanel').hidden) {
@@ -212,8 +228,8 @@ document.addEventListener('keydown', event => {
     $('timeSlider').value = state.selected; renderSelected();
   }
 });
-for (const id of ['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved', 'heatField', 'scaleMode']) $(id).onchange = renderSelected;
-$('fitView').onclick = () => map.fit(); $('zoomIn').onclick = () => map.zoom(1.3); $('zoomOut').onclick = () => map.zoom(1 / 1.3);
+for (const id of ['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved', 'heatField', 'scaleMode','historyMetric']) $(id).onchange = renderSelected;
+$('fitView').onclick = () => { for (const view of [map,densityMap,contrastMap]) view.fit(true); }; $('zoomIn').onclick = () => map.zoom(1.3); $('zoomOut').onclick = () => map.zoom(1 / 1.3);
 $('configSelect').onchange = updateProfile;
 $('aboutButton').onclick = () => $('aboutDialog').showModal(); $('closeAbout').onclick = () => $('aboutDialog').close();
 $('themeButton').onclick = () => {
@@ -272,7 +288,7 @@ $('exportJson').onclick = () => {
   download(new Blob([JSON.stringify(data, jsonValue)], { type: 'application/json' }), 'echomap-drf.json');
 };
 $('exportCsv').onclick = () => download(new Blob([snapshotCsv(state.frames, state.evaluations)], { type: 'text/csv;charset=utf-8' }), 'echomap-drf-snapshots.csv');
-$('exportPng').onclick = async () => { try { download(await png300dpi(await map.png()), 'echomap-drf-300dpi.png'); } catch (error) { notice(`PNG 저장 중단: ${error.message}`); } };
+$('exportPng').onclick = async () => { try { const field=$('heatField').value;download(await png300dpi(await (field==='betaHat' ? contrastMap : densityMap).png()), `echomap-drf-${field}-300dpi.png`); } catch (error) { notice(`PNG 저장 중단: ${error.message}`); } };
 new ResizeObserver(() => { renderSelected(); renderSweep(); }).observe($('analysis-panel') ?? $('sweepPanel'));
 window.addEventListener('resize', () => { renderSelected(); renderSweep(); });
 window.addEventListener('beforeunload', () => { for (const worker of state.workers) worker.stop(); state.sweep?.cancel(); });

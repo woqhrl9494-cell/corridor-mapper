@@ -1,9 +1,9 @@
-import { fitCamera, toScreen, toWorld, zoomCamera, tickStep } from "../surf/map.mjs";
+import { boundsOf, fitCamera, toScreen, toWorld, zoomCamera, tickStep } from "../surf/map.mjs";
 
-// Sampled viridis/cividis anchors. Color interpolation affects drawing only.
+// White-based sequential colors affect drawing only; zero stays transparent.
 const palettes = {
-  Dbar: [[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]],
-  betaHat: [[0,34,78],[52,68,108],[101,105,112],[150,143,115],[202,185,105],[254,232,56]],
+  Dbar: [[255,255,255],[255,225,143],[255,172,66],[239,100,29],[184,41,20]],
+  betaHat: [[255,255,255],[214,233,249],[145,195,229],[61,142,196],[8,81,156]],
 };
 const colorAt = (t, palette) => {
   const p = Math.max(0,Math.min(1,t)) * (palette.length-1), i = Math.min(palette.length-2,Math.floor(p));
@@ -50,7 +50,7 @@ export class DrfMap {
   set(state) {
     const previous=this.state;
     this.state=state;
-    if (state.grid !== previous.grid && this.auto) this.camera=null;
+    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || state.layers?.showTruth !== previous.layers?.showTruth || (state.focus && !this.fullDomain && state.frame !== previous.frame))) this.camera=null;
     if (state.frame !== previous.frame || state.grid !== previous.grid || state.heatField !== previous.heatField || state.scaleMode !== previous.scaleMode) this.buildHeat();
     this.draw();
   }
@@ -66,11 +66,11 @@ export class DrfMap {
     for (let iy=0;iy<g.ny;iy++) for (let ix=0;ix<g.nx;ix++) {
       const value=Math.max(0,values?.[iy*g.nx+ix] ?? 0), t=denominator>0 ? (scaleMode === "log" ? Math.log1p(value) : value)/denominator : 0;
       const at=4*((g.ny-1-iy)*g.nx+ix);
-      data.data.set([...colorAt(t,palette),values && Number.isFinite(value) ? 255 : 0],at);
+      data.data.set([...colorAt(t,palette),values && Number.isFinite(value) && value>0 ? 255 : 0],at);
     }
     ctx.putImageData(data,0,0);
   }
-  fit() { this.auto=true; this.camera=null; this.draw(); }
+  fit(fullDomain=false) { this.fullDomain=fullDomain;this.auto=true;this.camera=null;this.draw(); }
   zoom(factor,anchor) {
     if (!this.camera || !this.box) return;
     this.camera=zoomCamera(this.camera,factor,anchor ?? [this.box.x+this.box.w/2,this.box.y+this.box.h/2],this.box);
@@ -88,15 +88,25 @@ export class DrfMap {
     const ctx=target.getContext("2d"), css=getComputedStyle(document.documentElement), token=(name) => css.getPropertyValue(`--color-${name}`).trim();
     const ink=token("ink"),muted=token("ink-muted"),line=token("line"),accent=token("accent"),evalColor=token("eval"),background=token("plot-bg");
     ctx.scale(ratio,ratio); ctx.fillStyle=background; ctx.fillRect(0,0,width,height);
-    ctx.font="16px -apple-system, Arial, sans-serif";
-    const box={ x:62,y:40,w:Math.max(1,width-148),h:Math.max(1,height-132) }, g=this.state.grid;
-    this.box=box;
+    ctx.font="14px -apple-system, Arial, sans-serif";
+    const geometry=this.state.mode === "geometry",box={ x:44,y:16,w:Math.max(1,width-(geometry ? 60 : 108)),h:Math.max(1,height-62) }, g=this.state.grid;
     const domain=g?.domain ?? (g ? [g.xmin,g.xmax,g.ymin,g.ymax] : [0,60,0,30]);
-    if (!this.camera) this.camera=fitCamera({xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]},box.w,box.h);
+    let bounds={xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]};
+    if (this.state.focus && !this.fullDomain) {
+        // Drawing-only 24 m window follows current noisy poses, never future wire or truth.
+        const poses=(this.state.wire?.configs ?? []).flatMap(c=>[c.pHat_i,c.pHat_j]),n=poses.length;
+        const cx=Math.max(domain[0]+12,Math.min(domain[1]-12,n ? poses.reduce((s,p)=>s+p[0],0)/n : (domain[0]+domain[1])/2));
+        const cy=Math.max(domain[2]+12,Math.min(domain[3]-12,n ? poses.reduce((s,p)=>s+p[1],0)/n : (domain[2]+domain[3])/2));
+        bounds={xmin:cx-12,xmax:cx+12,ymin:cy-12,ymax:cy+12};
+    } else if (geometry && !this.fullDomain && this.state.layers?.showTruth && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
+    // A bounded plot rectangle prevents wide displays from adding meaningless world range.
+    const aspect=Math.max(1,bounds.xmax-bounds.xmin)/Math.max(1,bounds.ymax-bounds.ymin),plotW=Math.min(box.w,box.h*aspect),plotH=plotW/aspect;
+    box.x+=(box.w-plotW)/2;box.y+=(box.h-plotH)/2;box.w=plotW;box.h=plotH;this.box=box;
+    if (!this.camera) this.camera=fitCamera(bounds,box.w*1.12,box.h*1.12);
     const c=this.camera,screen=(p) => toScreen(p,c,box),lo=toWorld([box.x,box.y+box.h],c,box),hi=toWorld([box.x+box.w,box.y],c,box);
     this.canvas.dataset.view=JSON.stringify({xmin:lo[0],xmax:hi[0],ymin:lo[1],ymax:hi[1],pixelsPerMetre:c.scale,plotWidth:box.w,plotHeight:box.h,auto:this.auto});
     ctx.save();ctx.beginPath();ctx.rect(box.x,box.y,box.w,box.h);ctx.clip();
-    if (g && this.state.frame) {
+    if (g && this.state.frame && !geometry) {
       const p=screen([domain[0],domain[3]]),q=screen([domain[1],domain[2]]);
       ctx.imageSmoothingEnabled=false; ctx.drawImage(this.heat,p[0],p[1],q[0]-p[0],q[1]-p[1]);
     }
@@ -108,8 +118,9 @@ export class DrfMap {
     const dot=(p,color,r=4,open=false) => { if (!p) return; const [x,y]=screen(p);ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=2;open ? ctx.stroke() : ctx.fill(); };
     const {layers={},wire,truth,walls=[],proxy=[],observed=[],history=[]}=this.state;
     if (layers.showObserved) for (const p of observed) dot(p,evalColor,5,true);
-    if (layers.showTruth) for (const wall of walls) path(wall,evalColor,2.5,[8,6]);
+    if (layers.showTruth) for (const wall of walls) path(wall,ink,2.5,[8,6]);
     if (layers.showProxy) for (const p of proxy) dot(p,accent,4,true);
+    ctx.globalAlpha=.16;
     if (layers.showEllipses) for (const config of wire?.configs ?? []) {
       const a=config.pHat_i,b=config.pHat_j,dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),cos=Math.cos(angle),sin=Math.sin(angle);
       for (const q of config.paths) {
@@ -119,6 +130,7 @@ export class DrfMap {
         path(points,accent,1.5);
       }
     }
+    ctx.globalAlpha=1;
     if (layers.showSpecular || layers.showDiffuse) for (const config of truth?.configs ?? []) {
       if (layers.showSpecular) for (const q of config.specular ?? []) dot(q.s,evalColor,5,true);
       if (layers.showDiffuse) for (const q of config.diffuse ?? []) dot(q.s,evalColor,2.5);
@@ -146,22 +158,30 @@ export class DrfMap {
     }
     ctx.restore();
     const step=tickStep(c.scale*2/3),digits=Math.max(0,-Math.floor(Math.log10(step))),label=(n) => Math.abs(n)<step/100 ? "0" : n.toFixed(digits);
-    ctx.font="16px -apple-system, Arial, sans-serif";ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1.5;
+    ctx.font="14px -apple-system, Arial, sans-serif";ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1.5;
     ctx.strokeRect(box.x,box.y,box.w,box.h);
-    for (let x=Math.ceil(lo[0]/step)*step;x<=hi[0];x+=step) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(label(x),sx,box.y+box.h+25); }
+    for (let x=Math.ceil(lo[0]/step)*step;x<=hi[0];x+=step) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(label(x),sx,box.y+box.h+19); }
     for (let y=Math.ceil(lo[1]/step)*step;y<=hi[1];y+=step) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(label(y),box.x-10,sy+6); }
-    ctx.textAlign="center";ctx.fillText("x [m]",box.x+box.w/2,box.y+box.h+53);ctx.save();ctx.translate(19,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText("y [m]",0,0);ctx.restore();
-    const palette=palettes[this.state.heatField ?? "Dbar"],barX=width-63,barY=box.y+34,barH=Math.max(1,box.h-68),gradient=ctx.createLinearGradient(0,barY+barH,0,barY);
+    ctx.textAlign="center";ctx.fillText("x [m]",box.x+box.w/2,height-8);ctx.save();ctx.translate(14,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText("y [m]",0,0);ctx.restore();
+    if (geometry) {
+      if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "참 장면 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
+      return;
+    }
+    const palette=palettes[this.state.heatField ?? "Dbar"],barX=width-43,barY=box.y+27,barH=Math.max(1,box.h-54),gradient=ctx.createLinearGradient(0,barY+barH,0,barY);
     palette.forEach((value,i) => gradient.addColorStop(i/(palette.length-1),rgb(value)));
-    ctx.fillStyle=gradient;ctx.fillRect(barX,barY,20,barH);ctx.strokeStyle=line;ctx.strokeRect(barX,barY,20,barH);ctx.fillStyle=muted;ctx.textAlign="center";
-    ctx.fillText(this.state.heatField === "betaHat" ? "β̂" : "D̄",barX+10,box.y+3);
-    ctx.fillText(numberLabel(this.maxValue),barX+10,barY-8);ctx.fillText("0",barX+10,barY+barH+25);
-    ctx.textAlign="left";ctx.fillText(this.state.scaleMode === "log" ? "log(1 + 값)" : "선형 색 범위",box.x,height-15);
+    ctx.fillStyle=gradient;ctx.fillRect(barX,barY,14,barH);ctx.strokeStyle=line;ctx.strokeRect(barX,barY,14,barH);ctx.fillStyle=muted;ctx.textAlign="center";
+    ctx.fillText(numberLabel(this.maxValue),barX+7,barY-8);ctx.fillText("0",barX+7,barY+barH+19);
     if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText("아직 누적 필드가 없습니다.",box.x+box.w/2,box.y+box.h/2); }
   }
   async png() {
-    const out=document.createElement("canvas");
-    this.paint(out,300/96);
+    const plot=document.createElement("canvas"),out=document.createElement("canvas"),ratio=300/96;
+    this.paint(plot,ratio);out.width=plot.width;out.height=plot.height+Math.round(66*ratio);
+    const ctx=out.getContext("2d"),css=getComputedStyle(document.documentElement);
+    ctx.fillStyle=css.getPropertyValue('--color-plot-bg').trim();ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(plot,0,66*ratio);ctx.scale(ratio,ratio);
+    ctx.fillStyle=css.getPropertyValue('--color-ink').trim();ctx.font='600 14px -apple-system, Arial';
+    ctx.fillText(this.state.heatField==='betaHat' ? 'β̂ [dimensionless]' : 'D̄ [1/m²]',12,18);
+    ctx.font='14px -apple-system, Arial';ctx.fillText(`snapshot ${this.state.frame?.t ?? 0} · ${this.state.scaleMode==='log' ? 'log(1 + value)' : 'linear'} color scale`,12,38);
+    ctx.fillText('Dashed wall: evaluation only',12,58);
     return new Promise((resolve,reject) => out.toBlob((blob) => blob ? resolve(blob) : reject(Error("PNG 렌더에 실패했습니다.")),"image/png"));
   }
 }
@@ -218,12 +238,12 @@ function extent(points,includeZero=true) {
   const padding=(max-min || 1)*.12;
   return [min<0 ? min-padding : 0,max+padding];
 }
-export function drawMetricHistory(canvas,evaluations) {
+export function drawMetricHistory(canvas,evaluations,selection='all') {
   const surface=chartSurface(canvas);if (!surface) return;
-  const metrics=[["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]];
+  const metrics=[["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
   metrics.forEach(([key,title,unit],k) => {
     const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(key==="offwall" ? 100 : 1)})),[ymin,ymax]=extent(points);
-    const axes=chartAxes(surface,{title,xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/3,height:surface.height/3,compact:surface.height<420});
+    const axes=chartAxes(surface,{title,xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/metrics.length,height:surface.height/metrics.length,compact:surface.height<420});
     chartLine(surface,axes,points,surface.color("eval"));
   });
 }

@@ -25,7 +25,7 @@ test('actual app restart leaves one replay frame and reset invalidates stale dia
     workers:[{stop(){stoppedWorkers++;}}],sweep:{cancel(){cancelledSweeps++;}},sweepRuns:[{}]};
   const context=vm.createContext({state,$,form,hoverGeneration:0,hoverTimer:0,replayFrame:0,
     fieldWorker:{},evalWorker:{},hoverWorker:{},DEFAULT_INPUT:{snapshots:60},location:{hash:'#old'},
-    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){}},
+    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){}},densityMap:{set(){},fit(){}},contrastMap:{set(){},fit(){}},previewWalls:()=>[],
     fmt:v=>Number.isFinite(v) ? String(v) : '—',percentile:values=>values[0]??null,
     requestAnimationFrame:fn=>{const id=++nextFrame;pending.set(id,fn);return id;},cancelAnimationFrame:id=>pending.delete(id),clearTimeout(){},
     drawMetricHistory:(canvas,data)=>charts.set(canvas.id,data),drawHistogram:(canvas,data)=>charts.set(canvas.id,data),
