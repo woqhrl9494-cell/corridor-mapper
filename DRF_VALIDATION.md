@@ -88,7 +88,7 @@ HTTP(S)에서는 기존 module 앱과 module Worker를 사용하고, `file://`�
 - 실제 scenario/field/eval/sweep Worker와 Node: 짧은 3 snapshot / 100² 세 조건과 60 snapshot / 150² 네 조건, 총 7조건의 D̄/β̂ 바이트 및 Q/개수는 정확히 같다. Float64 평가 summary는 10⁻¹²×max(1, |참조값|) 허용오차로 비교했고 Theorem 평균 두 조건에서 최대 1.33e-15 차이를 기록했다. [검사 기록](tests/drf/browser-parity-result.json).
 - 단일 실행, 한 step, 계속 실행, 완료 snapshot slider, 과거 prefix 조회, 표시값/색 범위/레이어/확대/전체 보기, 진단 선택, 취소 및 재설정 확인.
 - 1440 × 900와 390 × 844 화면 확인. 모바일 document 폭 초과 0, 보이는 DOM 글자 최소16 px. DPR1/2에서 Canvas 실제 픽셀 크기 배수 일치. light/dark 화면 기록 보관.
-- 이전 구현의 실제 JSON 다운로드는 완료된 6 snapshots만 포함하고 wire에 oracle 필드가 없었다. CSV는 header+6행이었다. 이전 참고 디자인 버전의 실제 D̄ PNG는 1138 × 997 px, pHYs 11811 px/m = 299.9994 dpi다. 필드 이름, 1/m² 단위, snapshot, linear/log 색 매핑과 평가용 점선 설명을 포함했다. 현재 PNG 렌더는 선택한 필드의 현재 표시 영역을 저장하며, 필드별 파일명이 다르다. 선택한 표시축도 `Axes: independent x/y scale` 또는 `Axes: equal metres`로 명시한다. 이전 PNG 파일의 크기와 dpi 확인은 이번 표시축 문구 추가 후의 실제 다운로드 확인을 대신하지 않는다.
+- 이전 구현의 실제 JSON 다운로드는 완료된 6 snapshots만 포함하고 wire에 oracle 필드가 없었다. CSV는 header+6행이었다. 현재 버전의 실제 D̄ PNG 다운로드는 1138 × 1060 px, pHYs 11811 px/m = 299.9994 dpi다. 저장된 이미지를 열어 D̄와 1/m² 단위, snapshot 60, linear 색 매핑, 평가용 점선 설명 및 `Axes: independent x/y scale` 문구를 확인했다. PNG는 선택한 필드의 현재 표시 영역을 저장하며, 필드별 파일명이 다르다. 등척 선택 시에는 `Axes: equal metres`로 표시한다.
 - 외부 다운로드 이벤트 도구는 타임아웃했으나 실제 파일이 Downloads에 저장된 것을 파싱해 검증했다. PNG 그림은 선택 snapshot이며 JSON/CSV는 완료된 전체 기록이다.
 
 현재 자동 검사 104/104 통과(2.934894 s). offline 생성물의 22개 원본 SHA, 실제 HTML의 file/HTTP script 선택, 검증 JSON 포함, Blob URL 재사용과 해제, 4종 Worker의 classic script 파싱, 원본 field와 Float32 배열 일치를 포함한다. 기존 44개 보호 파일과 160회 검증의 수치 소스 SHA도 유지했다.
@@ -107,6 +107,8 @@ UI 추가 조작 결과는 [ui-validation.json](tests/drf/ui-validation.json)과
 
 확대 버튼 옆의 `처음으로`는 첫 snapshot과 기본 camera로 돌아가며 완료된 기록을 유지한다. 재생 중에는 재생을 멈추고 계산 중에는 일시정지한다. 실제 클릭 검사에서 1/60, slider max=60, 첫 snapshot Q=258 및 기본 camera 복원을 확인했다.
 
-classic bundle의 HTTP harness에서 실제 기본 60 snapshot 실행은 Q=2904, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같았다. 이 결과는 classic bundle의 실행과 수치 일치를 확인한 것이며 실제 `file://` 화면 검증은 남아 있다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다.
+classic bundle의 HTTP harness와 기존 HTTP module 경로에서 실제 기본 60 snapshot 실행은 모두 Q=2904, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같았다. HTTP module 경로의 브라우저 오류 기록은 `errors=[]`다. classic Sweep도 60 snapshots / 150² 격자, σ_d=0.1 m, 거칠기 2°, seed=1의 단일 조건이 1/1 완료되었고 표시값은 중앙 오차 0.140 m, P95 0.829 m, off-wall 11.2%였다. 이 결과는 두 런타임의 실행과 수치 일치를 확인한 것이며 실제 `file://` 화면 검증은 남아 있다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다.
+
+실제 1440 × 900, 1920 × 930, 1366 × 768에서 설정, 실행 버튼, 지도와 두 필드, 선택 평가 그래프, snapshot slider, 표시축 선택과 처음으로 버튼을 포함한 필수 요소 19개가 모두 첫 화면에 보였다. 1920 × 930의 지도 canvas는 1595 × 377 px이며 plot 영역은 1535 × 315 px다. 모바일 390 × 844는 가로 넘침 0, 보이는 DOM 글자 최소 16 px를 확인했다.
 
 크기별 범위와 첫 화면 요소는 [density-validation.json](tests/drf/density-validation.json)에 기록한다. 숨겨진 GT가 camera에 영향을 주지 않는지, 0값 투명도, 선택 지표의 큰 그래프, 두 표시축의 좌표 왕복, 넓은 화면의 plot 영역 사용, PNG의 필드/단위/표시축 문구를 자동 검사했다. 수치/평가 모듈과 44개 보호 파일은 수정하지 않았다. CSS/모듈 URL의 버전을 바꾸어 이전 렌더의 캐시 재사용을 막는다.
