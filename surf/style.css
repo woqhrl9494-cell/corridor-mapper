@@ -3,7 +3,7 @@
   --bg: #edf0f6;
   --raised: #edf0f6;
   --ink: #172136;
-  --muted: #66738a;
+  --muted: #4d5c74;
   --blue: #2a2aea;
   --cyan: #00a7d9;
   --purple: #843aff;
@@ -20,7 +20,7 @@ body {
   margin: 0;
   background: var(--bg);
   font:
-    14px/1.5 -apple-system,
+    18px/1.55 -apple-system,
     BlinkMacSystemFont,
     "Noto Sans KR",
     "Apple SD Gothic Neo",
@@ -98,7 +98,7 @@ h2 {
   letter-spacing: -0.025em;
 }
 small {
-  font-size: 11px;
+  font-size: 16px;
 }
 button,
 input,
@@ -127,7 +127,7 @@ strong {
 }
 .brand small {
   display: block;
-  font-size: 8px;
+  font-size: 16px;
   letter-spacing: 0.21em;
   font-weight: 600;
   margin-top: 2px;
@@ -155,7 +155,7 @@ strong {
   display: flex;
   align-items: center;
   gap: 31px;
-  font-size: 12px;
+  font-size: 16px;
   color: var(--muted);
 }
 .nav-current {
@@ -180,7 +180,7 @@ strong {
   gap: 7px;
   background: transparent;
   padding: 4px 0;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -205,7 +205,7 @@ main {
 }
 .eyebrow {
   color: var(--blue);
-  font-size: 9px;
+  font-size: 16px;
   letter-spacing: 0.18em;
   font-weight: 750;
   margin-bottom: 10px;
@@ -226,7 +226,7 @@ h1 {
 }
 .intro {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 16px;
   margin-top: 8px;
 }
 .version-note {
@@ -236,7 +236,7 @@ h1 {
   gap: 10px;
 }
 .pill {
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 650;
   color: var(--blue);
   padding: 7px 13px;
@@ -245,7 +245,7 @@ h1 {
   background: #f2f4fb;
 }
 .version-note small {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--muted);
 }
 .workspace {
@@ -276,8 +276,8 @@ h1 {
 }
 .section-number {
   font-family: ui-monospace, monospace;
-  font-size: 10px;
-  color: #8490a4;
+  font-size: 16px;
+  color: var(--muted);
 }
 .control-group {
   margin-bottom: 19px;
@@ -287,11 +287,11 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 9px;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 650;
 }
 .control-group > label > span {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--muted);
   font-weight: 400;
 }
@@ -319,8 +319,8 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: #78849a;
-  font-size: 11px;
+  color: var(--muted);
+  font-size: 16px;
 }
 .shape-choice svg {
   width: 65px;
@@ -338,7 +338,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   margin: 22px 0;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 650;
 }
 .select-shell {
@@ -355,7 +355,7 @@ h1 {
   position: absolute;
   right: 12px;
   top: 9px;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--muted);
   pointer-events: none;
 }
@@ -366,7 +366,7 @@ h1 {
   width: 100%;
   padding: 11px 30px 11px 12px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 16px;
   outline-offset: 0;
 }
 .compact {
@@ -374,7 +374,7 @@ h1 {
 }
 .symmetry-control {
   margin-top: -2px !important;
-  font-size: 11px !important;
+  font-size: 16px !important;
 }
 .check-row {
   display: flex;
@@ -383,7 +383,7 @@ h1 {
   position: relative;
   cursor: pointer;
   min-height: 35px;
-  font-size: 11px;
+  font-size: 16px;
 }
 .check-row > input {
   position: absolute;
@@ -399,7 +399,7 @@ h1 {
   flex: 1;
 }
 .check-row small {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
 }
 .symmetry-control > span:first-of-type {
@@ -456,13 +456,13 @@ h1 {
   letter-spacing: -0.04em;
 }
 .fixed-budget strong > span {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
   margin-left: 3px;
   letter-spacing: 0;
 }
 .fixed-budget small {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
 }
 .action-row {
@@ -475,7 +475,7 @@ h1 {
   min-height: 44px;
   border-radius: 12px;
   font-weight: 650;
-  font-size: 12px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -530,7 +530,7 @@ h1 {
   transition: width 0.3s;
 }
 .progress-region p {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--muted);
   margin-top: 9px;
   line-height: 1.6;
@@ -552,7 +552,7 @@ h1 {
   margin-top: -9px;
 }
 .small-note {
-  font-size: 10px;
+  font-size: 16px;
   line-height: 1.8;
   color: var(--muted);
   margin-top: 18px;
@@ -566,7 +566,7 @@ h1 {
   flex-shrink: 0;
 }
 .legend-line.truth {
-  color: #8c96a6;
+  color: var(--muted);
   border-top-style: dashed;
 }
 .legend-line.surf {
@@ -624,12 +624,12 @@ h1 {
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 16px;
 }
 .metric > span svg {
   width: 12px;
   height: 12px;
-  color: #8793a7;
+  color: var(--muted);
 }
 .metric > div {
   display: flex;
@@ -644,12 +644,12 @@ h1 {
   letter-spacing: -0.055em;
 }
 .metric b {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--muted);
   font-weight: 500;
 }
 .metric small {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
 }
 .map-panel {
@@ -669,16 +669,16 @@ h1 {
   align-items: center;
 }
 .map-header h2 {
-  font-size: 15px;
+  font-size: 16px;
 }
 .map-header p {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--muted);
   margin-top: 6px;
 }
 .status-tag {
   padding: 3px 7px;
-  font-size: 8px;
+  font-size: 16px;
   border-radius: 5px;
   letter-spacing: 0.03em;
   font-weight: 700;
@@ -697,12 +697,12 @@ h1 {
   border-color: #e8b5bf;
 }
 .status-tag.neutral {
-  color: #6c788e;
+  color: var(--muted);
   background: transparent;
   border-color: #d6deea;
 }
 .source-tag {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
   border-bottom: 1px dotted #9eabba;
   white-space: nowrap;
@@ -766,9 +766,9 @@ h1 {
   left: 65px;
   top: 13px;
   font:
-    9px ui-monospace,
+    16px ui-monospace,
     monospace;
-  color: #71809a;
+  color: var(--muted);
   letter-spacing: 0.02em;
 }
 .map-caption {
@@ -782,7 +782,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 17px;
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
 }
 .legend > span {
@@ -791,7 +791,7 @@ h1 {
   gap: 6px;
 }
 .auto-fit {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -836,7 +836,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
   margin-bottom: 5px;
 }
@@ -864,8 +864,8 @@ input[type="range"]::-webkit-slider-thumb {
   box-shadow: 0 1px 4px #a8b3cf;
 }
 .batch-note {
-  font-size: 9px;
-  color: #768298;
+  font-size: 16px;
+  color: var(--muted);
   margin: 8px 0 0 42px;
   line-height: 1.6;
 }
@@ -877,12 +877,12 @@ input[type="range"]::-webkit-slider-thumb {
   margin-bottom: 16px;
 }
 .section-top p {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--muted);
   margin-top: 5px;
 }
 .comparison h2 {
-  font-size: 15px;
+  font-size: 16px;
 }
 .table-scroll {
   overflow-x: auto;
@@ -898,7 +898,7 @@ th:first-child {
   text-align: left;
 }
 thead {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
   font-weight: 500;
 }
@@ -908,15 +908,15 @@ thead th {
   border-bottom: 1px solid #d7dfeb;
 }
 thead small {
-  font-size: 8px;
-  color: #8793a6;
+  font-size: 16px;
+  color: var(--muted);
   margin-left: 2px;
 }
 tbody {
-  font-size: 12px;
+  font-size: 16px;
 }
 tbody th {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 650;
 }
 tbody th,
@@ -935,7 +935,7 @@ th:first-child {
   padding-left: 0;
 }
 .table-tag {
-  font-size: 8px;
+  font-size: 16px;
   display: inline-block;
   padding: 1px 5px;
   border-radius: 5px;
@@ -953,7 +953,7 @@ th:first-child {
   align-items: center;
 }
 .result-foot > span {
-  font-size: 9px;
+  font-size: 16px;
   color: var(--muted);
 }
 .export-actions {
@@ -961,7 +961,7 @@ th:first-child {
   gap: 13px;
 }
 .export-actions .text-button {
-  font-size: 9px;
+  font-size: 16px;
   color: #465674;
 }
 .export-actions svg {
@@ -975,22 +975,22 @@ th:first-child {
 }
 .model-details summary {
   cursor: pointer;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 650;
 }
 .model-details summary > span {
-  font-size: 9px;
+  font-size: 16px;
   font-weight: 400;
   color: var(--muted);
   float: right;
 }
 .model-details > div {
   padding-top: 18px;
-  font-size: 11px;
+  font-size: 16px;
 }
 .model-details table {
   margin-top: 14px;
-  font-size: 10px;
+  font-size: 16px;
 }
 .model-details p {
   color: var(--muted);
@@ -1007,8 +1007,8 @@ footer {
   justify-content: space-between;
   padding: 12px 48px 27px;
   gap: 16px;
-  font-size: 9px;
-  color: #7d899c;
+  font-size: 16px;
+  color: var(--muted);
 }
 footer i {
   font-style: normal;
@@ -1023,7 +1023,7 @@ footer a {
   display: inline-flex;
   gap: 10px;
   align-items: center;
-  font-size: 12px;
+  font-size: 16px;
 }
 dialog {
   border: 1px solid white;
@@ -1043,12 +1043,12 @@ dialog h2 {
   margin-bottom: 19px;
 }
 dialog p {
-  font-size: 12px;
+  font-size: 16px;
   line-height: 1.9;
   margin: 16px 0;
 }
 dialog .eyebrow {
-  font-size: 9px;
+  font-size: 16px;
   margin: 0 0 12px;
 }
 .dialog-close {
@@ -1060,7 +1060,7 @@ dialog .eyebrow {
   color: var(--muted);
 }
 dl {
-  font-size: 11px;
+  font-size: 16px;
   display: grid;
   grid-template-columns: 85px 1fr;
   gap: 11px 10px;
@@ -1106,7 +1106,7 @@ dd {
     font-size: 28px;
   }
   .metric small {
-    font-size: 8px;
+    font-size: 16px;
   }
   .map-panel {
     padding: 20px 17px 15px;
@@ -1121,7 +1121,7 @@ dd {
     padding: 20px 18px;
   }
   .source-tag {
-    font-size: 8px;
+    font-size: 16px;
   }
   .legend {
     gap: 10px;
@@ -1223,7 +1223,7 @@ dd {
     gap: 10px;
   }
   .brand small {
-    font-size: 6px;
+    font-size: 16px;
   }
   .brand-mark {
     width: 35px;
@@ -1234,7 +1234,7 @@ dd {
     gap: 16px;
   }
   .site-header nav > a {
-    font-size: 10px;
+    font-size: 16px;
   }
   .site-header .text-button {
     font-size: 0;
@@ -1251,14 +1251,14 @@ dd {
     align-items: flex-start;
   }
   .eyebrow {
-    font-size: 7px;
+    font-size: 16px;
     letter-spacing: 0.14em;
   }
   h1 {
     font-size: 23px;
   }
   .intro {
-    font-size: 10px;
+    font-size: 16px;
     max-width: 225px;
   }
   .version-note {
@@ -1266,11 +1266,11 @@ dd {
     margin-top: 20px;
   }
   .pill {
-    font-size: 7px;
+    font-size: 16px;
     padding: 5px 8px;
   }
   .version-note small {
-    font-size: 7px;
+    font-size: 16px;
   }
   .workspace {
     gap: 20px;
@@ -1298,13 +1298,13 @@ dd {
   .control-row label {
     display: block;
     margin-bottom: 9px;
-    font-size: 12px;
+    font-size: 16px;
   }
   .control-row .compact {
     width: 100%;
   }
   .control-group > label > span {
-    font-size: 8px;
+    font-size: 16px;
   }
   .symmetry-control {
     align-self: end;
@@ -1333,10 +1333,10 @@ dd {
     gap: 2px 16px;
   }
   .check-row {
-    font-size: 10px;
+    font-size: 16px;
   }
   .small-note {
-    font-size: 9px;
+    font-size: 16px;
     margin-top: 14px;
   }
   .progress-region {
@@ -1344,7 +1344,7 @@ dd {
     margin-top: 12px;
   }
   .progress-region p {
-    font-size: 9px;
+    font-size: 16px;
   }
   .metrics {
     gap: 9px;
@@ -1357,18 +1357,18 @@ dd {
     font-size: 24px;
   }
   .metric > span {
-    font-size: 8px;
+    font-size: 16px;
   }
   .metric > span svg {
     display: none;
   }
   .metric small {
-    font-size: 7px;
+    font-size: 16px;
     line-height: 1.6;
     display: block;
   }
   .metric b {
-    font-size: 8px;
+    font-size: 16px;
   }
   .metric > div {
     gap: 4px;
@@ -1384,16 +1384,16 @@ dd {
     flex-wrap: wrap;
   }
   .map-header h2 {
-    font-size: 13px;
+    font-size: 16px;
   }
   .map-header p {
-    font-size: 9px;
+    font-size: 16px;
   }
   .source-tag {
-    font-size: 8px;
+    font-size: 16px;
   }
   .status-tag {
-    font-size: 7px;
+    font-size: 16px;
   }
   .title-line {
     gap: 7px;
@@ -1414,11 +1414,11 @@ dd {
   .legend {
     flex-wrap: wrap;
     gap: 8px 12px;
-    font-size: 8px;
+    font-size: 16px;
     max-width: 230px;
   }
   .auto-fit {
-    font-size: 8px;
+    font-size: 16px;
   }
   .legend-line {
     width: 14px;
@@ -1428,7 +1428,7 @@ dd {
     gap: 10px;
   }
   .batch-note {
-    font-size: 8px;
+    font-size: 16px;
     margin-left: 44px;
   }
   .comparison {
@@ -1437,10 +1437,10 @@ dd {
     margin-top: 20px;
   }
   .comparison h2 {
-    font-size: 13px;
+    font-size: 16px;
   }
   .section-top p {
-    font-size: 9px;
+    font-size: 16px;
   }
   .comparison table {
     min-width: 520px;
@@ -1452,7 +1452,7 @@ dd {
     gap: 17px;
   }
   .export-actions .text-button {
-    font-size: 10px;
+    font-size: 16px;
   }
   .model-details {
     margin-top: 18px;
@@ -1462,19 +1462,19 @@ dd {
   }
   .model-details table {
     min-width: 0;
-    font-size: 8px;
+    font-size: 16px;
   }
   .model-details td,
   .model-details th {
     padding: 8px 5px;
   }
   .model-details p {
-    font-size: 10px;
+    font-size: 16px;
   }
   footer {
     padding: 0 20px 22px;
     gap: 8px;
-    font-size: 8px;
+    font-size: 16px;
   }
   dialog {
     margin: auto 16px;
@@ -1488,7 +1488,7 @@ dd {
   }
   .scale-badge {
     left: 58px;
-    font-size: 8px;
+    font-size: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1502,4 +1502,88 @@ dd {
 .map-panel[data-ambiguous="true"] .legend-line.surf {
   color: #843aff;
   border-top-style: dashed;
+}
+
+/* Readable type at every viewport; layout wraps instead of shrinking text. */
+.site-header { height: auto; min-height: 110px; padding: 20px 32px; gap: 20px; flex-wrap: wrap; }
+.brand { font-size: 24px; letter-spacing: .03em; }
+.brand small { font-size: 16px; letter-spacing: .03em; }
+.site-header nav { flex-wrap: wrap; gap: 12px 24px; font-size: 18px; }
+.site-header nav > a,.text-button { min-height: 44px; font-size: 18px; }
+main { padding: 32px; }
+.workspace { grid-template-columns: 320px minmax(0,1fr); }
+h2,.map-header h2,.comparison h2 { font-size: 22px; }
+.controls { padding: 24px; }
+.control-group > label,.control-row { font-size: 18px; }
+.select-shell select { font-size: 18px; min-height: 48px; }
+.select-shell:after { top: 12px; }
+.check-row,.symmetry-control { min-height: 44px; font-size: 18px !important; }
+.check-row > span:first-of-type { flex-wrap: wrap; }
+.check-indicator { width: 22px; height: 22px; flex-basis: 22px; }
+.primary-button { font-size: 18px; min-height: 48px; padding: 10px 8px; }
+.icon-button { min-width: 48px; min-height: 48px; }
+.metric { padding: 20px; }
+.metrics { grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); }
+.metric small { display: block; }
+.map-header,.map-caption,.title-line { flex-wrap: wrap; }
+.legend { flex-wrap: wrap; font-size: 16px; }
+.legend-line,.legend-dot { flex-shrink: 0; }
+.map-tool,.timeline-play { width: 44px; height: 44px; }
+.map-tool svg,.timeline-play svg { width: 20px; height: 20px; }
+.map-tools { right: 10px; top: 10px; }
+.scale-badge { left: 75px; font-size: 16px; }
+.auto-fit { min-height: 44px; font-size: 16px; }
+.auto-fit input { width: 22px; height: 22px; }
+.timeline-main { min-width: 0; }
+.timeline-main > div { flex-wrap: wrap; gap: 8px; }
+input[type="range"] { min-height: 44px; height: 44px; background: transparent; box-shadow: none; }
+input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 6px; background: #d8dfeb; }
+input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -9px; }
+.model-details summary > span { float: none; display: block; margin-top: 8px; }
+.model-details table { min-width: 500px; }
+.comparison table { min-width: 720px; }
+.fixed-budget { gap: 10px; flex-wrap: wrap; }
+.fixed-budget strong { font-size: 26px; }
+.dialog-close { min-width: 44px; min-height: 44px; }
+dialog p,dialog dl { font-size: 18px; }
+@media (max-width: 1050px) {
+  .workspace { grid-template-columns: 1fr; }
+  .controls { display: block; }
+  .controls fieldset { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+  .control-row { margin: 0; display: block; }
+  .control-row label { display: block; margin-bottom: 9px; }
+  .compact { width: 100%; }
+  .layer-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 24px; }
+  .site-header nav { gap: 12px 20px; }
+}
+@media (max-width: 560px) {
+  .site-header { padding: 20px; }
+  .site-header nav { width: 100%; }
+  .site-header nav > a,.site-header .text-button { font-size: 18px; }
+  .site-header .text-button { gap: 8px; }
+  main { padding: 24px 16px; }
+  .page-heading { flex-direction: column; gap: 20px; }
+  h1 { font-size: 30px; }
+  .intro { max-width: none; font-size: 18px; }
+  .version-note { align-items: flex-start; margin-top: 0; }
+  .controls fieldset,.layer-controls,.metrics { grid-template-columns: 1fr; }
+  .control-group > label { flex-wrap: wrap; gap: 8px; }
+  .controls { padding: 24px; }
+  .shape-choice { font-size: 18px; height: 78px; flex-direction: column; gap: 3px; }
+  .metric { padding: 20px; }
+  .metric strong { font-size: 32px; }
+  .map-panel { padding: 20px 12px; }
+  .map-caption { gap: 16px; }
+  .legend { max-width: none; font-size: 16px; }
+  .timeline { align-items: flex-start; }
+  .batch-note { font-size: 16px; }
+  .source-tag { white-space: normal; }
+  .model-details p { font-size: 18px; }
+  .model-details table { font-size: 16px; }
+  footer { font-size: 16px; padding: 0 20px 24px; }
+}
+
+@media (max-width: 560px) {
+  .map-tools { flex-direction: row; }
+  .scale-badge { top: 64px; }
 }

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>DRF 브라우저 Worker 수치 검사</title>
+    <style>
+      body { margin: auto; max-width: 1000px; padding: 32px 24px; font: 18px/1.6 -apple-system, sans-serif; color: #19243b; background: #eef2f8; }
+      h1 { font-size: 30px; line-height: 1.3; }
+      button { font: inherit; min-height: 48px; padding: 12px 20px; border: 1px solid #2a2aea; border-radius: 10px; color: white; background: #2a2aea; cursor: pointer; }
+      button:focus-visible { outline: 3px solid #3979ea; outline-offset: 4px; }
+      button:disabled { opacity: .5; }
+      pre { padding: 20px; border: 1px solid #cbd5e3; border-radius: 12px; background: white; white-space: pre-wrap; overflow-wrap: anywhere; font: 16px/1.6 ui-monospace, monospace; }
+    </style>
+  </head>
+  <body>
+    <h1>DRF 브라우저 Worker 수치 검사</h1>
+    <p>기준 코리도 7조건: 짧은 3 snapshot / 100 × 100 격자 3조건과 전체 60 snapshot / 150 × 150 격자 4조건(거칠기 0°, 2° × seeds 1, 2). 버튼을 누를 때만 계산합니다.</p>
+    <p>실제 scenario, field, eval, sweep Worker를 실행합니다. Float32 필드만 바이트 단위로 동일해야 하며 SHA-256으로 확인합니다. Q와 개수는 정확히 같아야 합니다. Float64 평가 수치는 |차이| ≤ 10⁻¹² × max(1, |참조값|)를 허용합니다. 자체 RNG의 브라우저 일치 검사이며 Octave 대조가 아닙니다.</p>
+    <button id="run" type="button">브라우저 검사 실행</button>
+    <pre id="results" role="status" aria-live="polite" data-passed="pending">검사 대기</pre>
+    <script type="module">
+      import {createGrid} from '../../drf/field.mjs';
+      const output=document.getElementById('results'),button=document.getElementById('run');
+      const assert=(condition,message) => {if (!condition) throw Error(message);};
+      async function hash(arrays) {
+        const bytes=new Uint8Array(arrays.reduce((n,a)=>n+a.byteLength,0));let at=0;
+        for (const a of arrays) {bytes.set(new Uint8Array(a.buffer,a.byteOffset,a.byteLength),at);at+=a.byteLength;}
+        const result=await crypto.subtle.digest('SHA-256',bytes);
+        return Array.from(new Uint8Array(result),b=>b.toString(16).padStart(2,'0')).join('');
+      }
+      function rpc(name) {
+        const worker=new Worker(new URL(`../../drf/${name}.worker.mjs`,import.meta.url),{type:'module'}),pending=new Map();let next=0;
+        worker.onmessage=({data}) => {
+          if (data.type==='progress') return;
+          const id=data.requestId ?? data.id,request=pending.get(id);if (!request) return;
+          clearTimeout(request.timer);pending.delete(id);
+          data.type==='error' ? request.reject(Error(data.message ?? data.error)) : request.resolve(data);
+        };
+        worker.onerror=(event) => {for (const request of pending.values()) {clearTimeout(request.timer);request.reject(Error(event.message));}pending.clear();};
+        return {
+          request(message) {return new Promise((resolve,reject) => {const id=++next,timer=setTimeout(()=>{pending.delete(id);reject(Error(`${name}: 30초 응답 시간 초과`));},30000);pending.set(id,{resolve,reject,timer});worker.postMessage({...message,id,requestId:id});});},
+          stop() {worker.terminate();for (const request of pending.values()) {clearTimeout(request.timer);request.reject(Error('Worker 종료'));}pending.clear();},
+        };
+      }
+      function summary(frame,evaluation) {
+        const d=evaluation.diagnostics;
+        return {medianError:evaluation.medianError,p95:evaluation.p95,offwall:evaluation.offwall,offset:evaluation.offset,
+          f1:evaluation.f1,caMsd:evaluation.caMsd,caHd95:evaluation.caHd95,observedFraction:evaluation.observedFraction,missing:evaluation.missing,
+          diffusePerConfig:d.diffusePerConfig,duplicateFraction:d.duplicateFraction,theoremMean:d.theoremMean,theoremMedian:d.theoremMedian,
+          theoremN:d.ratios.length,theoremNegative:d.theoremNegative,Q:frame.Q,admitted:frame.admitted,rejected:frame.rejected};
+      }
+      function compareSummary(a,b,comparison) {
+        let strictEqual=true,passed=true,maxAbsError=0;const differences=[];
+        for (const key of Object.keys(b)) {
+          if (Object.is(a[key],b[key])) continue;
+          strictEqual=false;
+          const finite=Number.isFinite(a[key]) && Number.isFinite(b[key]),
+            absoluteError=finite ? Math.abs(a[key]-b[key]) : null,
+            tolerance=finite && !comparison.exactSummaryKeys.includes(key) ? comparison.summaryTolerance*Math.max(1,Math.abs(b[key])) : 0,
+            withinTolerance=finite && !comparison.exactSummaryKeys.includes(key) && absoluteError<=tolerance;
+          if (absoluteError!==null) maxAbsError=Math.max(maxAbsError,absoluteError);
+          if (!withinTolerance) passed=false;
+          differences.push({key,actual:a[key],reference:b[key],absoluteError,tolerance,withinTolerance});
+        }
+        return {passed,strictEqual,maxAbsError,differences};
+      }
+      button.onclick=async () => {
+        button.disabled=true;output.dataset.passed='running';const results=[];let workers=[];
+        try {
+          const response=await fetch('browser-fixtures.json');assert(response.ok,'Node fixture 불러오기 실패');const fixture=await response.json();
+          for (const c of fixture.cases) {
+            output.textContent=JSON.stringify({state:'RUNNING',case:c.id,completed:results},null,2);
+            const started=performance.now(),scenarioWorker=rpc('scenario'),fieldWorker=rpc('field'),evalWorker=rpc('eval'),sweepWorker=rpc('sweep');
+            workers=[scenarioWorker,fieldWorker,evalWorker,sweepWorker];
+            const {scenario}=await scenarioWorker.request({type:'generate',input:c.input}),grid=createGrid(c.input.grid,c.input.grid);
+            await fieldWorker.request({type:'init',grid,numerical:{band:c.input.band,perimeter:c.input.perimeter}});
+            await evalWorker.request({type:'init',scenario,grid});
+            let frame,evaluation;
+            for (const snapshot of scenario.wire) {
+              const message=await fieldWorker.request({type:'step',snapshot}),{type,requestId,...data}=message;frame=data;
+              ({evaluation}=await evalWorker.request({type:'evaluate',frame}));
+              assert(frame.t===snapshot.t,`${c.id}: snapshot 인덱스`);
+            }
+            const actual={Dbar:await hash([frame.Dbar]),betaHat:await hash([frame.betaHat]),combined:await hash([frame.Dbar,frame.betaHat])};
+            for (const key of ['Dbar','betaHat','combined']) assert(actual[key]===c.expected[key],`${c.id}: Node ${key} SHA-256 불일치`);
+            const pipelineSummary=summary(frame,evaluation),nodeSummaryComparison=compareSummary(pipelineSummary,c.expected.summary,fixture.comparison);
+            assert(nodeSummaryComparison.passed,`${c.id}: Node summary 허용오차 초과 ${JSON.stringify(nodeSummaryComparison.differences)}`);
+            const {result}=await sweepWorker.request({type:'run',input:c.input});
+            assert(await hash([result.final.Dbar,result.final.betaHat])===actual.combined,`${c.id}: 개별 pipeline / sweep 필드 불일치`);
+            const sweepSummaryComparison=compareSummary(result.summary,c.expected.summary,fixture.comparison),
+              pipelineSweepComparison=compareSummary(pipelineSummary,result.summary,fixture.comparison);
+            assert(sweepSummaryComparison.passed,`${c.id}: sweep / Node summary 허용오차 초과 ${JSON.stringify(sweepSummaryComparison.differences)}`);
+            assert(pipelineSweepComparison.passed,`${c.id}: pipeline / sweep summary 허용오차 초과 ${JSON.stringify(pipelineSweepComparison.differences)}`);
+            const comparisons={pipelineVsNode:nodeSummaryComparison,sweepVsNode:sweepSummaryComparison,pipelineVsSweep:pipelineSweepComparison};
+            results.push({id:c.id,passed:true,fieldsStrictEqual:true,...actual,Q:frame.Q,
+              strictEqual:Object.values(comparisons).every(value=>value.strictEqual),
+              maxAbsError:Math.max(...Object.values(comparisons).map(value=>value.maxAbsError)),
+              differences:Object.entries(comparisons).flatMap(([source,value])=>value.differences.map(d=>({source,...d}))),
+              summaryComparisons:comparisons,summary:result.summary,ms:performance.now()-started});
+            workers.forEach(w=>w.stop());workers=[];
+          }
+          output.dataset.passed='true';output.dataset.status='PASS';output.textContent=JSON.stringify({state:'PASS',reference:fixture.reference,comparison:fixture.comparison,nodeVersion:fixture.nodeVersion,browser:navigator.userAgent,results},null,2);
+        } catch (error) {
+          output.dataset.passed='false';output.dataset.status='FAIL';output.textContent=JSON.stringify({state:'FAIL',error:error.message,results},null,2);
+        } finally {workers.forEach(w=>w.stop());button.disabled=false;}
+      };
+    </script>
+  </body>
+</html>

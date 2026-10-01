@@ -1,0 +1,94 @@
+{
+  "status": "local UI verified; no public deployment",
+  "default": {
+    "Q": 2904,
+    "canvas": {
+      "height": 558,
+      "width": 677
+    },
+    "clientWidth": 1425,
+    "documentWidth": 1425,
+    "fieldHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+    "minimumVisibleFontPx": 16,
+    "slider": "60",
+    "snapshot": "60 / 60",
+    "state": "done",
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  "consoleErrorsAndWarnings": [],
+  "browserParity": "browser-parity-result.json",
+  "responsive": {
+    "mobile": [
+      390,
+      844
+    ],
+    "mobileClientWidth": 375,
+    "mobileScrollWidth": 375,
+    "minimumVisibleFontPx": 16,
+    "DPR1Canvas": [
+      307,
+      408
+    ],
+    "DPR2Canvas": [
+      614,
+      816
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "SURFMinimumVisibleFontPx": 16,
+    "SURFMobileHorizontalOverflowPx": 0
+  },
+  "actions": [
+    "single step at t=1",
+    "second single step at t=2",
+    "resume to 6/6",
+    "slider historical t=1",
+    "display Dbar/beta and linear/log",
+    "measured ellipse layer",
+    "zoom and fit",
+    "diagnostic profile selection",
+    "prefix hover",
+    "reset clears inspector and diagnostics",
+    "cancel retains completed t=1",
+    "4-run full sweep",
+    "sweep cancellation at 0/4",
+    "zero position and range noise rejected"
+  ],
+  "downloads": {
+    "JSONCompletedSnapshots": 6,
+    "CSVSnapshotRows": 6,
+    "PNGPixels": [
+      2628,
+      1744
+    ],
+    "PNGpixelsPerMeter": 11811,
+    "PNGdpi": 299.9994,
+    "PNGByteLength": 283412,
+    "downloadEventToolTimedOutButFilesParsed": true
+  },
+  "browserPoolVsNode": {
+    "cases": 4,
+    "Float64MaxAbsDifference": 1.3322676295501878e-15,
+    "differingKeys": [
+      "theoremMean"
+    ],
+    "cancelledExportSnapshots": 1
+  },
+  "automatedTests": {
+    "node": {
+      "passed": 101,
+      "failed": 0,
+      "elapsedMs": 3563.702458
+    },
+    "legacyDOM": {
+      "passed": true,
+      "checks": 8,
+      "uiErrors": []
+    }
+  }
+}

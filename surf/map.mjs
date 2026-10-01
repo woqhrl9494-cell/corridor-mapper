@@ -149,10 +149,10 @@ export class SurfaceMap {
     const ctx = target.getContext("2d");
     ctx.scale(pixelRatio, pixelRatio);
     const box = {
-      x: width < 400 ? 48 : 55,
-      y: 34,
-      w: width - (width < 400 ? 65 : 75),
-      h: height - 77,
+      x: 72,
+      y: width < 560 ? 96 : 40,
+      w: width - 94,
+      h: height - (width < 560 ? 164 : 108),
     };
     this.box = box;
     if (!this.camera)
@@ -178,9 +178,9 @@ export class SurfaceMap {
     ctx.fillStyle = "#f9fbfe";
     ctx.fillRect(0, 0, width, height);
     ctx.lineWidth = 1;
-    ctx.font = "10px -apple-system, Arial, sans-serif";
+    ctx.font = "16px -apple-system, Arial, sans-serif";
     ctx.fillStyle = "#64738b";
-    const step = tickStep(c.scale),
+    const step = tickStep(c.scale * (64 / 96)),
       digits = Math.max(0, -Math.floor(Math.log10(step)));
     const label = (n) => (Math.abs(n) < step / 100 ? "0" : n.toFixed(digits));
     for (
@@ -195,7 +195,7 @@ export class SurfaceMap {
       ctx.lineTo(sx, box.y + box.h);
       ctx.stroke();
       ctx.textAlign = "center";
-      ctx.fillText(label(x), sx, box.y + box.h + 17);
+      ctx.fillText(label(x), sx, box.y + box.h + 25);
     }
     for (
       let y = Math.ceil(lo[1] / step) * step;
@@ -209,7 +209,7 @@ export class SurfaceMap {
       ctx.lineTo(box.x + box.w, sy);
       ctx.stroke();
       ctx.textAlign = "right";
-      ctx.fillText(label(y), box.x - 9, sy + 3);
+      ctx.fillText(label(y), box.x - 9, sy + 6);
     }
     ctx.strokeStyle = "#cbd5e4";
     ctx.strokeRect(box.x, box.y, box.w, box.h);
@@ -217,7 +217,7 @@ export class SurfaceMap {
     ctx.textAlign = "center";
     ctx.fillText("x (m)", box.x + box.w / 2, height - 8);
     ctx.save();
-    ctx.translate(14, box.y + box.h / 2);
+    ctx.translate(19, box.y + box.h / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText("y (m)", 0, 0);
     ctx.restore();
@@ -313,27 +313,28 @@ export class SurfaceMap {
       ctx.strokeStyle = "white";
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.font = "bold 9px -apple-system, Arial";
+      ctx.font = "bold 16px -apple-system, Arial";
       ctx.textAlign = "center";
       ctx.fillStyle = "#1d6a82";
+      const labelX = Math.max(box.x + 20, Math.min(box.x + box.w - 20, x));
       let ly = y - 11;
       while (
-        labels.some((p) => Math.abs(p[0] - x) < 20 && Math.abs(p[1] - ly) < 12)
+        labels.some((p) => Math.abs(p[0] - labelX) < 36 && Math.abs(p[1] - ly) < 24)
       )
-        ly -= 12;
-      labels.push([x, ly]);
-      if (ly < y - 11) {
+        ly -= 24;
+      labels.push([labelX, ly]);
+      if (ly < y - 11 || labelX !== x) {
         ctx.strokeStyle = "#6c9dac";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(x, y - 7);
-        ctx.lineTo(x, ly + 3);
+        ctx.lineTo(labelX, ly + 3);
         ctx.stroke();
       }
       ctx.fillStyle = "#f9fbfe";
-      ctx.fillRect(x - 9, ly - 9, 18, 11);
+      ctx.fillRect(labelX - 18, ly - 18, 36, 24);
       ctx.fillStyle = "#1d6a82";
-      ctx.fillText(`V${id + 1}`, x, ly);
+      ctx.fillText(`V${id + 1}`, labelX, ly);
     }
     ctx.restore();
     if (!this.scene) {
@@ -347,33 +348,40 @@ export class SurfaceMap {
       plot = document.createElement("canvas");
     this.draw(plot, ratio);
     const out = document.createElement("canvas");
-    out.width = plot.width;
-    out.height = plot.height + Math.round(72 * ratio);
     const ctx = out.getContext("2d");
+    const wrap = (text, font) => {
+      ctx.font = font;
+      const lines = [];
+      let line = "";
+      for (const word of text.split(" ")) {
+        const next = line ? `${line} ${word}` : word;
+        if (line && ctx.measureText(next).width > this.canvas.clientWidth - 30) {
+          lines.push(line);
+          line = word;
+        } else line = next;
+      }
+      if (line) lines.push(line);
+      return lines;
+    };
+    const heading = wrap(`SURF / ${this.scene.config.shape} / ${this.scene.config.nBots} vehicles / batch 12 s`, "bold 18px Arial");
+    const notes = [
+      ...wrap(`${this.result.fit.status} / x, y in metres / 1:1 metric scale`, "16px Arial"),
+      ...wrap(`${this.result.fit.status === "AMBIGUOUS" ? "Purple: alternative surfaces" : "Blue: SURF"} / Cyan: vehicles`, "16px Arial"),
+    ];
+    const headerHeight = 16 + heading.length * 24,
+      footerHeight = 16 + notes.length * 24;
+    out.width = plot.width;
+    out.height = plot.height + Math.round((headerHeight + footerHeight) * ratio);
     ctx.fillStyle = "#f9fbfe";
     ctx.fillRect(0, 0, out.width, out.height);
-    ctx.drawImage(plot, 0, Math.round(34 * ratio));
+    ctx.drawImage(plot, 0, Math.round(headerHeight * ratio));
     ctx.scale(ratio, ratio);
     ctx.fillStyle = "#172136";
-    ctx.font = "bold 11px Arial";
-    ctx.fillText(
-      `SURF / ${this.scene.config.shape} / ${this.scene.config.nBots} vehicles / batch 12 s`,
-      15,
-      20,
-    );
-    ctx.font = "10px Arial";
+    ctx.font = "bold 18px Arial";
+    heading.forEach((text, k) => ctx.fillText(text, 15, 25 + k * 24));
+    ctx.font = "16px Arial";
     ctx.fillStyle = "#536484";
-    ctx.fillText(
-      `${this.result.fit.status} / x, y in metres / 1:1 metric scale`,
-      15,
-      this.canvas.clientHeight + 52,
-    );
-    ctx.font = "9px Arial";
-    ctx.fillText(
-      `${this.result.fit.status === "AMBIGUOUS" ? "Purple: alternative surfaces" : "Blue: SURF"} / Cyan: vehicles`,
-      15,
-      this.canvas.clientHeight + 66,
-    );
+    notes.forEach((text, k) => ctx.fillText(text, 15, headerHeight + this.canvas.clientHeight + 25 + k * 24));
     return new Promise((resolve) => out.toBlob(resolve, "image/png"));
   }
 }

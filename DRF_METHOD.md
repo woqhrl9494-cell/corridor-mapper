@@ -1,0 +1,181 @@
+# EchoMap DRF Lab 방법과 재현 조건
+
+DRF Lab은 simulator, estimator, evaluator를 분리한 브라우저 실험 도구이다. 추정기는 측정 range와 추정 차량 위치만으로 Direct Residual Field를 누적한다. `wall-shape-model-free`는 추정기가 벽 모양을 입력받지 않는다는 뜻이다. Simulator의 cubic spline 벽과 평가용 corridor prior까지 모델이 없다는 뜻으로 확장하지 않는다.
+
+권위 문서로 지정된 `메인 알고리즘`과 `bspline_specular.m`, `smoke_spline_field.m`, `sweep_spline_field.m` 원본은 제공되지 않았다. 현재 구현 근거는 사용자 첨부의 식과 숫자 fixture이다. Octave 원본 실행이나 원본 구현과의 parity를 검증했다고 표기하지 않는다.
+
+## Input, Output, 좌표와 배열
+
+기준 장면은 world coordinate system의 `[0,60] × [0,30]` m 영역이다. 아래 벽 knot 높이는 `[8,6,9,7.5,10,8,7]`, 위 벽은 `[22,24,21,23.5,20,22.5,23]`, knot x는 `0:10:60` m이다. `notAKnot`은 MATLAB `spline`과 같은 not-a-knot 경계조건의 계수를 계산한다. 랜덤 장면은 이 knot 높이를 seed로 ±0.5 m 이내에서 변경하는 탐색용 장면이며 참조 통계 비교 대상에서 제외한다.
+
+차량 v=1,2,3의 참 위치는 x=4,7,10 m에서 출발해 snapshot마다 0.75 m씩 증가한다. y는 `15 + 2 sin(2πx/30 + v)` m이다. 기준 입력은 차량 3대, snapshot 60개, isotropic 위치 표준편차 0.1 m, range 표준편차 0.1 m, roughness 2°, intensity 10/m, 목표 cell 길이 0.02 m, 격자 150×150, band 4, exact perimeter, seed 1이다. UI가 허용하는 범위는 차량 2–3대, snapshot 1–60개, 격자 100/150/200이다.
+
+입력 제한은 위치/range 표준편차 각각 0–2 m, roughness 0–20°, intensity 0–30/m, cell step 0.005–0.2 m, resolution ablation 0–2 m, seed uint32이다. 두 표준편차를 동시에 0으로 만들 수 없다. 실제 cell의 양의 residual variance 조건은 field가 추가로 검사한다.
+
+- 위치와 산란점: 길이 2의 `[x,y]`, 단위 m.
+- Pose covariance: `[xx,xy,yy]`, 대칭 2×2 행렬 `[[xx,xy],[xy,yy]]`의 압축 표현, 단위 m², positive semidefinite 조건.
+- Range와 표준편차: `dHat`, `sigmaD`, 단위 m. Roughness는 계산 시 rad, UI 입력과 표시는 deg.
+- 곡률 κell, κΓ, Δκ는 1/m, Theorem 2 scale varsigma는 m, ratio z는 무차원.
+- Spline span: `C`는 4×2 power basis 계수이며 `s(u)=[1,u,u²,u³] C`. u는 무차원이다. `evaluate`는 `s`, `t=s′(u)`, `dd=s″(u)`를 반환한다. Span 번호는 1부터, 벽 번호는 아래 0과 위 1부터 시작한다.
+- Grid: x/y는 길이 nx/ny의 Float64Array, flattened index는 `iy*nx+ix`, y 증가 순서. 기준 cell center는 x=`(ix+0.5)*0.4`, y=`(iy+0.5)*0.2` m.
+- 누적 D/A는 길이 G=`nx*ny`의 Float64Array. 화면 전송 Dbar/β̂는 같은 길이의 Float32Array. D, A, Dbar와 prefactor α의 단위는 1/m²이며 β̂는 무차원 비율이다. β̂를 확률, posterior, occupancy로 해석하지 않는다.
+- Field 출력: `{t,Dbar,betaHat,Q,admitted,rejected,epsilonA,ms}`. `Q`, 채택 수, 거부 수는 실행 시작 이후 누적 정수이다. 시간 측정 `ms`는 실행 시간이며 물리적 snapshot 간격이 아니다.
+
+## 정보 경계와 인과성
+
+`scenario.worker`가 truth와 measurement wire를 만든다. Main은 wire만 `field.worker`에 전달하고, field 출력 뒤에 truth와 출력을 `eval.worker`로 보낸다. 평가 결과를 field 입력으로 보내지 않는다. 추정기에 벽, 참 위치, 산란점, path 라벨, w, N, roughness, intensity, Δκ, seed를 전달하지 않는다.
+
+```text
+wire = {
+  t,
+  configs: [{
+    i, j,
+    pHat_i: [x,y], pHat_j: [x,y],
+    Sigma_i: [xx,xy,yy], Sigma_j: [xx,xy,yy],
+    paths: [{dHat,sigmaD}]
+  }]
+}
+```
+
+`makeWire`는 위 속성만 복사하고, 다른 속성은 읽지 않는다. 유효하지 않은 차원, 비유한 수, indefinite covariance를 거부한다. `createField.step`도 이 경계를 다시 적용한다. Field는 `t=1,2,...`를 한 번씩 순서대로 처리한다. 잘못된 snapshot에서 예외가 발생하면 이전 D/A, Q, t를 유지한다. 미래 wire를 변경하거나 NaN으로 오염시켜도 처리한 prefix의 출력은 바뀌지 않아야 한다.
+
+Simulator가 전체 시나리오를 먼저 생성해도 field에는 현재 snapshot 하나씩만 전달된다. Evaluator의 truth cursor도 현재 field의 t까지만 이동한다. GT는 평가 열과 오차 계산에만 사용하며 admission, band, kernel, proxy threshold를 GT로 조정하지 않는다.
+
+과거 hover는 Float32 Dbar/β̂에서 D/A를 역산하지 않는다. 별도 field worker가 해당 시점까지의 measurement prefix를 1-cell Float64 field로 재생한다. β̂에는 원래 전체 격자의 `epsilonA`를 사용한다. 입력은 격자 index, 수치 설정, measurement prefix와 추정기 출력 `epsilonA`이며 truth나 미래 snapshot을 포함하지 않는다.
+
+## 첨부 F번호와 코드 대응
+
+첨부에 실제로 정의된 번호 F10–F41을 사용한다. 별도 F1–F18 식은 제공되지 않았다.
+
+1. **F10–F11, admission:** `createField.step`, `pathFieldPoint`. 추정 초점 거리 ρ̂를 계산하고 `dHat≤ρ̂`를 거부한다. b_min gate는 없다. Q에는 채택된 path만 포함한다.
+2. **F16–F22, 타원 둘레:** `ellipsePerimeter`, `ellipticE`. `a=dHat/2`, `m=(ρ̂/dHat)²`, `P=4aE(m)`. E의 입력은 modulus가 아닌 parameter m이며 AGM으로 계산한다.
+3. **F23, 비교 옵션:** `ellipsePerimeter(...,'ramanujan')`. Ramanujan 근사이며 기본은 `exact`이다.
+4. **F24–F33, path field:** `geometry`, `pathFieldPoint`, `createField.step`. Residual, 위치오차 전파, gradient, Gaussian kernel, prefactor를 계산한다.
+5. **F36–F38, 누적:** `createField.step`. 현재 snapshot의 deltaD/deltaA를 먼저 계산하고 유효성이 확인된 뒤 D/A와 Q에 반영한다.
+6. **F39–F40, readout:** `createField.readout`, `createField.inspect`. Dbar와 β̂를 계산한다. 초기 또는 A=0인 cell의 β̂는 0이다.
+7. **F41, configuration factorization:** `createField.step`. Configuration 안의 모든 path에 동일 sigmaD를 요구한다. 이 조건을 위반하면 예외를 발생시킨다.
+
+Grid cell x에서 추정 초점 i,j까지 거리는 rᵢ,rⱼ이고, guard가 적용된 방향은 `eᵢ=(x−pHat_i)/max(rᵢ,1e−9 m)`이다. Focal guard는 나눗셈에만 적용하며 range나 model noise를 추가하지 않는다.
+
+$$
+\rho_q(x)=r_i+r_j,\qquad r_q(x)=\rho_q(x)-\hat d_q,\qquad g_q=e_i+e_j.
+$$
+
+$$
+\sigma_{r,q}^2=\sigma_{d,q}^2+e_i^T\Sigma_i e_i+e_j^T\Sigma_j e_j,
+\qquad
+K_q=\exp\left[-\frac{r_q^2}{2\sigma_{r,q}^2}\right].
+$$
+
+$$
+\alpha_q=\frac{\lVert g_q\rVert}{P_q\sqrt{2\pi}\sigma_{r,q}},
+\qquad u_q=\alpha_qK_q,
+\qquad D_t=D_{t-1}+\sum_{q\in\mathcal Q_t}u_q,
+\qquad A_t=A_{t-1}+\sum_{q\in\mathcal Q_t}\alpha_q.
+$$
+
+$$
+Q_t=Q_{t-1}+\#\mathcal Q_t,\quad
+\bar D_t=\frac{D_t}{\max(Q_t,1)},\quad
+\epsilon_A=10^{-12}\max_x A_t(x),\quad
+\hat\beta_t=\frac{D_t}{A_t+\epsilon_A}.
+$$
+
+`𝒬_t`는 현재 snapshot에서 채택한 path 집합이다. 마지막 비율의 분모가 0이면 구현은 0을 반환한다. 수치 Gaussian은 underflow로 K=0이 될 수 있으므로 계산 assertion은 `0≤K≤1`이다. 모든 cell에서 residual variance가 유한하고 양수여야 한다. 전체 noise를 0으로 만든 설정은 이 kernel에 정의되지 않는다. Wire는 차량 간 cross-covariance를 지원하지 않으며 기준 simulator의 위치오차는 차량과 snapshot마다 독립이다.
+
+동일 sigmaD 조건에서 configuration의 `ρ(x)`, `g(x)`, `σr(x)`는 path와 독립이다. `A(x)=f(x) Σq(1/Pq)`, `f=norm(g)/(sqrt(2π) σr)`로 계산하고 A는 full field에 누적한다. D는 range 순으로 정렬한 path 중 `abs(r)≤cB σr`에 해당하는 path만 갱신한다. cB는 3/4/5/full 중 수치 설정이며 물리 상수가 아니다. 동일 A에 대한 full/truncated β̂ 차이의 이론 상한은 `exp(−cB²/2)`이다. `1/Pq`를 정확한 unit mass라고 설명하지 않는다.
+
+이 추정기는 최적화 objective나 벽 fitting을 풀지 않는다. Tangency weighting, forgetting, snapshot당 1/M 보정, 양의 model-noise 항, Gaussian train 대체는 사용하지 않는다.
+
+## Spline, 정반사와 가시성
+
+`notAKnot`/`graphSpans`가 기준 graph wall을 만들고 `bsplineSpans`는 uniform cubic B-spline의 `C=M Q`를 제공한다. 일반 닫힌 동굴 UI와 그 장면의 extractor 검증은 구현 범위에 포함되지 않는다. Span AABB는 Bezier control point convex hull로 계산한다.
+
+`specularPolynomial`은 참 위치 pT,pR와 span 접선 v로 `a=s−pT`, `b=s−pR`를 정의하고 다음 Fermat's principle 조건의 다항식을 만든다.
+
+$$
+P_k(u)=(v\cdot a)(v\times b)+(v\cdot b)(v\times a).
+$$
+
+다항식 차수는 일반 cubic parametric span에서 최대 9, graph wall에서 최대 8이다. `rootInfo`는 power basis를 Bernstein basis로 바꾸고 de Casteljau subdivision으로 단순근을 분리한다. Bisection/Newton과 `refineSpecularRoot`의 unsquared Fermat residual을 함께 사용한다. Companion eigenvalue나 imaginary threshold는 사용하지 않는다.
+
+중근은 derivative stationary point와 Float64 roundoff에 따른 불확실성 구간을 사용해 처리한다. `nearMultiple`, `unresolved`, `degenerateSpans`를 보고하며 보편적인 1e−15 root 정확도를 주장하지 않는다. 공유 경계점은 중복 제거하고 마지막 열린 graph span의 u=1 끝점은 포함한다. 이는 첨부의 모든 span `[0,1)` 표기와 마지막 `[50,60]` 표기를 일관되게 처리하기 위한 endpoint convention이다.
+
+`specularPoints`는 `(v×a)(v×b)>0`인 same-side 근만 남기고 두 차량 leg 모두의 visibility를 검사한다. `visible`은 line/span 교차의 cubic 근을 구하고 leg parameter `λ∈(1e−9,1−1e−7)`에 교차가 있으면 차단한다. Collinear overlap도 차단한다. 진단의 `cosθ=norm(a/ra+b/rb)/2`, `κell=cosθ(1/ra+1/rb)/2`, `Δκ=κell−κΓ`에서 κΓ는 벽이 차량 쪽으로 휠 때 양수이다. Δκ의 부호를 보존한다.
+
+## Diffuse cell과 난수
+
+`diffuseProfile`은 각 cell의 midpoint에서 facet tangent mismatch를 계산한다. uT,uR은 모두 산란점에서 차량 쪽으로 향하는 단위벡터이다. 따라서 `uR−uT`가 정반사에서 접선 방향이며 합 벡터를 그대로 접선으로 쓰지 않는다. 두 방향이 거의 같으면 `facetSinDelta`가 수학적으로 동등한 `sign(cross(uT,uR))*perp(uT+uR)` 표현을 사용해 cancellation을 줄인다. 정의되지 않은 방향이나 유한하지 않은 tan²δ의 intensity는 0이다.
+
+$$
+w_n=\exp\left[-\frac{\tan^2\delta_n}{2\sigma^2}\right],\quad
+\Delta s_n=\lVert s'(u_n)\rVert\Delta u_n,\quad
+\Lambda_n=\lambda_0w_n\Delta s_n.
+$$
+
+λ₀의 단위는 1/m, Λ는 Poisson 평균인 무차원 수이다. 실행은 Simpson 호길이 표의 역보간으로 cell 경계를 만들고 midpoint speed로 Δs를 가중한다. 이는 연속 intensity의 cell quadrature 근사이다. Cell 안의 u는 균일하게 샘플링한다. ΣΛ 숫자 fixture는 별도로 `partition='x'`, Δx=0.02 m를 사용한다. 두 partition의 숫자를 bit 동일하다고 요구하지 않는다.
+
+`sampleDiffuse`는 전달된 cell들의 합 Λ로 `N~Poisson(ΣΛ)`를 뽑고, 누적 intensity 이분탐색으로 cell을 선택한 뒤 cell 내 u를 뽑는다. Mean이 30을 넘으면 평균 30 이하인 독립 Poisson 변수들의 합을 사용한다. Same-side와 visibility로 thinning한다. σ=0 또는 λ₀=0이면 diffuse를 만들지 않는다. 유한한 Bernoulli 시도를 Poisson으로 부르지 않는다.
+
+`createRng`는 seed와 stream 주소로 초기화하는 xoshiro128**이다. Uniform은 열린 구간 (0,1), normal은 Box–Muller이다. Stream 주소는 다음과 같다.
+
+- 위치: `(seed,'pose',t,v)`.
+- 정반사 표준잡음: `(seed,'specNoise',t,i,j)`.
+- Diffuse 생성: `(seed,'diffuse',t,i,j,wall)`, 벽마다 독립.
+- Diffuse range 표준잡음: `(seed,'diffNoise',t,i,j)`.
+- Wire 순서 섞기: `(seed,'shuffle',t,i,j)`.
+- 탐색용 랜덤 벽: `(seed,'wall')`.
+
+같은 seed에서 σ 또는 σd를 바꿔도 pose 표준잡음과 정반사 표준잡음은 동일하다. σd는 모든 path 유형에 동일하게 적용한다. Path resolution ablation은 기본 OFF이며, ON일 때 noise-free range 순으로 직전에 채택한 range와 εres 미만인 path를 버린다. 이것을 실제 레이더 MPC 분해능 검증으로 해석하지 않는다.
+
+참조 sweep은 모든 조건에 같은 grid, seed 목록, admission, band와 perimeter 설정을 적용한다. Simulator 조건만 바꿔 동일 추정기를 비교한다. Perimeter 근사나 resolution ablation을 켠 결과는 기본 참조 결과와 분리한다.
+
+## 평가용 proxy와 진단
+
+`outerPeak`는 y<15 / y≥15의 각 반쪽 열에서 최대값의 0.5 이상인 local maximum 중 가장 바깥 것을 고른다. 인접한 두 값보다 크거나 같고, 적어도 하나보다 엄격히 커야 한다. 3점 포물선 보간 displacement를 ±0.5 cell로 제한한다. 이는 **corridor prior를 사용하는 평가용 proxy이며 최종 extractor는 미확정**이다. 이 prior는 estimator 누적식에는 들어가지 않는다.
+
+평가 열은 x∈[10,50] m이고, t까지 같은 벽의 정반사점 x가 ±0.4 m 이내에 생긴 열이다. 아래/위 벽을 별도로 집계한다. Proxy 절대 y 오차의 중앙값, 정렬 후 `ceil(0.95*n)`번째 P95, 오차>0.5 m 비율을 계산한다. 관측된 열에 proxy가 없으면 Infinity 오차와 failure로 기록해 성공 표본에서 제외하는 방식으로 성능을 높이지 않는다.
+
+`offset`은 참 벽 y의 ±1.5 m 창 안에서 Dbar의 격자 열 최대값을 고른 signed y offset의 **평균**이다. 아래 벽의 y 증가와 위 벽의 y 감소가 안쪽 양수이다. 이 peak에는 proxy의 포물선 보간을 적용하지 않는다. 제공 참조 +0.139 m의 집계 원본은 확인되지 않았다. Seed 1, σ0°, σd=0.1 m에서 같은 188열의 평균은 +0.233710 m, 중앙은 +0.141950 m였으며, 참조에 맞추기 위해 평균을 중앙값으로 바꾸지 않았다.
+
+`wall_metrics.js`의 GT arc samples는 0.2 m 간격이다. 현재까지의 정반사와 diffuse hit에서 거리 1.0 m 이내인 GT를 observed mask로 누적한다. Boundary tolerance는 0.4 m이다. Precision은 모든 prediction→전체 GT, recall은 observed GT→prediction으로 계산한다. CA-MSD는 두 directed mean의 평균, CA-HD95는 두 directed P95의 최댓값이다. 서로 다른 GT support를 쓰므로 표준 ASSD/HD95와 구분한다. 이 mask와 specular-observed 열은 서로 다른 평가 정의이다.
+
+Theorem 2 진단은 같은 벽의 가장 가까운 정반사점을 Euclidean 거리로 짝짓고, `abs(x−x*)≤4σ/abs(Δκ)`를 통과한 diffuse 표본에서 다음 signed 비율을 계산한다.
+
+$$
+\varsigma=\frac{\cos\theta\,\sigma^2}{\Delta\kappa},\qquad
+z=\frac{\rho-\rho^*}{\varsigma}.
+$$
+
+`abs(Δκ)≤1e−9` 또는 `abs(varsigma)≤1e−15`인 비율은 계산하지 않는다. 음수 Δκ를 일괄 제거하거나 분모만 절댓값으로 바꾸지 않는다. 비율의 χ²₁ 평균 1과 중앙 약 0.455는 국소 quadratic/linear 근사의 진단 기준이며 유한 roughness, 경계, 여러 root가 가까운 구간에서 정확한 분포를 보장하지 않는다. 제공 수용 기준은 σ2°에서 평균 `1±0.05`, 중앙 `0.43±0.04`이다.
+
+Diffuse count 예측은 정반사점마다 `λ₀ sqrt(2π) σ / abs(Δκ)`를 합한다. Fold 예측은 기준 isotropic 잡음에서 `0.765 sqrt(2) σr / (2 cosθ)`를 사용한다. Visibility, 유한 벽 길이, 겹치는 국소 구간의 효과를 없앤 정확한 count/offset 식으로 해석하지 않는다.
+
+## 계산량, 메모리와 실험 범위
+
+C는 snapshot당 차량 pair 수, G는 grid cell 수, P는 configuration당 path 수, B는 band 안의 grid/path 방문 수이다. Field의 snapshot 계산량은 `O(C*(P log P + G log P) + B)`, scratch 메모리는 `O(G+P)`이다. D/A와 transactional deltaD/deltaA 네 Float64Array를 유지한다. Full mode에서는 B가 `C*G*P`까지 증가한다.
+
+Simulator는 configuration마다 M개 quadrature cell과 방출 표본을 처리한다. S개 wall span과 root 비용 R을 두면 최악 visibility 비용은 path당 `O(SR)`, categorical 선택은 `O(log M)`이다. Poisson sampling 비용은 기대 방출 수에 비례한다. Root degree는 9 이하이나 ill-conditioned/multiple roots의 처리 시간과 정확도는 별도 진단 대상이다. Not-a-knot dense solve는 `O(K³)`이며 기준 K=7이다.
+
+단일 실행에서 두 Float32 field history의 비용은 `8*T*G` bytes이다. 기준 60×150²에서는 10.8 MB, 최대 지원 60×200²에서는 19.2 MB이다. 이는 전체 RAM 사용량이 아니다. Truth/wire는 `O(T*C*P)`, evaluator의 모든 누적 ratio history를 보관하면 최악 `O(T²*C*P)`, proxy/observed history와 worker 복사본도 추가된다. 현재 입력 범위에서는 T*G≤2.4×10⁶이므로 첨부의 5×10⁶ keyframe 조건에 도달하지 않는다. 범위 확장 시 keyframe 저장이나 메모리 제한을 먼저 구현해야 한다.
+
+`runExperiment`는 field frame history를 보관하지 않는다. Browser sweep pool은 기본 `hardwareConcurrency−1`개 worker를 사용하며 실행 중 cancellation은 worker를 종료한다. Worker가 보낸 final 두 field는 pool의 완료 record에서 제거하고 scalar summary만 보관한다. 따라서 UI의 완료 job 보관 비용은 `O(J)`이며 J는 완료한 job 수이다. 개별 worker 실행의 임시 field와 truth 비용은 별도로 남는다. Node runner도 final field를 SHA-256으로 축약하고 scalar summary만 저장한다. 실제 메모리와 실행 속도는 장면, path 수, worker 수, 기기에서 측정해야 한다.
+
+Snapshot index와 0.75 m/snapshot은 물리적 Δt를 지정하지 않는다. 레이더 carrier/bandwidth, 동기화, clock drift, 차량 간 상관 위치오차, 검출 누락, latency, 실제 MPC resolution과 hardware calibration은 검증하지 않았다. 이 도구의 simulator 일치를 실제 장비 성능으로 주장하지 않는다.
+
+## 검증과 내보내기
+
+```bash
+npm test
+npm run test:legacy-dom
+node tests/drf/run-reference.mjs --seed-count 10 --workers 3
+python3 -m http.server 8871 --bind 127.0.0.1
+```
+
+HTTP로 `drf.html`을 열며 `file://`은 사용하지 않는다. `numeric.test.mjs`는 모든 spline/span fixture, 평평한 벽 적분과 derivative, t=30 네 가시 정반사점, 중근과 경계근, Poisson/normal/categorical 검사를 포함한다. 닫힌 24-control spline의 자체 seed 내부 300쌍은 독립 physical-residual bracket의 1824/1824근과 일치했다. 최대 u 차이는 6.11×10⁻¹⁵, 최대 `abs(sinδ)`는 4.03×10⁻¹⁶이었다. 제공 Octave의 2040근 검사와 같은 pair 표본이라는 주장은 하지 않는다. Field 검사는 scalar fixture, AGM, factorized A, band bound, causal prefix, oracle getter 격리와 prefix hover를 포함한다.
+
+확보한 160회, 10-seed 참조 실행 기록은 **96개 수용 조건 중 84개 통과, 12개 실패**이다. 중앙 절대오차, diffuse 수, 중복 비율, observed 비율과 σ2° Theorem 2 기준은 통과했지만 P95 3조건과 off-wall 9조건이 실패했다. 전체 reference acceptance는 실패이다. 실패 조건과 seed별 수치, 평균/표준편차, 실행 시간, source SHA는 `tests/drf/validation-results.json`에 보존한다. 마지막 수치 source 변경 뒤 160회 실행을 다시 수행했으며, 실행 전후와 현재 source SHA를 검사한다. 이후 source 변경 시 이 기록을 재생성해야 한다.
+
+Runner는 browser sweep과 같은 `runExperiment`/`aggregateRuns`를 사용한다. Seed별 통계의 평균과 sample SD를 계산하며, 표준편차를 confidence interval로 부르지 않는다. 원본 참조 3-seed 집계 상세는 미확인이다. Runner 종료 상태는 실행/소스 오류 1, seed≥10에서 참조 수용 실패 2이다. 작은 `--seed-count` 실행은 smoke이며 통계 수용 검증으로 보고하지 않는다.
+
+`drf/provenance.json`은 기준 Git commit, field/wire source hash와 core 묶음 hash를 기록한다. 배포 여부는 별도 증거로 확인한다. JSON은 input, measurement, result, evaluation, truth를 분리한다. CSV는 snapshot별 지표를 기록한다. PNG 버튼은 현재 지도를 CSS 크기의 300/96 배로 다시 그린 뒤 `surf/exports.mjs`의 `png300dpi`를 적용한다. PNG의 pHYs 목표는 11811 px/m이며 metadata가 선명한 label이나 모든 chart의 내보내기를 자동 보장하지 않는다. Viridis/cividis, 읽을 수 있는 label, 충분한 선 굵기와 ±1 SD error bar는 실제 화면과 저장본에서 검사한다.

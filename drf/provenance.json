@@ -1,0 +1,18 @@
+{
+  "schema": "echomap-drf-provenance/1",
+  "baseCommit": "751f34e3d8d7ee1317554672152d6a2563ce2e0c",
+  "coreHash": "4cbbe073040b739abe4862f21e0ca4ba677b92161f8d59d747c2e8aade5baaf1",
+  "coreFiles": {
+    "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+    "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
+  },
+  "status": "local preview, not deployed",
+  "referenceStatus": "Provided text fixtures only; original MATLAB/Octave files unavailable",
+  "numericalConventions": [
+    "numerical K may underflow to zero",
+    "empty readout betaHat=0",
+    "all-noise-zero configuration rejected",
+    "identical sigmaD within each configuration"
+  ],
+  "referenceQuadrature": "x=0.02 m; simulation uses approximate arc=0.02 m"
+}
