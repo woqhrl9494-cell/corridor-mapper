@@ -6,7 +6,7 @@
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
   },
-  "status": "local preview, not deployed",
+  "status": "research release; 84/96 reference criteria pass, original MATLAB/Octave parity unverified",
   "referenceStatus": "Provided text fixtures only; original MATLAB/Octave files unavailable",
   "numericalConventions": [
     "numerical K may underflow to zero",

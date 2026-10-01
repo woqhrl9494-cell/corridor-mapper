@@ -176,21 +176,21 @@ function chartSurface(canvas) {
   ctx.scale(ratio,ratio);ctx.fillStyle=color("plot-bg");ctx.fillRect(0,0,width,height);
   return {ctx,width,height,color};
 }
-function chartAxes(surface,{title,xLabel,yLabel,xmin,xmax,ymin,ymax,top=0,height=surface.height}) {
-  const {ctx,width,color}=surface,box={x:66,y:top+42,w:Math.max(1,width-90),h:Math.max(1,height-104)};
+function chartAxes(surface,{title,xLabel,yLabel,xmin,xmax,ymin,ymax,top=0,height=surface.height,compact=false}) {
+  const {ctx,width,color}=surface,box={x:compact ? 50 : 66,y:top+(compact ? 26 : 42),w:Math.max(1,width-(compact ? 66 : 90)),h:Math.max(1,height-(compact ? 64 : 104))};
   if (!(xmax>xmin)) xmax=xmin+1;
   if (!(ymax>ymin)) ymax=ymin+1;
   const x=(v) => box.x+(v-xmin)/(xmax-xmin)*box.w,y=(v) => box.y+box.h-(v-ymin)/(ymax-ymin)*box.h;
-  ctx.fillStyle=color("ink");ctx.font="600 18px -apple-system, Arial";ctx.textAlign="left";ctx.fillText(title,8,top+23);
+  ctx.fillStyle=color("ink");ctx.font=`600 ${compact ? 16 : 18}px -apple-system, Arial`;ctx.textAlign="left";ctx.fillText(title,8,top+(compact ? 18 : 23));
   ctx.strokeStyle=color("line");ctx.lineWidth=1.5;ctx.strokeRect(box.x,box.y,box.w,box.h);
-  ctx.font="16px -apple-system, Arial";ctx.fillStyle=color("ink-muted");
+  ctx.font=`${compact ? 14 : 16}px -apple-system, Arial`;ctx.fillStyle=color("ink-muted");
   for (let i=0;i<=2;i++) {
     const xx=xmin+(xmax-xmin)*i/2,yy=ymin+(ymax-ymin)*i/2;
-    ctx.textAlign="center";ctx.fillText(numberLabel(xx),x(xx),box.y+box.h+23);
+    ctx.textAlign="center";ctx.fillText(numberLabel(xx),x(xx),box.y+box.h+(compact ? 17 : 23));
     ctx.textAlign="right";ctx.fillText(numberLabel(yy),box.x-9,y(yy)+5);
   }
-  ctx.textAlign="center";ctx.fillText(xLabel,box.x+box.w/2,top+height-10);
-  ctx.save();ctx.translate(18,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText(yLabel,0,0);ctx.restore();
+  ctx.textAlign="center";ctx.fillText(xLabel,box.x+box.w/2,top+height-(compact ? 3 : 10));
+  if (!compact) { ctx.save();ctx.translate(18,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText(yLabel,0,0);ctx.restore(); }
   return {box,x,y};
 }
 function chartLine(surface,axes,points,color,dash=[],errorBars=false,dots=false) {
@@ -223,7 +223,7 @@ export function drawMetricHistory(canvas,evaluations) {
   const metrics=[["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]];
   metrics.forEach(([key,title,unit],k) => {
     const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(key==="offwall" ? 100 : 1)})),[ymin,ymax]=extent(points);
-    const axes=chartAxes(surface,{title,xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/3,height:surface.height/3});
+    const axes=chartAxes(surface,{title,xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/3,height:surface.height/3,compact:surface.height<420});
     chartLine(surface,axes,points,surface.color("eval"));
   });
 }

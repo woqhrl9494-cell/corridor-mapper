@@ -1,12 +1,12 @@
 # EchoMap DRF 검증 기록
 
-상태: 로컬 구현과 UI 검사는 완료, Phase 3 통계 수용은 실패, 공개 배포는 미실행. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 구현 parity는 미검증이다.
+상태: Phase 3 통계 수용 기준 12개 미충족을 남긴 연구용 버전이다. 사용자는 이 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 구현 parity는 미검증이다.
 
 ## 변경과 재현 조건
 
 - 기준 저장소 commit: `751f34e3d8d7ee1317554672152d6a2563ce2e0c`, 작업 branch: `feat/drf-lab`.
 - SURF 홈 유지, `drf.html` 별도 추가. 승인된 기존 변경은 nav 링크와 글자/컨트롤/표시 여백/문자 대비이다. 기존 알고리즘과 나머지 44개 보호 파일의 SHA-256은 유지한다.
-- 본문 18 px, 보조 글자와 Canvas 축 16 px 이상, 버튼 높이 44 px 이상.
+- 사용자 요청에 따라 첫 화면의 정보량을 늘렸다. 데스크톱 본문/입력 16 px, 보조 글자와 압축 그래프 축 14 px 이상, 버튼 높이 44 px 이상이다. 모바일 DOM 글자는 16 px 이상이며 시간 그래프는 큰 축 표시를 유지한다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
 
 ```sh
@@ -76,7 +76,7 @@ python3 -m http.server 8871 --bind 127.0.0.1
 - Theorem 2 비율은 같은 벽의 최근접 정반사점을 사용하며 정의된 x gate를 적용한다. 국소 근사 가정의 유효 범위와 원본 최근접 정의 대조가 남았다.
 - MATLAB 설치 경로는 확인된 사용자 지침이나 원본 .m 파일 실행은 하지 않았다. 임의 파일을 만들어 Octave reference로 표시하지 않았다.
 - 물리 dt, 안테나/거리 보정, 가시성 외 실제 수신 검출 확률, amplitude 및 하드웨어 지연 모델은 없다. 웹 수치 재현이 실제 레이더의 검증을 대신하지 않는다.
-- 공개 URL은 아직 기존 배포이다. git push, Pages 배포, live hash 대조를 완료하지 않았다.
+- 배포 대상은 기존 Pages의 `main:/`이다. 홈은 SURF를 유지하고 DRF는 `https://woqhrl9494-cell.github.io/corridor-mapper/drf.html`이다. 배포 완료는 Pages의 built 상태와 배포 commit 일치, 공개 자산 SHA-256 일치, 공개 화면에서 기본 실행을 확인한 뒤 판정한다.
 
 ## 브라우저와 내보내기
 
@@ -86,6 +86,12 @@ python3 -m http.server 8871 --bind 127.0.0.1
 - 실제 JSON 다운로드의 measurement/result/truth는 완료된 6 snapshots만 포함하고 wire에 oracle 필드가 없다. CSV는 header+6행. PNG는 2628 × 1744 px, pHYs 11811 px/m = 299.9994 dpi, 생성 당시 Canvas CSS 크기의 300/96배 렌더 확인.
 - 외부 다운로드 이벤트 도구는 타임아웃했으나 실제 파일이 Downloads에 저장된 것을 파싱해 검증했다. PNG 그림은 선택 snapshot이며 JSON/CSV는 완료된 전체 기록이다.
 
-자동 검사 101/101 통과(3.564 s), 기존 legacy DOM smoke 8개 검사 통과(uiErrors=[]). jsdom 파일 읽기 문제는 기존 버전을 임시 폴더에서 로드해 검사했으며 저장소 의존성은 변경하지 않았다. UI의 별도 네 seed run summary는 중앙 오차/P95/off-wall 및 나머지 값이 Node와 같고 Theorem 평균만 최대1.33e-15 차이였다. Sweep 즉시 취소는0/4, 단일 취소는 완료1 snapshot만 보존, 두 noise=0 입력은 실행을 차단했다.
+자동 검사 101/101 통과(2.808 s), 기존 legacy DOM smoke 8개 검사 통과(uiErrors=[]). jsdom 파일 읽기 문제는 기존 버전을 임시 폴더에서 로드해 검사했으며 저장소 의존성은 변경하지 않았다. UI의 별도 네 seed run summary는 중앙 오차/P95/off-wall 및 나머지 값이 Node와 같고 Theorem 평균만 최대1.33e-15 차이였다. Sweep 즉시 취소는0/4, 단일 취소는 완료1 snapshot만 보존, 두 noise=0 입력은 실행을 차단했다.
 
 UI 추가 조작 결과는 [ui-validation.json](tests/drf/ui-validation.json)과 실행 출력으로 보충한다. 방법/단위/복잡도는 [DRF_METHOD.md](DRF_METHOD.md)에 기록한다.
+
+## 첫 화면 밀도 개선
+
+설정과 실행 버튼을 왼쪽, 전체 지도와 재생 막대를 가운데, 주요 지표와 세 가지 snapshot 평가 그래프를 오른쪽에 배치했다. 일반 설정은 2열이며 세부 수치 설정은 접을 수 있다. 화면을 자르는 고정 높이나 패널 내부 스크롤은 사용하지 않는다. 낮은 데스크톱 화면에서는 제목을 한 줄로 배치한다.
+
+실제 브라우저 크기별 범위와 기본 실행 체크섬은 [density-validation.json](tests/drf/density-validation.json)에 기록한다. 수치/평가 모듈과 보호 파일은 수정하지 않았다. 새 소스 버전은 CSS/모듈 URL에 표시하여 이전 렌더가 캐시에서 재사용되는 것을 막는다.

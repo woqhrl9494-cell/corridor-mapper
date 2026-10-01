@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261001-layout2';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');

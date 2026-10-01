@@ -11,15 +11,15 @@ test('DRF DOM contract and readable stylesheet', () => {
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   for (const path of ['../../drf/style.css','../../surf/style.css']) {
     const css=readFileSync(new URL(path,import.meta.url),'utf8');
-    for (const match of css.matchAll(/font-size:\s*(\d+)px/g)) assert.ok(Number(match[1])>=16,`${path}: ${match[0]}`);
+    for (const match of css.matchAll(/font-size:\s*(\d+)px/g)) assert.ok(Number(match[1])>=(path.includes('/drf/') ? 14 : 16),`${path}: ${match[0]}`);
   }
   assert.match(html,/name="sigmaP"[^>]*value="0.1"/);
   assert.match(html,/name="roughness"[\s\S]*?value="2" selected/);
 });
 
 test('render keeps world row order, uses real DPR/300 dpi pixels, and charts execute', async () => {
-  const snapshots={},created=[];
-  const context=() => new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{if (key==='fillText') assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=16,args[0]);};}});
+  const snapshots={},created=[],rectangles=[];
+  const context=() => new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{if (key==='fillText') assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=14,args[0]);if (key==='strokeRect') rectangles.push(args);};}});
   const makeCanvas=()=>({clientWidth:700,clientHeight:540,width:0,height:0,dataset:{},getContext:()=>context(),addEventListener(){},toBlob(callback){callback(new Blob(['png']));}});
   const saved={};
   const stubs={document:{createElement:()=>{const c=makeCanvas();created.push(c);return c;},documentElement:{}},window:{devicePixelRatio:2},getComputedStyle:()=>({getPropertyValue:()=>'#111111'}),ResizeObserver:class{observe(){}},MutationObserver:class{observe(){}},matchMedia:()=>({addEventListener(){}}),requestAnimationFrame:()=>1};
@@ -34,6 +34,10 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     const target=makeCanvas();map.paint(target,300/96);assert.equal(target.width,2188);assert.equal(target.height,1688);
     assert.ok(await map.png() instanceof Blob);
     drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
+    rectangles.length=0;canvas.clientHeight=360;
+    drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
+    assert.equal(rectangles.length,3);assert.ok(rectangles.every(([, , ,height])=>height>=50),'compact history plots must retain usable vertical space');
+    canvas.clientHeight=540;
     drawSweep(canvas,[{roughness:2,sigmaD:.1,medianError:{mean:.13,sd:.02}}],[{roughness:2,sigmaD:.1,medianError:.134}]);
     drawHistogram(canvas,[-.1,.1,.4,1,2]);
     drawProfile(canvas,[{s:[10,6],wall:0,delta:.1,w:.5,lambda:.1},{s:[20,22],wall:1,delta:.2,w:.3,lambda:.06}]);

@@ -3,22 +3,22 @@
   "branch": "feat/drf-lab",
   "deployed": false,
   "sha256": {
-    "drf.html": "9204a11bd96eb7d21cf8cc5f826f2ff0bc3ba4b5ef394adbed47a0399ec50ba7",
-    "drf/app.mjs": "337311c2eb96fffdc4751cbfef0a8d8b485866ab43e9da12c6a6853e01e6a739",
+    "drf.html": "1f5f736a12624058c8dc070bcbebb4cc524c0a87d846dcae4b8b27872ba61566",
+    "drf/app.mjs": "b77b9c9507316e413dc4048186eeda1522ea54b332c0d55f2077b33b7ab5102e",
     "drf/diffuse.mjs": "7761c5193a18b6055ba3a47f6b4581718c33ec8a9caa13f47fdee6da8b9f481f",
     "drf/eval.worker.mjs": "15a5d15418cfeea319c6a90f93e5304f431fdd01288b21c027cc32b2347e9b1c",
     "drf/evaluate.mjs": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/field.worker.mjs": "f1c991b422e7b5f93d36d7df29496088c9f83708e30f90bb0378453bda85ad64",
     "drf/poly.mjs": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
-    "drf/provenance.json": "45d99f8535f1416ffdb0070f412585f83f9e95d581f4702d9deaf7291d7230e0",
+    "drf/provenance.json": "d967ebc636ffc4254b673893449d8a37253b69b1fb45748023fd3f6164650406",
     "drf/reference/octave/fixtures.json": "563d63edf14d334c86c07769ff7bde6453d88875214082e87e4a196c567c39c4",
-    "drf/render.mjs": "b684d989fe5d88deb7958d060445c16155c06b2b4af368b9ecdd78aff9ecc101",
+    "drf/render.mjs": "59af43015feffd84b1f3ca868c663cfc89b21093f6fe09b7ab610b3b7ffec518",
     "drf/rng.mjs": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
     "drf/scenario.mjs": "1c50a6194a17d65c6cfcce754e4d8e0b841d74cec5d9d248037e0fac69aa3870",
     "drf/scenario.worker.mjs": "d50f2256fbe3d9cf4e51bc912ea7847db6d0196ea045b7660ad46a568a955e95",
     "drf/specular.mjs": "6012366d3fcc743c722b814996e8f56ce6371bfea223e2e11cfbe696b4e7349d",
-    "drf/style.css": "3adc88a3bd27c7b1e0a63334058e69ac84c37701810ac1cd356f9ede8e7a57c5",
+    "drf/style.css": "26559b1099b988213eafae6c88f7a202956365196364eca5c709fed95c8343e6",
     "drf/sweep.mjs": "463400943f4c36dc47dc657722ac06cdf6368e66230077e839294812f6aeeb99",
     "drf/sweep.worker.mjs": "4863af68e5b421f5b968703071ca28640f32306f211d07ff8461b814f5330efc",
     "drf/wall.mjs": "dc2a7ce0404c9034c47b83365a3575462f4b8e32043ee90dcc6ba9e7cd90e440",
@@ -27,5 +27,6 @@
     "package.json": "d044e6f02e7694a94f5783ab199a411cd3cb81647c71412e37acbaedbcf4a0ca",
     "surf/map.mjs": "9a8c31b8c87c0c157f73db4a22d0f8b8a7cafa7c13bacaf60b6b8c4136b39d60",
     "surf/style.css": "e62e5bb7c4cfd1ee3e1f38e5d80dda5e7b9bb4c12d0836c1956d6a34026ef27e"
-  }
+  },
+  "status": "pre-deployment source snapshot after first-screen layout revision"
 }
