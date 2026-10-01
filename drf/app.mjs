@@ -2,13 +2,13 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261001-reference4';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261001-local5';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
 const state = { mode: 'idle', scenario: null, grid: null, frames: [], evaluations: [], selected: 0, next: 0,
-  busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false };
+  busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false, followLive: true };
 let fieldWorker, evalWorker, hoverWorker, hoverTimer, hoverGeneration = 0, replayFrame = 0, reference = [], provenance = {};
 const fmt = (v, places = 3) => typeof v !== 'number' ? '—' : Number.isFinite(v) ? v.toFixed(places) : v === Infinity ? '실패 (∞)' : v === -Infinity ? '실패 (−∞)' : '실패 (NaN)';
 const notice = text => { $('status').textContent = text; };
@@ -24,7 +24,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = new Worker(new URL(`./${name}.worker.mjs`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -50,6 +50,7 @@ function controls() {
   $('sweepButton').disabled = active || sweeping; $('sweepCancel').disabled = !sweeping;
   $('timeSlider').max = state.frames.length; $('timeSlider').value = state.selected; $('timeSlider').disabled = !state.frames.length;
   $('replayButton').disabled = !state.frames.length;
+  $('firstSnapshot').disabled = !state.frames.length;
   $('exportJson').disabled = (!state.valid || !state.frames.length) && !state.sweepRuns.length;
   for (const id of ['exportCsv', 'exportPng']) $(id).disabled = !state.valid || !state.frames.length;
   document.body.dataset.state = state.mode;
@@ -61,6 +62,7 @@ function cancel(clear = false) {
   state.busy = false; state.mode = clear ? 'idle' : 'cancelled';
   if (clear) {
     state.scenario = null; state.grid = null; state.frames = []; state.evaluations = []; state.selected = 0; state.next = 0; state.valid = false;
+    state.followLive = true;
     $('mapCanvas').removeAttribute('data-field-hash');
     for (const view of [map,densityMap,contrastMap]) view.fit();
   } else if (state.frames.length && state.scenario) {
@@ -102,7 +104,8 @@ async function advance(single = false) {
     const { type, requestId, ...frame } = data;
     const { evaluation } = await evalWorker.request({ type: 'evaluate', frame });
     if (generation !== state.generation) return;
-    state.frames.push(frame); state.evaluations.push(evaluation); state.next++; state.selected = state.frames.length;
+    state.frames.push(frame); state.evaluations.push(evaluation); state.next++;
+    if (state.followLive || !state.selected) state.selected = state.frames.length;
     $('timeSlider').value = state.selected; state.busy = false;
     renderSelected(); notice(`필드 계산 ${frame.t} / ${state.scenario.input.snapshots}`);
     if (state.next === state.scenario.wire.length) {
@@ -159,7 +162,7 @@ function renderSelected() {
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
   const display={ grid: state.grid, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),
     proxy: evaluation?.proxy, observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
-    history: scenario?.wire.slice(0, state.selected) };
+    history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
   map.set({...display,mode:'geometry'});
   const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
   densityMap.set({...display,layers:fieldLayers,heatField:'Dbar',focus:true});
@@ -210,25 +213,33 @@ function replayTick(time) {
 }
 function toggleReplay() {
   if (!state.frames.length) return;
-  if (state.replay) stopReplay(); else { state.replay = true; state.replayAt = 0; $('replayButton').textContent = '재생 정지'; replayFrame = requestAnimationFrame(replayTick); }
+  if (state.replay) stopReplay(); else { state.followLive = false; state.replay = true; state.replayAt = 0; $('replayButton').textContent = '재생 정지'; replayFrame = requestAnimationFrame(replayTick); }
+}
+function firstSnapshot() {
+  if (!state.frames.length) return;
+  stopReplay(); if (state.mode === 'running') state.mode = 'paused';
+  state.followLive = false; state.selected = 1; $('timeSlider').value = 1;
+  for (const view of [map,densityMap,contrastMap]) view.fit();
+  controls(); renderSelected(); notice('첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.');
 }
 $('runButton').onclick = () => prepare();
-$('pauseButton').onclick = () => { state.mode = state.mode === 'paused' ? 'running' : 'paused'; controls(); if (state.mode === 'running') advance(); else notice('현재 snapshot에서 일시정지했습니다.'); };
-$('stepButton').onclick = () => state.mode === 'paused' ? advance(true) : prepare(true);
+$('pauseButton').onclick = () => { state.mode = state.mode === 'paused' ? 'running' : 'paused'; controls(); if (state.mode === 'running') { state.followLive = true; advance(); } else notice('현재 snapshot에서 일시정지했습니다.'); };
+$('stepButton').onclick = () => { state.followLive = true; state.mode === 'paused' ? advance(true) : prepare(true); };
+$('firstSnapshot').onclick = firstSnapshot;
 $('cancelButton').onclick = () => { cancel(); notice('취소했습니다. 완전히 계산된 snapshot만 남겼습니다.'); };
 $('resetButton').onclick = () => { state.sweep?.cancel(); state.sweepRuns = []; cancel(true); fillSettings(DEFAULT_INPUT); renderSelected(); location.hash = ''; renderSweep(); $('sweepStatus').textContent = '실행 결과가 없습니다.'; notice('기본 설정으로 재설정했습니다.'); };
 form.addEventListener('change', () => { state.sweepRuns = []; cancel(true); renderSweep(); $('sweepStatus').textContent = '실행 결과가 없습니다.'; notice('설정이 바뀌어 이전 결과를 무효화했습니다.'); try { location.hash = `v1=${encodeURIComponent(JSON.stringify(settings()))}`; } catch (e) { notice(e.message); } });
-$('timeSlider').oninput = () => { stopReplay(); state.selected = Number($('timeSlider').value); hoverGeneration++; renderSelected(); };
+$('timeSlider').oninput = () => { stopReplay(); state.followLive = false; state.selected = Number($('timeSlider').value); hoverGeneration++; renderSelected(); };
 $('replayButton').onclick = toggleReplay;
 document.addEventListener('keydown', event => {
   if (event.target.matches('input,select,textarea,button') || $('aboutDialog').open) return;
   if (event.code === 'Space') { event.preventDefault(); toggleReplay(); }
   if (['ArrowLeft', 'ArrowRight'].includes(event.key) && state.frames.length) {
-    event.preventDefault(); stopReplay(); state.selected = Math.max(1, Math.min(state.frames.length, state.selected + (event.key === 'ArrowRight' ? 1 : -1)));
+    event.preventDefault(); stopReplay(); state.followLive = false; state.selected = Math.max(1, Math.min(state.frames.length, state.selected + (event.key === 'ArrowRight' ? 1 : -1)));
     $('timeSlider').value = state.selected; renderSelected();
   }
 });
-for (const id of ['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved', 'heatField', 'scaleMode','historyMetric']) $(id).onchange = renderSelected;
+for (const id of ['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved', 'heatField', 'scaleMode','historyMetric','aspectMode']) $(id).onchange = renderSelected;
 $('fitView').onclick = () => { for (const view of [map,densityMap,contrastMap]) view.fit(true); }; $('zoomIn').onclick = () => map.zoom(1.3); $('zoomOut').onclick = () => map.zoom(1 / 1.3);
 $('configSelect').onchange = updateProfile;
 $('aboutButton').onclick = () => $('aboutDialog').showModal(); $('closeAbout').onclick = () => $('aboutDialog').close();
@@ -296,7 +307,7 @@ try {
   const raw = location.hash.startsWith('#v1=') ? JSON.parse(decodeURIComponent(location.hash.slice(4))) : DEFAULT_INPUT;
   fillSettings(normalizeInput(raw));
 } catch (error) { fillSettings(DEFAULT_INPUT); notice(`URL 설정을 불러오지 못했습니다: ${error.message}`); }
-Promise.all([fetch(new URL('./provenance.json', import.meta.url)).then(r => r.json()), fetch(new URL('./reference/octave/fixtures.json', import.meta.url)).then(r => r.json())])
+(globalThis.__drfOffline ? Promise.resolve(globalThis.__drfOffline.metadata) : Promise.all([fetch(new URL('./provenance.json', import.meta.url)).then(r => r.json()), fetch(new URL('./reference/octave/fixtures.json', import.meta.url)).then(r => r.json())]))
   .then(([p, f]) => { provenance = p; reference = f.statistics; $('provenanceCommit').textContent = `기준 commit ${p.baseCommit.slice(0, 8)}`;
     $('provenanceCore').textContent = `core ${p.coreHash.slice(0, 12)}`; renderSweep(); })
   .catch(error => notice(`검증 정보를 불러오지 못했습니다: ${error.message}`));

@@ -1,21 +1,21 @@
 {
-  "schema": "echomap-drf-layout-validation/2",
-  "date": "2026-10-01T12:45:06.934Z",
-  "url": "http://127.0.0.1:8871/drf.html#v1=%7B%22scene%22%3A%22reference%22%2C%22vehicles%22%3A3%2C%22snapshots%22%3A60%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22roughness%22%3A2%2C%22lambda0%22%3A10%2C%22cellStep%22%3A0.02%2C%22resolution%22%3A0%2C%22specular%22%3Atrue%2C%22grid%22%3A150%2C%22band%22%3A4%2C%22perimeter%22%3A%22exact%22%2C%22seed%22%3A1%7D",
-  "layout": "reference HTML: sidebar, one upper map, three lower graphs",
+  "schema": "echomap-drf-layout-validation/3",
+  "date": "2026-10-01T14:00:42.130Z",
+  "url": "http://127.0.0.1:8871/drf-file-check.html#v1=%7B%22scene%22%3A%22reference%22%2C%22vehicles%22%3A3%2C%22snapshots%22%3A60%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22roughness%22%3A2%2C%22lambda0%22%3A10%2C%22cellStep%22%3A0.02%2C%22resolution%22%3A0%2C%22specular%22%3Atrue%2C%22grid%22%3A150%2C%22band%22%3A4%2C%22perimeter%22%3A%22exact%22%2C%22seed%22%3A1%7D",
+  "runtime": "classic bundle and Blob Workers under HTTP; file:// browser control unavailable",
+  "layout": "sidebar, one upper map, three lower graphs; independent x/y scale by default",
   "desktop": [
     {
-      "densityView": {
-        "auto": true,
-        "pixelsPerMetre": 7.427777777777779,
-        "plotHeight": 191,
-        "plotWidth": 191,
-        "xmax": 60.857142857142854,
-        "xmin": 35.142857142857146,
-        "ymax": 27.927087972886483,
-        "ymin": 2.2128022586007727
-      },
       "elements": {
+        "#aspectMode": {
+          "bottom": 102,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 114,
+          "x": 1291.984375,
+          "y": 72
+        },
         "#cancelButton": {
           "bottom": 155.59375,
           "font": "14px",
@@ -43,6 +43,15 @@
           "x": 301,
           "y": 533.515625
         },
+        "#firstSnapshot": {
+          "bottom": 101,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 69.53125,
+          "x": 1217.453125,
+          "y": 73
+        },
         "#historyMetric": {
           "bottom": 514.421875,
           "font": "14px",
@@ -56,10 +65,10 @@
           "bottom": 467.421875,
           "font": "14px",
           "fullyVisible": true,
-          "height": 362.421875,
+          "height": 360.421875,
           "width": 1114.984375,
           "x": 301,
-          "y": 105
+          "y": 107
         },
         "#medianValue": {
           "bottom": 790.28125,
@@ -173,34 +182,62 @@
       "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
       "overflow": 0,
       "q": "2904",
-      "status": "계산 완료 · 측정 생성 0.53 s · 참조 .m 원본 대조 미완료",
-      "view": {
-        "auto": true,
-        "pixelsPerMetre": 14.34651097627349,
-        "plotHeight": 300,
-        "plotWidth": 922.2757056175814,
-        "xmax": 62.142857142857146,
-        "xmin": -2.142857142857139,
-        "ymax": 25.52927392129791,
-        "ymin": 4.618266325364294
-      },
+      "scrollY": 0,
+      "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.",
       "viewport": [
         1440,
         900
-      ]
+      ],
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 10.256410256410255,
+          "pixelsPerMetreY": 7.652243589743589,
+          "plotHeight": 191,
+          "plotWidth": 256,
+          "xmax": 60.48,
+          "xmin": 35.519999999999996,
+          "ymax": 27.54994511574363,
+          "ymin": 2.589945115743628
+        },
+        "densityCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 10.256410256410255,
+          "pixelsPerMetreY": 7.652243589743589,
+          "plotHeight": 191,
+          "plotWidth": 256,
+          "xmax": 60.48,
+          "xmin": 35.519999999999996,
+          "ymax": 27.54994511574363,
+          "ymin": 2.589945115743628
+        },
+        "mapCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 16.90705128205128,
+          "pixelsPerMetreY": 14.681525655664489,
+          "plotHeight": 298,
+          "plotWidth": 1055,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
     },
     {
-      "densityView": {
-        "auto": true,
-        "pixelsPerMetre": 7.972222222222224,
-        "plotHeight": 205,
-        "plotWidth": 205,
-        "xmax": 60.857142857142854,
-        "xmin": 35.142857142857146,
-        "ymax": 27.927087972886483,
-        "ymin": 2.2128022586007745
-      },
       "elements": {
+        "#aspectMode": {
+          "bottom": 102,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 114,
+          "x": 1772,
+          "y": 72
+        },
         "#cancelButton": {
           "bottom": 155.59375,
           "font": "14px",
@@ -228,6 +265,15 @@
           "x": 301,
           "y": 550.484375
         },
+        "#firstSnapshot": {
+          "bottom": 101,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 69.53125,
+          "x": 1697.46875,
+          "y": 73
+        },
         "#historyMetric": {
           "bottom": 531.390625,
           "font": "14px",
@@ -241,10 +287,10 @@
           "bottom": 484.390625,
           "font": "14px",
           "fullyVisible": true,
-          "height": 379.390625,
+          "height": 377.390625,
           "width": 1595,
           "x": 301,
-          "y": 105
+          "y": 107
         },
         "#medianValue": {
           "bottom": 790.28125,
@@ -358,34 +404,62 @@
       "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
       "overflow": 0,
       "q": "2904",
-      "status": "계산 완료 · 측정 생성 0.53 s · 참조 .m 원본 대조 미완료",
-      "view": {
-        "auto": true,
-        "pixelsPerMetre": 15.159479931595651,
-        "plotHeight": 317,
-        "plotWidth": 974.5379956025776,
-        "xmax": 62.14285714285714,
-        "xmin": -2.142857142857139,
-        "ymax": 25.52927392129791,
-        "ymin": 4.618266325364292
-      },
+      "scrollY": 0,
+      "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.",
       "viewport": [
         1920,
         930
-      ]
+      ],
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 16.666666666666668,
+          "pixelsPerMetreY": 8.213141025641026,
+          "plotHeight": 205,
+          "plotWidth": 416,
+          "xmax": 60.48,
+          "xmin": 35.52,
+          "ymax": 27.54994511574363,
+          "ymin": 2.589945115743628
+        },
+        "densityCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 16.666666666666668,
+          "pixelsPerMetreY": 8.213141025641026,
+          "plotHeight": 205,
+          "plotWidth": 416,
+          "xmax": 60.48,
+          "xmin": 35.52,
+          "ymax": 27.54994511574363,
+          "ymin": 2.589945115743628
+        },
+        "mapCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 24.59935897435897,
+          "pixelsPerMetreY": 15.519062354141992,
+          "plotHeight": 315,
+          "plotWidth": 1535,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
     },
     {
-      "densityView": {
-        "auto": true,
-        "pixelsPerMetre": 5.211111111111112,
-        "plotHeight": 134,
-        "plotWidth": 134,
-        "xmax": 60.857142857142854,
-        "xmin": 35.142857142857146,
-        "ymax": 27.927087972886483,
-        "ymin": 2.2128022586007745
-      },
       "elements": {
+        "#aspectMode": {
+          "bottom": 102,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 30,
+          "width": 114,
+          "x": 1218,
+          "y": 72
+        },
         "#cancelButton": {
           "bottom": 143.59375,
           "font": "14px",
@@ -413,6 +487,15 @@
           "x": 301,
           "y": 458.90625
         },
+        "#firstSnapshot": {
+          "bottom": 101,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 28,
+          "width": 69.53125,
+          "x": 1143.46875,
+          "y": 73
+        },
         "#historyMetric": {
           "bottom": 439.8125,
           "font": "14px",
@@ -426,10 +509,10 @@
           "bottom": 392.8125,
           "font": "14px",
           "fullyVisible": true,
-          "height": 287.8125,
+          "height": 285.8125,
           "width": 1041,
           "x": 301,
-          "y": 105
+          "y": 107
         },
         "#medianValue": {
           "bottom": 742.28125,
@@ -543,23 +626,106 @@
       "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
       "overflow": 0,
       "q": "2904",
-      "status": "계산 완료 · 측정 생성 0.53 s · 참조 .m 원본 대조 미완료",
-      "view": {
-        "auto": true,
-        "pixelsPerMetre": 10.807704935459364,
-        "plotHeight": 226,
-        "plotWidth": 694.7810315652446,
-        "xmax": 62.14285714285714,
-        "xmin": -2.142857142857139,
-        "ymax": 25.52927392129791,
-        "ymin": 4.618266325364294
-      },
+      "scrollY": 0,
+      "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.",
       "viewport": [
         1366,
         768
-      ]
+      ],
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 9.254807692307692,
+          "pixelsPerMetreY": 5.368589743589744,
+          "plotHeight": 134,
+          "plotWidth": 231,
+          "xmax": 60.48,
+          "xmin": 35.519999999999996,
+          "ymax": 27.54994511574363,
+          "ymin": 2.589945115743628
+        },
+        "densityCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 9.254807692307692,
+          "pixelsPerMetreY": 5.368589743589744,
+          "plotHeight": 134,
+          "plotWidth": 231,
+          "xmax": 60.48,
+          "xmin": 35.519999999999996,
+          "ymax": 27.54994511574363,
+          "ymin": 2.589945115743628
+        },
+        "mapCanvas": {
+          "aspectMode": "fill",
+          "auto": true,
+          "pixelsPerMetreX": 15.721153846153843,
+          "pixelsPerMetreY": 11.035777674056527,
+          "plotHeight": 224,
+          "plotWidth": 981,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
     }
   ],
+  "firstSnapshot": {
+    "slider": {
+      "max": "60",
+      "value": "1"
+    },
+    "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.",
+    "views": [
+      {
+        "aspectMode": "fill",
+        "auto": true,
+        "id": "mapCanvas",
+        "pixelsPerMetreX": 14.342948717948715,
+        "pixelsPerMetreY": 9.705572329415784,
+        "plotHeight": 197,
+        "plotWidth": 895,
+        "xmax": 61.2,
+        "xmin": -1.2000000000000028,
+        "ymax": 25.222579143224223,
+        "ymin": 4.924961103437983
+      },
+      {
+        "aspectMode": "fill",
+        "auto": true,
+        "id": "densityCanvas",
+        "pixelsPerMetreX": 8.092948717948717,
+        "pixelsPerMetreY": 4.527243589743589,
+        "plotHeight": 113,
+        "plotWidth": 202,
+        "xmax": 24.48,
+        "xmin": -0.4800000000000004,
+        "ymax": 27.04509409811885,
+        "ymin": 2.085094098118848
+      },
+      {
+        "aspectMode": "fill",
+        "auto": true,
+        "id": "contrastCanvas",
+        "pixelsPerMetreX": 8.092948717948717,
+        "pixelsPerMetreY": 4.527243589743589,
+        "plotHeight": 113,
+        "plotWidth": 202,
+        "xmax": 24.48,
+        "xmin": -0.4800000000000004,
+        "ymax": 27.04509409811885,
+        "ymin": 2.085094098118848
+      }
+    ]
+  },
+  "automatedTests": {
+    "passed": 104,
+    "failed": 0
+  },
+  "numericalChanges": false,
+  "expectedDefaultHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
   "mobile": {
     "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
     "mapHeight": 340,
@@ -570,10 +736,30 @@
       844
     ]
   },
-  "numericalChanges": false,
-  "automatedTests": {
-    "passed": 101,
-    "failed": 0
+  "classicSweep": {
+    "status": "완료 · 1 / 1 · 원본 .m 대조 미완료",
+    "table": "Sweep 수치 결과σ [deg]σ_d [m]seeds중앙 |오차| [m]P95 [m]off-wall [%]20.110.140 ± — (유효 1/1, 실패 0, 미관측 0)0.829 ± — (유효 1/1, 실패 0, 미관측 0)11.2 ± — (유효 1/1, 실패 0, 미관측 0)",
+    "conditions": {
+      "sigmaD": [
+        0.1
+      ],
+      "roughness": [
+        2
+      ],
+      "seeds": [
+        1
+      ],
+      "snapshots": 60,
+      "grid": 150
+    },
+    "errors": []
   },
-  "expectedDefaultHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926"
+  "classicRuntimeErrors": [],
+  "moduleRuntime": {
+    "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+    "q": "2904",
+    "status": "계산 완료 · 측정 생성 0.50 s · 참조 .m 원본 대조 미완료",
+    "time": "60 / 60",
+    "errors": []
+  }
 }

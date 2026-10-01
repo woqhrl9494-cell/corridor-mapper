@@ -10,8 +10,8 @@ const section=(start,end)=>{
   return source.slice(a,b);
 };
 
-test('actual app restart leaves one replay frame and reset invalidates stale diagnostics',()=>{
-  const nodes=new Map(),pending=new Map(),charts=new Map();let nextFrame=0,stoppedWorkers=0,cancelledSweeps=0;
+test('actual app first snapshot preserves records and restart/reset clear stale replay',async()=>{
+  const nodes=new Map(),pending=new Map(),charts=new Map();let nextFrame=0,stoppedWorkers=0,cancelledSweeps=0,fitCalls=0,releaseField;
   const $=id=>{
     if (!nodes.has(id)) nodes.set(id,{id,value:'',textContent:'old snapshot value',checked:false,options:[],
       removeAttribute(){},replaceChildren(...options){this.options=options;}});
@@ -25,7 +25,7 @@ test('actual app restart leaves one replay frame and reset invalidates stale dia
     workers:[{stop(){stoppedWorkers++;}}],sweep:{cancel(){cancelledSweeps++;}},sweepRuns:[{}]};
   const context=vm.createContext({state,$,form,hoverGeneration:0,hoverTimer:0,replayFrame:0,
     fieldWorker:{},evalWorker:{},hoverWorker:{},DEFAULT_INPUT:{snapshots:60},location:{hash:'#old'},
-    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){}},densityMap:{set(){},fit(){}},contrastMap:{set(){},fit(){}},previewWalls:()=>[],
+    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){fitCalls++;}},densityMap:{set(){},fit(){fitCalls++;}},contrastMap:{set(){},fit(){fitCalls++;}},previewWalls:()=>[],
     fmt:v=>Number.isFinite(v) ? String(v) : '—',percentile:values=>values[0]??null,
     requestAnimationFrame:fn=>{const id=++nextFrame;pending.set(id,fn);return id;},cancelAnimationFrame:id=>pending.delete(id),clearTimeout(){},
     drawMetricHistory:(canvas,data)=>charts.set(canvas.id,data),drawHistogram:(canvas,data)=>charts.set(canvas.id,data),
@@ -36,6 +36,7 @@ test('actual app restart leaves one replay frame and reset invalidates stale dia
   vm.runInContext([
     section('function stopReplay()','async function prepare('),
     section('function renderSelected()','async function updateProfile('),
+    section('async function advance(','async function hashField('),
     section('function replayTick(','$(\'runButton\').onclick'),reset,
   ].join('\n'),context);
   vm.runInContext('controls();',context);
@@ -44,6 +45,15 @@ test('actual app restart leaves one replay frame and reset invalidates stale dia
   assert.equal(pending.size,1,'Rapid start/stop/start must retain only one rAF');
   const [id,callback]=pending.entries().next().value;pending.delete(id);callback(300);
   assert.equal(pending.size,1,'Replay tick must retain only one next rAF');assert.equal(state.selected,1);
+  vm.runInContext('stopReplay();',context);state.mode='running';state.selected=3;state.followLive=true;
+  state.scenario.wire=Array.from({length:5},()=>({}));
+  context.fieldWorker={request:()=>new Promise(resolve=>{releaseField=resolve;})};context.evalWorker={request:async()=>({evaluation:{}})};
+  const inFlight=context.advance();assert.equal(state.busy,true);
+  context.firstSnapshot();assert.equal(state.selected,1);assert.equal(state.mode,'paused');assert.equal(state.followLive,false);
+  assert.equal(state.frames.length,3,'First snapshot must preserve completed records');assert.equal(fitCalls,3);assert.equal(pending.size,0);
+  releaseField({type:'frame',requestId:1,t:4,Q:4,admitted:4,rejected:0,ms:1});await inFlight;
+  assert.equal(state.frames.length,4,'An in-flight completed result must be retained');assert.equal(state.selected,1,'Late worker completion must not move the view away from the first snapshot');
+  state.workers=[{stop(){stoppedWorkers++;}}];
   $('inspector').textContent='old D/A/Q';$('diagnosticSummary').textContent='old Theorem 2';
   vm.runInContext("$('resetButton').onclick();",context);
   assert.equal(pending.size,0);assert.equal(stoppedWorkers,1);assert.equal(cancelledSweeps,1);

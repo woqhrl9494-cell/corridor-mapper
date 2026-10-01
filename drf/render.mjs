@@ -1,4 +1,12 @@
-import { boundsOf, fitCamera, toScreen, toWorld, zoomCamera, tickStep } from "../surf/map.mjs";
+import { boundsOf, tickStep } from "../surf/map.mjs";
+
+// Display affine transform only: each axis retains metres; inference never sees pixels.
+export const mapToScreen=(p,c,b)=>[b.x+b.w/2+(p[0]-c.cx)*c.scaleX,b.y+b.h/2-(p[1]-c.cy)*c.scaleY];
+export const mapToWorld=(p,c,b)=>[c.cx+(p[0]-b.x-b.w/2)/c.scaleX,c.cy-(p[1]-b.y-b.h/2)/c.scaleY];
+export function zoomMap(c,factor,anchor,box) {
+  const p=mapToWorld(anchor,c,box),scaleX=Math.max(.05,Math.min(100000,c.scaleX*factor)),scaleY=Math.max(.05,Math.min(100000,c.scaleY*factor));
+  return {cx:p[0]-(anchor[0]-box.x-box.w/2)/scaleX,cy:p[1]+(anchor[1]-box.y-box.h/2)/scaleY,scaleX,scaleY};
+}
 
 // White-based sequential colors affect drawing only; zero stays transparent.
 const palettes = {
@@ -35,11 +43,11 @@ export class DrfMap {
     canvas.addEventListener("pointermove", (e) => {
       if (!this.camera || !this.box) return;
       if (this.pointer) {
-        this.camera.cx -= (e.clientX-this.pointer[0])/this.camera.scale;
-        this.camera.cy += (e.clientY-this.pointer[1])/this.camera.scale;
+        this.camera.cx -= (e.clientX-this.pointer[0])/this.camera.scaleX;
+        this.camera.cy += (e.clientY-this.pointer[1])/this.camera.scaleY;
         this.pointer = [e.clientX,e.clientY]; this.auto = false; this.draw();
       }
-      const [x,y] = toWorld([e.offsetX,e.offsetY],this.camera,this.box), g=this.state.grid;
+      const [x,y] = mapToWorld([e.offsetX,e.offsetY],this.camera,this.box), g=this.state.grid;
       if (!g) return;
       const d=g.domain ?? [g.xmin,g.xmax,g.ymin,g.ymax], dx=(d[1]-d[0])/g.nx, dy=(d[3]-d[2])/g.ny;
       const ix=Math.floor((x-d[0])/dx), iy=Math.floor((y-d[2])/dy);
@@ -50,6 +58,7 @@ export class DrfMap {
   set(state) {
     const previous=this.state;
     this.state=state;
+    if (state.aspectMode !== previous.aspectMode) {this.auto=true;this.camera=null;}
     if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || state.layers?.showTruth !== previous.layers?.showTruth || (state.focus && !this.fullDomain && state.frame !== previous.frame))) this.camera=null;
     if (state.frame !== previous.frame || state.grid !== previous.grid || state.heatField !== previous.heatField || state.scaleMode !== previous.scaleMode) this.buildHeat();
     this.draw();
@@ -73,7 +82,7 @@ export class DrfMap {
   fit(fullDomain=false) { this.fullDomain=fullDomain;this.auto=true;this.camera=null;this.draw(); }
   zoom(factor,anchor) {
     if (!this.camera || !this.box) return;
-    this.camera=zoomCamera(this.camera,factor,anchor ?? [this.box.x+this.box.w/2,this.box.y+this.box.h/2],this.box);
+    this.camera=zoomMap(this.camera,factor,anchor ?? [this.box.x+this.box.w/2,this.box.y+this.box.h/2],this.box);
     this.auto=false; this.draw();
   }
   draw() {
@@ -99,12 +108,16 @@ export class DrfMap {
         const cy=Math.max(domain[2]+12,Math.min(domain[3]-12,n ? poses.reduce((s,p)=>s+p[1],0)/n : (domain[2]+domain[3])/2));
         bounds={xmin:cx-12,xmax:cx+12,ymin:cy-12,ymax:cy+12};
     } else if (geometry && !this.fullDomain && this.state.layers?.showTruth && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
-    // A bounded plot rectangle prevents wide displays from adding meaningless world range.
-    const aspect=Math.max(1,bounds.xmax-bounds.xmin)/Math.max(1,bounds.ymax-bounds.ymin),plotW=Math.min(box.w,box.h*aspect),plotH=plotW/aspect;
-    box.x+=(box.w-plotW)/2;box.y+=(box.h-plotH)/2;box.w=plotW;box.h=plotH;this.box=box;
-    if (!this.camera) this.camera=fitCamera(bounds,box.w*1.12,box.h*1.12);
-    const c=this.camera,screen=(p) => toScreen(p,c,box),lo=toWorld([box.x,box.y+box.h],c,box),hi=toWorld([box.x+box.w,box.y],c,box);
-    this.canvas.dataset.view=JSON.stringify({xmin:lo[0],xmax:hi[0],ymin:lo[1],ymax:hi[1],pixelsPerMetre:c.scale,plotWidth:box.w,plotHeight:box.h,auto:this.auto});
+    if (!this.camera) {
+      let scaleX=box.w/(Math.max(1,bounds.xmax-bounds.xmin)*1.04),scaleY=box.h/(Math.max(1,bounds.ymax-bounds.ymin)*1.04);
+      if (this.state.aspectMode==='equal') scaleX=scaleY=Math.min(scaleX,scaleY);
+      this.camera={cx:(bounds.xmin+bounds.xmax)/2,cy:(bounds.ymin+bounds.ymax)/2,scaleX,scaleY};
+    }
+    const c=this.camera,screen=(p) => mapToScreen(p,c,box),lo=mapToWorld([box.x,box.y+box.h],c,box),hi=mapToWorld([box.x+box.w,box.y],c,box);
+    if (target===this.canvas) {
+      this.box=box;
+      this.canvas.dataset.view=JSON.stringify({xmin:lo[0],xmax:hi[0],ymin:lo[1],ymax:hi[1],pixelsPerMetreX:c.scaleX,pixelsPerMetreY:c.scaleY,aspectMode:this.state.aspectMode ?? 'fill',plotWidth:box.w,plotHeight:box.h,auto:this.auto});
+    }
     ctx.save();ctx.beginPath();ctx.rect(box.x,box.y,box.w,box.h);ctx.clip();
     if (g && this.state.frame && !geometry) {
       const p=screen([domain[0],domain[3]]),q=screen([domain[1],domain[2]]);
@@ -157,11 +170,11 @@ export class DrfMap {
       }
     }
     ctx.restore();
-    const step=tickStep(c.scale*2/3),digits=Math.max(0,-Math.floor(Math.log10(step))),label=(n) => Math.abs(n)<step/100 ? "0" : n.toFixed(digits);
+    const stepX=tickStep(c.scaleX*2/3),stepY=tickStep(c.scaleY*2/3),label=(n,step) => Math.abs(n)<step/100 ? "0" : n.toFixed(Math.max(0,-Math.floor(Math.log10(step))));
     ctx.font="14px -apple-system, Arial, sans-serif";ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1.5;
     ctx.strokeRect(box.x,box.y,box.w,box.h);
-    for (let x=Math.ceil(lo[0]/step)*step;x<=hi[0];x+=step) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(label(x),sx,box.y+box.h+19); }
-    for (let y=Math.ceil(lo[1]/step)*step;y<=hi[1];y+=step) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(label(y),box.x-10,sy+6); }
+    for (let x=Math.ceil(lo[0]/stepX)*stepX;x<=hi[0];x+=stepX) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(label(x,stepX),sx,box.y+box.h+19); }
+    for (let y=Math.ceil(lo[1]/stepY)*stepY;y<=hi[1];y+=stepY) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(label(y,stepY),box.x-10,sy+6); }
     ctx.textAlign="center";ctx.fillText("x [m]",box.x+box.w/2,height-8);ctx.save();ctx.translate(14,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText("y [m]",0,0);ctx.restore();
     if (geometry) {
       if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "참 장면 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
@@ -175,13 +188,14 @@ export class DrfMap {
   }
   async png() {
     const plot=document.createElement("canvas"),out=document.createElement("canvas"),ratio=300/96;
-    this.paint(plot,ratio);out.width=plot.width;out.height=plot.height+Math.round(66*ratio);
+    this.paint(plot,ratio);out.width=plot.width;out.height=plot.height+Math.round(86*ratio);
     const ctx=out.getContext("2d"),css=getComputedStyle(document.documentElement);
-    ctx.fillStyle=css.getPropertyValue('--color-plot-bg').trim();ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(plot,0,66*ratio);ctx.scale(ratio,ratio);
+    ctx.fillStyle=css.getPropertyValue('--color-plot-bg').trim();ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(plot,0,86*ratio);ctx.scale(ratio,ratio);
     ctx.fillStyle=css.getPropertyValue('--color-ink').trim();ctx.font='600 14px -apple-system, Arial';
     ctx.fillText(this.state.heatField==='betaHat' ? 'β̂ [dimensionless]' : 'D̄ [1/m²]',12,18);
     ctx.font='14px -apple-system, Arial';ctx.fillText(`snapshot ${this.state.frame?.t ?? 0} · ${this.state.scaleMode==='log' ? 'log(1 + value)' : 'linear'} color scale`,12,38);
     ctx.fillText('Dashed wall: evaluation only',12,58);
+    ctx.fillText(this.state.aspectMode==='equal' ? 'Axes: equal metres' : 'Axes: independent x/y scale',12,78);
     return new Promise((resolve,reject) => out.toBlob((blob) => blob ? resolve(blob) : reject(Error("PNG 렌더에 실패했습니다.")),"image/png"));
   }
 }
@@ -197,7 +211,8 @@ function chartSurface(canvas) {
   return {ctx,width,height,color};
 }
 function chartAxes(surface,{title,xLabel,yLabel,xmin,xmax,ymin,ymax,top=0,height=surface.height,compact=false}) {
-  const {ctx,width,color}=surface,box={x:compact ? 50 : 66,y:top+(compact ? 26 : 42),w:Math.max(1,width-(compact ? 66 : 90)),h:Math.max(1,height-(compact ? 64 : 104))};
+  compact ||= height<420;
+  const {ctx,width,color}=surface,box={x:compact ? 44 : 52,y:top+(compact ? 24 : 32),w:Math.max(1,width-(compact ? 58 : 68)),h:Math.max(1,height-(compact ? 58 : 76))};
   if (!(xmax>xmin)) xmax=xmin+1;
   if (!(ymax>ymin)) ymax=ymin+1;
   const x=(v) => box.x+(v-xmin)/(xmax-xmin)*box.w,y=(v) => box.y+box.h-(v-ymin)/(ymax-ymin)*box.h;

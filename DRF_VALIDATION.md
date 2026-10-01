@@ -8,14 +8,18 @@
 - SURF 홈 유지, `drf.html` 별도 추가. 승인된 기존 변경은 nav 링크와 글자/컨트롤/표시 여백/문자 대비이다. 기존 알고리즘과 나머지 44개 보호 파일의 SHA-256은 유지한다.
 - 사용자 요청에 따라 첫 화면의 정보량을 늘렸다. 참고 HTML 배치에 맞추어 데스크톱 글자와 축은 14 px 이상, 일반 컨트롤 높이는 32–36 px이다. 높이 800 px 이하의 데스크톱에서는 설정 컨트롤을 28 px로 압축한다. 모바일 DOM 글자는 16 px 이상, 버튼 높이는 44 px 이상이다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
+- `file://` 실행을 위한 classic bundle 추가. 기존 esbuild로 동일한 앱과 scenario/field/eval/sweep Worker를 묶고, Worker는 4종의 classic Blob script로 실행한다. provenance와 참조 fixtures JSON도 bundle에 포함하므로 로컬 파일에서 module import나 JSON fetch에 의존하지 않는다.
 
 ```sh
+npm run build:drf-offline
 npm test
 node tests/drf/run-reference.mjs --seed-count 10 --workers 3
 python3 -m http.server 8871 --bind 127.0.0.1
 ```
 
-`http://127.0.0.1:8871/drf.html`에서 같은 파이프라인을 실행한다. 로컬 HTTP가 필요한 이유는 module Worker 및 파일 로딩이다. `tests/drf/browser-check.html`의 검사 버튼은 실제 Worker와 Node의 Float32 바이트 및 summary를 비교한다.
+HTTP(S)에서는 기존 module 앱과 module Worker를 사용하고, `file://`에서는 `drf/offline.bundle.js`를 classic script로 선택한다. 브라우저 보안 설정이나 별도 서버 실행을 변경하지 않는다. bundle의 원본 파일 SHA-256 22개를 자동 검사해 오래된 생성물을 검출하므로 앱이나 렌더를 수정한 뒤에는 `npm run build:drf-offline`로 재생성한다.
+
+`http://127.0.0.1:8871/drf.html`은 기존 module 경로를 확인하는 로컬 주소다. `tests/drf/browser-check.html`의 검사 버튼은 실제 Worker와 Node의 Float32 바이트 및 summary를 비교한다. classic bundle도 HTTP 검사용 harness에서 실행해 기본 결과를 확인했다. 실제 `file://` 화면은 CUA 도구의 프로토콜 접근 제한으로 미검증이며 사용자 확인 대기 상태다. protocol 선택 자동 검사와 HTTP harness 실행을 실제 파일 화면 검증으로 판정하지 않는다.
 
 ## 수치 및 정보 경계 검사
 
@@ -77,16 +81,19 @@ python3 -m http.server 8871 --bind 127.0.0.1
 - MATLAB 설치 경로는 확인된 사용자 지침이나 원본 .m 파일 실행은 하지 않았다. 임의 파일을 만들어 Octave reference로 표시하지 않았다.
 - 물리 dt, 안테나/거리 보정, 가시성 외 실제 수신 검출 확률, amplitude 및 하드웨어 지연 모델은 없다. 웹 수치 재현이 실제 레이더의 검증을 대신하지 않는다.
 - 배포 대상은 기존 Pages의 `main:/`이다. 홈은 SURF를 유지하고 DRF는 `https://woqhrl9494-cell.github.io/corridor-mapper/drf.html`이다. 배포 완료는 Pages의 built 상태와 배포 commit 일치, 공개 자산 SHA-256 일치, 공개 화면에서 기본 실행을 확인한 뒤 판정한다.
+- 실제 `file://` 파일 화면의 실행 버튼과 Blob Worker는 사용자 확인 대기다. HTTP classic bundle 실행 및 자동 검사까지 확인했으며 파일 프로토콜의 실제 표시와 실행은 아직 확인하지 않았다.
 
 ## 브라우저와 내보내기
 
 - 실제 scenario/field/eval/sweep Worker와 Node: 짧은 3 snapshot / 100² 세 조건과 60 snapshot / 150² 네 조건, 총 7조건의 D̄/β̂ 바이트 및 Q/개수는 정확히 같다. Float64 평가 summary는 10⁻¹²×max(1, |참조값|) 허용오차로 비교했고 Theorem 평균 두 조건에서 최대 1.33e-15 차이를 기록했다. [검사 기록](tests/drf/browser-parity-result.json).
 - 단일 실행, 한 step, 계속 실행, 완료 snapshot slider, 과거 prefix 조회, 표시값/색 범위/레이어/확대/전체 보기, 진단 선택, 취소 및 재설정 확인.
 - 1440 × 900와 390 × 844 화면 확인. 모바일 document 폭 초과 0, 보이는 DOM 글자 최소16 px. DPR1/2에서 Canvas 실제 픽셀 크기 배수 일치. light/dark 화면 기록 보관.
-- 이전 구현의 실제 JSON 다운로드는 완료된 6 snapshots만 포함하고 wire에 oracle 필드가 없었다. CSV는 header+6행이었다. 이번 참고 디자인 버전의 실제 D̄ PNG는 1138 × 997 px, pHYs 11811 px/m = 299.9994 dpi다. 필드 이름, 1/m² 단위, snapshot, linear/log 색 매핑과 평가용 점선 설명을 포함한다. PNG는 선택한 필드의 현재 표시 영역을 저장하며, 필드별 파일명이 다르다.
+- 이전 구현의 실제 JSON 다운로드는 완료된 6 snapshots만 포함하고 wire에 oracle 필드가 없었다. CSV는 header+6행이었다. 이전 참고 디자인 버전의 실제 D̄ PNG는 1138 × 997 px, pHYs 11811 px/m = 299.9994 dpi다. 필드 이름, 1/m² 단위, snapshot, linear/log 색 매핑과 평가용 점선 설명을 포함했다. 현재 PNG 렌더는 선택한 필드의 현재 표시 영역을 저장하며, 필드별 파일명이 다르다. 선택한 표시축도 `Axes: independent x/y scale` 또는 `Axes: equal metres`로 명시한다. 이전 PNG 파일의 크기와 dpi 확인은 이번 표시축 문구 추가 후의 실제 다운로드 확인을 대신하지 않는다.
 - 외부 다운로드 이벤트 도구는 타임아웃했으나 실제 파일이 Downloads에 저장된 것을 파싱해 검증했다. PNG 그림은 선택 snapshot이며 JSON/CSV는 완료된 전체 기록이다.
 
-자동 검사 101/101 통과(2.858 s), 기존 legacy DOM smoke 8개 검사 통과(uiErrors=[]). jsdom 파일 읽기 문제는 기존 버전을 임시 폴더에서 로드해 검사했으며 저장소 의존성은 변경하지 않았다. UI의 별도 네 seed run summary는 중앙 오차/P95/off-wall 및 나머지 값이 Node와 같고 Theorem 평균만 최대1.33e-15 차이였다. Sweep 즉시 취소는0/4, 단일 취소는 완료1 snapshot만 보존, 두 noise=0 입력은 실행을 차단했다.
+현재 자동 검사 104/104 통과(2.934894 s). offline 생성물의 22개 원본 SHA, 실제 HTML의 file/HTTP script 선택, 검증 JSON 포함, Blob URL 재사용과 해제, 4종 Worker의 classic script 파싱, 원본 field와 Float32 배열 일치를 포함한다. 기존 44개 보호 파일과 160회 검증의 수치 소스 SHA도 유지했다.
+
+이전 검사에서는 legacy DOM smoke 8개가 통과했다(uiErrors=[]). jsdom 파일 읽기 문제는 기존 버전을 임시 폴더에서 로드해 검사했으며 저장소 의존성은 변경하지 않았다. UI의 별도 네 seed run summary는 중앙 오차/P95/off-wall 및 나머지 값이 Node와 같고 Theorem 평균만 최대1.33e-15 차이였다. Sweep 즉시 취소는0/4, 단일 취소는 완료1 snapshot만 보존, 두 noise=0 입력은 실행을 차단했다.
 
 UI 추가 조작 결과는 [ui-validation.json](tests/drf/ui-validation.json)과 실행 출력으로 보충한다. 방법/단위/복잡도는 [DRF_METHOD.md](DRF_METHOD.md)에 기록한다.
 
@@ -94,8 +101,12 @@ UI 추가 조작 결과는 [ui-validation.json](tests/drf/ui-validation.json)과
 
 사용자가 제공한 corridor_mapper.html의 밝은 배경과 배치를 적용했다. 왼쪽에는 설정과 수치, 상단에는 측정 타원과 차량 궤적을 표시한다. 하단에는 D̄, β̂, 선택한 시간별 평가 지표를 각각 표시한다. 데스크톱은 화면 높이에 맞추고 설정/추가 실험은 패널 스크롤로 접근한다. 모바일은 세로로 배치한다.
 
-상단 자동 보기는 명시적으로 켠 평가용 참벽의 범위 또는 공개 60 × 30 m 영역을 사용한다. 하단 필드는 현재 noisy pHat 중심 24 × 24 m 창을 확대한다. 이후 관측은 보기에 사용하지 않는다. 휠과 드래그는 수동 보기를 유지하며 전체 보기는 공개 계산 영역으로 돌아간다. 격자, 수치 필드와 평가값은 변경하지 않았다. 등척을 유지하는 plot 사각형으로 넓은 화면의 불필요한 축 범위를 줄였다. D̄는 밝은 warm 순차색, β̂는 밝은 blue 순차색이며 정확히 0인 셀은 투명하다.
+상단 자동 보기는 명시적으로 켠 평가용 참벽의 범위 또는 공개 60 × 30 m 영역을 사용한다. 하단 필드는 현재 noisy pHat 중심 24 × 24 m 창을 확대한다. 이후 관측은 보기에 사용하지 않는다. 휠과 드래그는 수동 보기를 유지하며 전체 보기는 공개 계산 영역으로 돌아간다. 격자, 수치 필드와 평가값은 변경하지 않았다.
 
-실제 1440 × 900, 1920 × 930, 1366 × 768에서 실행 버튼, 위치/거리 오차와 산란 설정, 지도와 두 필드, 선택 평가 그래프, snapshot slider와 중앙/P95/off-wall 수치 17개가 모두 첫 화면에 보였다. 모바일 390 × 844의 보이는 DOM 글자 최소 16 px, 가로 넘침 0이다. 기본 60 snapshot 실행은 Q=2904, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다.
+기본 표시 방식은 `화면 채움`이며 x/y 축에 독립 배율을 적용해 지도와 두 필드가 각 canvas의 plot 영역을 채운다. 수치 좌표와 축 단위는 m를 유지하지만 화면의 x/y 1 m 길이는 다를 수 있다. `등척 (1:1)` 선택은 x/y의 1 m 길이를 같게 표시한다. 측정 타원의 각도나 화면상 형상 비율을 물리 좌표와 비교할 때는 등척을 사용한다. 선택한 표시축은 hover 역변환과 확대/이동에도 동일하게 적용하며 추정 알고리즘의 입력으로 사용하지 않는다. 시간별 평가, Sweep, 히스토그램, profile 및 산점도도 plot 여백을 줄였다. D̄는 밝은 warm 순차색, β̂는 밝은 blue 순차색이며 정확히 0인 셀은 투명하다.
 
-크기별 범위와 첫 화면 요소는 [density-validation.json](tests/drf/density-validation.json)에 기록했다. 숨겨진 GT가 camera에 영향을 주지 않는지, 0값 투명도, 선택 지표의 큰 그래프, 넓은 화면 축 범위, PNG의 필드/단위 표시를 자동 검사했다. 수치/평가 모듈과 44개 보호 파일은 수정하지 않았다. CSS/모듈 URL의 버전을 바꾸어 이전 렌더의 캐시 재사용을 막는다.
+확대 버튼 옆의 `처음으로`는 첫 snapshot과 기본 camera로 돌아가며 완료된 기록을 유지한다. 재생 중에는 재생을 멈추고 계산 중에는 일시정지한다. 실제 클릭 검사에서 1/60, slider max=60, 첫 snapshot Q=258 및 기본 camera 복원을 확인했다.
+
+classic bundle의 HTTP harness에서 실제 기본 60 snapshot 실행은 Q=2904, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같았다. 이 결과는 classic bundle의 실행과 수치 일치를 확인한 것이며 실제 `file://` 화면 검증은 남아 있다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다.
+
+크기별 범위와 첫 화면 요소는 [density-validation.json](tests/drf/density-validation.json)에 기록한다. 숨겨진 GT가 camera에 영향을 주지 않는지, 0값 투명도, 선택 지표의 큰 그래프, 두 표시축의 좌표 왕복, 넓은 화면의 plot 영역 사용, PNG의 필드/단위/표시축 문구를 자동 검사했다. 수치/평가 모듈과 44개 보호 파일은 수정하지 않았다. CSS/모듈 URL의 버전을 바꾸어 이전 렌더의 캐시 재사용을 막는다.
