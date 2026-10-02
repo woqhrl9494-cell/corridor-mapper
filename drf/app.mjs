@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-fleet11
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-fleet11';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-fleet13';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-viewreset14';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -215,19 +215,13 @@ function toggleReplay() {
   if (!state.frames.length) return;
   if (state.replay) stopReplay(); else { state.followLive = false; state.replay = true; state.replayAt = 0; $('replayButton').textContent = '재생 정지'; replayFrame = requestAnimationFrame(replayTick); }
 }
-function firstSnapshot() {
-  stopReplay();
-  if (state.frames.length) {
-    if (state.mode === 'running') state.mode = 'paused';
-    state.followLive = false; state.selected = 1; $('timeSlider').value = 1;
-  }
+function resetView() {
   for (const view of [map,densityMap,contrastMap]) view.fit();
-  controls(); renderSelected(); notice(state.frames.length ? '첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.' : '실행 전 기본 보기로 돌아왔습니다. 설정은 유지합니다.');
 }
 $('runButton').onclick = () => prepare();
 $('pauseButton').onclick = () => { state.mode = state.mode === 'paused' ? 'running' : 'paused'; controls(); if (state.mode === 'running') { state.followLive = true; advance(); } else notice('현재 snapshot에서 일시정지했습니다.'); };
 $('stepButton').onclick = () => { state.followLive = true; state.mode === 'paused' ? advance(true) : prepare(true); };
-$('firstSnapshot').onclick = firstSnapshot;
+$('firstSnapshot').onclick = resetView;
 $('cancelButton').onclick = () => { cancel(); notice('취소했습니다. 완전히 계산된 snapshot만 남겼습니다.'); };
 $('resetButton').onclick = () => { state.sweep?.cancel(); state.sweepRuns = []; cancel(true); fillSettings(DEFAULT_INPUT); renderSelected(); location.hash = ''; renderSweep(); $('sweepStatus').textContent = '실행 결과가 없습니다.'; notice('기본 설정으로 재설정했습니다.'); };
 form.addEventListener('change', () => { state.sweepRuns = []; cancel(true); renderSweep(); $('sweepStatus').textContent = '실행 결과가 없습니다.'; notice('설정이 바뀌어 이전 결과를 무효화했습니다.'); try { location.hash = `v1=${encodeURIComponent(JSON.stringify(settings()))}`; } catch (e) { notice(e.message); } });

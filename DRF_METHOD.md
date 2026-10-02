@@ -178,7 +178,7 @@ Snapshot index와 0.75 m/snapshot은 물리적 Δt를 지정하지 않는다. �
 
 데스크톱 사이드바는 456 px에서 342 px로 줄이고, 상단 RAW와 하단 그래프의 행 비율은 1.3:1에서 1.9:1로 바꿨다. RAW의 x/y 1 m는 같은 화면 길이이다. 하단 Dbar/β̂도 기본 등척이며 차량 주변 24 m 확대 대신 전체 x=0–60 m를 표시한다. 평가용 참벽 표시를 켜면 그 벽 범위에 자동으로 맞추고, 끄면 공개 계산 영역 [0,60] × [0,30] m를 사용한다. 자동 보기의 참벽은 표시와 평가 전용이며 추정기 입력에 연결되지 않는다. 선택 가능한 `필드 채움`은 하단 필드의 x/y 화면 배율을 독립적으로 사용한다. 거리 지도 x/y 격자와 profile x 격자는 10 m 간격이며 휠 확대에도 물리 간격은 유지한다.
 
-`처음으로`는 실행 전에도 활성화한다. 기록이 없으면 세 지도의 camera만 기본 보기로 복원하고 설정, 생성 중 worker와 실행 상태를 유지한다. 기록이 있으면 snapshot 1을 선택하고 재생과 추가 계산을 일시정지하되 완료된 기록을 유지한다. 처리 중인 한 snapshot이 나중에 완료되어도 선택 시점은 1에 남는다. 이 조작과 보기 선택은 수치 필드, 측정 생성식과 평가식을 변경하지 않는다.
+`처음으로`는 실행 전에도 활성화하며 세 지도의 확대와 이동만 기본 보기로 복원한다. 선택 snapshot, 누적 기록, 설정, 실행/일시정지 상태, 재생과 진행 중 worker를 그대로 유지한다. 진행 중인 계산은 원래의 live-follow 설정대로 계속된다. 축소 버튼과 마우스 휠은 현재 plot 크기와 표시 범위로 계산한 기본 배율까지만 축소한다. 두 조작은 측정 생성식과 수치 필드, 평가식을 변경하지 않는다.
 
 ## 검증과 내보내기
 
@@ -202,7 +202,7 @@ Runner는 browser sweep과 같은 `runExperiment`/`aggregateRuns`를 사용한�
 
 `drf/provenance.json`은 기준 Git commit, field/wire source hash와 core 묶음 hash를 기록한다. 배포 여부는 별도 증거로 확인한다. JSON은 input, measurement, result, evaluation, truth를 분리한다. CSV는 snapshot별 지표를 기록한다. PNG 버튼은 선택한 필드를 CSS 크기의 300/96 배로 다시 그린 뒤 `surf/exports.mjs`의 `png300dpi`를 적용한다. PNG의 pHYs 목표는 11811 px/m이며 metadata가 선명한 label이나 모든 chart의 내보내기를 자동 보장하지 않는다. 현재 clay UI는 Dbar의 warm 순차색과 β̂의 blue 순차색, 흰 plot 배경과 RAW/하단 필드의 기본 등척을 유지한다. 읽을 수 있는 label, 선 굵기, 선택한 표시축과 ±1 SD error bar는 실제 화면과 저장본에서 검사한다.
 
-직전 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. 실행 전/측정 준비 중 `처음으로`의 camera 복원과 설정/기록/worker 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지도 VM 회귀 검사에 포함한다. 수치 소스 11개의 SHA가 기존 160회 통계 보고서와 일치하므로 그 표시 수정에서는 160회를 다시 실행하지 않았다. 원본 22개 offline bundle과 44개 보호 파일 검사도 통과했다. 최신 실제 화면 기록은 [density-validation.json](tests/drf/density-validation.json)의 schema 5이며, 이전 schema 4는 `previousLayoutEvidence`에 보존한다.
+직전 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. 실행 전/측정 준비 중 `처음으로`의 camera 복원과 설정/기록/worker 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지도 VM 회귀 검사에 포함한다. 수치 소스 11개의 SHA가 기존 160회 통계 보고서와 일치하므로 그 표시 수정에서는 160회를 다시 실행하지 않았다. 원본 22개 offline bundle과 44개 보호 파일 검사도 통과했다. 이전 schema 5 실제 화면 기록은 [density-validation.json](tests/drf/density-validation.json)의 schema 5이며, 이전 schema 4는 `previousLayoutEvidence`에 보존한다.
 
 ## 20대 규모 확장 검증
 
@@ -216,4 +216,14 @@ RAW 타원은 전체 측정 중 일정 stride로 최대 600개만 그린다. 현
 
 차량 확장 후 `npm test`는 115/115 통과, 실패 0, 18.282778 s였다. 실제 20대 생성기 연결 검사와 표시 600개 상한, 전 차량점 유지, 번호 bbox/차량점 겹침과 plot 경계 검사가 포함된다.
 
-최종 HTTP module 화면에서 차량 20대, 60/60, Q=187631과 같은 최종 필드 SHA를 확인했다. 1920×930 content viewport에서 사이드바는 342 px, clientHeight/scrollHeight=876/876 px이고 28개 설정 컨트롤과 네 canvas가 모두 첫 화면에 보였다. 마지막 시점의 측정 4326개 중 타원 541개가 표시됐다. 생성 중 취소는 기록 0개와 실행 가능 상태로 돌아갔고, 완료 후 `처음으로`는 1/60을 선택하며 60개 기록을 유지했다. Console warning/error는 0개였다. 20대 수치 폭으로 하단 설명이 5 px 잘린 문제는 desktop section 상하 여백 2→1 px로 해결했다. 이 마지막 CSS/cache/bundle 수정 후 관련 7개 표시·버튼·offline 검사는 모두 통과했다. 실제 file 화면 검증으로 확대하지 않는다.
+차량 확장 수정 당시 HTTP module 화면에서 차량 20대, 60/60, Q=187631과 같은 최종 필드 SHA를 확인했다. 1920×930 content viewport에서 사이드바는 342 px, clientHeight/scrollHeight=876/876 px이고 28개 설정 컨트롤과 네 canvas가 모두 첫 화면에 보였다. 마지막 시점의 측정 4326개 중 타원 541개가 표시됐다. 생성 중 취소는 기록 0개와 실행 가능 상태로 돌아갔고, 완료 후 `처음으로`는 1/60을 선택하며 60개 기록을 유지했다. Console warning/error는 0개였다. 20대 수치 폭으로 하단 설명이 5 px 잘린 문제는 desktop section 상하 여백 2→1 px로 해결했다. 이 마지막 CSS/cache/bundle 수정 후 관련 7개 표시·버튼·offline 검사는 모두 통과했다. 실제 file 화면 검증으로 확대하지 않는다.
+
+## 보기 초기화와 축소 하한 수정
+
+`처음으로`에서 첫 snapshot 선택, 재생 정지와 실행 일시정지를 제거했다. 세 지도의 camera 복원만 수행하므로 현재 시점과 기록, 입력, worker와 실행/재생 상태를 유지한다. 기본 배율은 현재 plot 크기와 표시 범위의 CSS px/m로 계산하며 버튼과 휠에서 두 축 모두 그 배율보다 작아지지 않게 제한한다. 화면 크기나 표시 범위 변경 때도 하한을 갱신한다. 이동 중심과 확대 anchor를 보존한다.
+
+자동 검사 115/115 통과, 실패 0, 11.806166 s였다. VM에서 기록 없는 idle/준비 중과 done/paused/running/cancelled, 재생 rAF와 진행 중 field 요청 상태 보존을 확인했다. 실제 RAW/등척 Dbar/채움 betaHat 객체에서는 축소 버튼, 휠, 이동, 양방향 화면 크기 변경과 표시 범위 변경을 검사했다.
+
+HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 그대로였다. 세 지도를 확대하고 이동한 뒤 `처음으로`를 눌렀을 때 60/60과 상태, 기록 및 수치는 그대로이고 세 camera가 기본 보기로 복원됐다. 59/60을 따로 선택한 검사도 그 시점을 유지했다. 반복 축소 버튼과 세 지도의 휠 축소는 초기 배율에서 멈췄다. Console warning/error는 0개였다. 상세 기록은 [view-reset-validation.json](tests/drf/view-reset-validation.json)이다.
+
+수치 source 11개와 기존 160회 reference 보고서의 SHA가 일치하므로 수치 실험은 다시 실행하지 않았다. 기존 참조 수용 조건 12개 미충족도 그대로이다. offline 22개 source bundle을 다시 생성하고 검사했으며 실제 file 화면 검증으로 확대하지 않는다.

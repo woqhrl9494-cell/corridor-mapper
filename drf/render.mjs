@@ -50,6 +50,7 @@ export class DrfMap {
     this.state = {};
     this.auto = true;
     this.camera = null;
+    this.defaultScale = null;
     this.pending = false;
     this.pointer = null;
     this.heat = document.createElement("canvas");
@@ -104,7 +105,9 @@ export class DrfMap {
   }
   fit(fullDomain=false) { this.fullDomain=fullDomain;this.auto=true;this.camera=null;this.draw(); }
   zoom(factor,anchor) {
-    if (!this.camera || !this.box) return;
+    if (!this.camera || !this.box || !this.defaultScale) return;
+    factor=Math.max(factor,this.defaultScale.scaleX/this.camera.scaleX,this.defaultScale.scaleY/this.camera.scaleY);
+    if (factor===1) return;
     this.camera=zoomMap(this.camera,factor,anchor ?? [this.box.x+this.box.w/2,this.box.y+this.box.h/2],this.box);
     this.auto=false; this.draw();
   }
@@ -141,10 +144,15 @@ export class DrfMap {
         this.draw();return;
       }
     }
+    // CSS pixels/metre: every viewport and visible-range change updates the zoom floor.
+    let scaleX=box.w/(Math.max(1,bounds.xmax-bounds.xmin)*1.04),scaleY=box.h/(Math.max(1,bounds.ymax-bounds.ymin)*1.04);
+    if (this.state.aspectMode==='equal') scaleX=scaleY=Math.min(scaleX,scaleY);
+    this.defaultScale={scaleX,scaleY};
     if (!this.camera) {
-      let scaleX=box.w/(Math.max(1,bounds.xmax-bounds.xmin)*1.04),scaleY=box.h/(Math.max(1,bounds.ymax-bounds.ymin)*1.04);
-      if (this.state.aspectMode==='equal') scaleX=scaleY=Math.min(scaleX,scaleY);
       this.camera={cx:(bounds.xmin+bounds.xmax)/2,cy:(bounds.ymin+bounds.ymax)/2,scaleX,scaleY};
+    } else {
+      const factor=Math.max(1,scaleX/this.camera.scaleX,scaleY/this.camera.scaleY);
+      if (factor>1) this.camera=zoomMap(this.camera,factor,[box.x+box.w/2,box.y+box.h/2],box);
     }
     const c=this.camera,screen=(p) => mapToScreen(p,c,box),lo=mapToWorld([box.x,box.y+box.h],c,box),hi=mapToWorld([box.x+box.w,box.y],c,box);
     // Fixed world grid: zoom changes its pixel spacing, never its 10 m interval.

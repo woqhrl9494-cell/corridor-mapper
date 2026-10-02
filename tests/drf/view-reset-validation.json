@@ -1,0 +1,365 @@
+{
+  "schema": "echomap-drf-view-reset-validation/1",
+  "date": "2026-10-02T05:22:20.581Z",
+  "automaticChecks": {
+    "command": "npm test",
+    "passed": 115,
+    "failed": 0,
+    "durationMs": 11806.165834
+  },
+  "numericalSourcesUnchanged": true,
+  "localHttp": {
+    "viewport": [
+      1920,
+      930
+    ],
+    "emptyPreviewBefore": {
+      "q": "0",
+      "replay": "재생",
+      "settings": "3",
+      "slider": {
+        "max": "0",
+        "value": "0"
+      },
+      "state": "idle",
+      "status": "설정을 확인한 뒤 실행하세요.",
+      "time": "0 / 60",
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 17.539003803411266,
+          "pixelsPerMetreY": 17.539003803411266,
+          "plotHeight": 356,
+          "plotWidth": 1095,
+          "xmax": 61.21614010332294,
+          "xmin": -1.2161401033229424,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
+    },
+    "emptyPreviewAfter": {
+      "q": "0",
+      "replay": "재생",
+      "settings": "3",
+      "slider": {
+        "max": "0",
+        "value": "0"
+      },
+      "state": "idle",
+      "status": "설정을 확인한 뒤 실행하세요.",
+      "time": "0 / 60",
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 17.539003803411266,
+          "pixelsPerMetreY": 17.539003803411266,
+          "plotHeight": 356,
+          "plotWidth": 1095,
+          "xmax": 61.21614010332294,
+          "xmin": -1.2161401033229424,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
+    },
+    "emptyMinusScales": {
+      "contrastCanvas": [
+        6.378205128205128,
+        6.378205128205128
+      ],
+      "densityCanvas": [
+        6.378205128205128,
+        6.378205128205128
+      ],
+      "mapCanvas": [
+        17.539003803411266,
+        17.539003803411266
+      ]
+    },
+    "completedBefore": {
+      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+      "q": "2904",
+      "replay": "재생",
+      "settings": "3",
+      "slider": {
+        "max": "60",
+        "value": "60"
+      },
+      "state": "done",
+      "status": "계산 완료 · 측정 생성 0.57 s · 참조 .m 원본 대조 미완료",
+      "time": "60 / 60",
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 17.539003803411266,
+          "pixelsPerMetreY": 17.539003803411266,
+          "plotHeight": 356,
+          "plotWidth": 1095,
+          "xmax": 61.21614010332294,
+          "xmin": -1.2161401033229424,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
+    },
+    "zoomedAndMovedViews": {
+      "contrastCanvas": {
+        "aspectMode": "equal",
+        "auto": false,
+        "pixelsPerMetreX": 9.051103915706994,
+        "pixelsPerMetreY": 9.051103915706994,
+        "plotHeight": 138,
+        "plotWidth": 398,
+        "xmax": 51.44976510309247,
+        "xmin": 7.477228304644754,
+        "ymax": 23.659903648573124,
+        "ymin": 8.413144658156579
+      },
+      "densityCanvas": {
+        "aspectMode": "equal",
+        "auto": false,
+        "pixelsPerMetreX": 9.051103915706994,
+        "pixelsPerMetreY": 9.051103915706994,
+        "plotHeight": 138,
+        "plotWidth": 398,
+        "xmax": 51.44976510309247,
+        "xmin": 7.477228304644754,
+        "ymax": 23.659903648573124,
+        "ymin": 8.413144658156579
+      },
+      "mapCanvas": {
+        "aspectMode": "equal",
+        "auto": false,
+        "pixelsPerMetreX": 24.88903113207464,
+        "pixelsPerMetreY": 24.88903113207464,
+        "plotHeight": 356,
+        "plotWidth": 1095,
+        "xmax": 52.50129196312888,
+        "xmin": 8.506007687524153,
+        "ymax": 22.575628503446257,
+        "ymin": 8.272138821149195
+      }
+    },
+    "completedAfter": {
+      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+      "q": "2904",
+      "replay": "재생",
+      "settings": "3",
+      "slider": {
+        "max": "60",
+        "value": "60"
+      },
+      "state": "done",
+      "status": "계산 완료 · 측정 생성 0.57 s · 참조 .m 원본 대조 미완료",
+      "time": "60 / 60",
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 138,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.89186057559241,
+          "ymin": 4.255679671069796
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 17.539003803411266,
+          "pixelsPerMetreY": 17.539003803411266,
+          "plotHeight": 356,
+          "plotWidth": 1095,
+          "xmax": 61.21614010332294,
+          "xmin": -1.2161401033229424,
+          "ymax": 25.222579143224223,
+          "ymin": 4.924961103437983
+        }
+      }
+    },
+    "wheelFloorScales": {
+      "contrastCanvas": [
+        6.378205128205128,
+        6.378205128205128
+      ],
+      "densityCanvas": [
+        6.378205128205128,
+        6.378205128205128
+      ],
+      "mapCanvas": [
+        17.539003803411266,
+        17.539003803411266
+      ]
+    },
+    "buttonFloorScales": {
+      "contrastCanvas": [
+        6.378205128205128,
+        6.378205128205128
+      ],
+      "densityCanvas": [
+        6.378205128205128,
+        6.378205128205128
+      ],
+      "mapCanvas": [
+        17.539003803411266,
+        17.539003803411266
+      ]
+    },
+    "selectedBefore": {
+      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+      "q": "2859",
+      "replay": "재생",
+      "settings": "3",
+      "slider": {
+        "max": "60",
+        "value": "59"
+      },
+      "state": "done",
+      "status": "계산 완료 · 측정 생성 0.57 s · 참조 .m 원본 대조 미완료",
+      "time": "59 / 60"
+    },
+    "selectedAfter": {
+      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+      "q": "2859",
+      "replay": "재생",
+      "settings": "3",
+      "slider": {
+        "max": "60",
+        "value": "59"
+      },
+      "state": "done",
+      "status": "계산 완료 · 측정 생성 0.57 s · 참조 .m 원본 대조 미완료",
+      "time": "59 / 60"
+    },
+    "selectedAfterViews": {
+      "contrastCanvas": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 6.378205128205128,
+        "pixelsPerMetreY": 6.378205128205128,
+        "plotHeight": 138,
+        "plotWidth": 398,
+        "xmax": 61.2,
+        "xmin": -1.2000000000000028,
+        "ymax": 25.89186057559241,
+        "ymin": 4.255679671069796
+      },
+      "densityCanvas": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 6.378205128205128,
+        "pixelsPerMetreY": 6.378205128205128,
+        "plotHeight": 138,
+        "plotWidth": 398,
+        "xmax": 61.2,
+        "xmin": -1.2000000000000028,
+        "ymax": 25.89186057559241,
+        "ymin": 4.255679671069796
+      },
+      "mapCanvas": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 17.539003803411266,
+        "pixelsPerMetreY": 17.539003803411266,
+        "plotHeight": 356,
+        "plotWidth": 1095,
+        "xmax": 61.21614010332294,
+        "xmin": -1.2161401033229424,
+        "ymax": 25.222579143224223,
+        "ymin": 4.924961103437983
+      }
+    },
+    "consoleWarningsErrors": []
+  },
+  "scope": "HTTP module UI plus VM state checks; actual file UI not verified"
+}

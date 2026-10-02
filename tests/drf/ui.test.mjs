@@ -59,7 +59,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       if (key==='strokeRect') rectangles.push(args);
     };}});
   };
-  const makeCanvas=()=>{const ctx=context();return {clientWidth:700,clientHeight:540,width:0,height:0,style:{},dataset:{},getContext:()=>ctx,addEventListener(){},toBlob(callback){callback(new Blob(['png']));}};};
+  const makeCanvas=()=>{const ctx=context(),listeners={};return {clientWidth:700,clientHeight:540,width:0,height:0,style:{},dataset:{},listeners,getContext:()=>ctx,addEventListener(name,callback){listeners[name]=callback;},setPointerCapture(){},toBlob(callback){callback(new Blob(['png']));}};};
   const assertGrid=(box,message) => {
     const near=(a,b)=>Math.abs(a-b)<1e-8,inside=(v,lo,hi)=>v>lo+1e-8 && v<hi-1e-8;
     assert.ok(gridSegments.some(([a,b])=>near(a[0],b[0]) && inside(a[0],box.x,box.x+box.w) && near(Math.min(a[1],b[1]),box.y) && near(Math.max(a[1],b[1]),box.y+box.h)),`${message}: vertical grid inside plot`);
@@ -221,6 +221,55 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     }
     assert.equal(JSON.stringify(fleet.wire),wireBefore,'drawing limits must not remove or reorder estimator measurements');
     assert.deepEqual([...frame.Dbar],[0,1,2,3]);assert.deepEqual([...frame.betaHat],[0,...new Float32Array([.2,.5]),1]);
+    for (const [name,mode,heatField,aspectMode] of [['RAW','geometry','Dbar','fill'],['density',undefined,'Dbar','equal'],['contrast',undefined,'betaHat','fill']]) {
+      const floorCanvas=makeCanvas(),floorMap=new DrfMap(floorCanvas),near=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${name}: ${a} != ${b}`);
+      floorMap.set({grid:{nx:2,ny:2,domain:[0,60,0,30]},frame,mode,heatField,aspectMode,layers:{}});floorMap.paint(floorCanvas,2);
+      const initial={...floorMap.camera},anchor=[floorMap.box.x+floorMap.box.w*.3,floorMap.box.y+floorMap.box.h*.6];
+      floorMap.zoom(1/1.3);assert.deepEqual(floorMap.camera,initial,`${name}: minus button cannot shrink the default view`);
+      assert.equal(floorMap.auto,true,`${name}: a blocked zoom must preserve automatic fit`);
+      let prevented=false;
+      floorCanvas.listeners.wheel({deltaY:1e6,offsetX:anchor[0],offsetY:anchor[1],preventDefault(){prevented=true;}});
+      assert.equal(prevented,true);assert.deepEqual(floorMap.camera,initial,`${name}: wheel cannot shrink the default view`);
+      const world=mapToWorld(anchor,floorMap.camera,floorMap.box);
+      floorCanvas.listeners.wheel({deltaY:-Math.log(2)*1000,offsetX:anchor[0],offsetY:anchor[1],preventDefault(){}});
+      mapToWorld(anchor,floorMap.camera,floorMap.box).forEach((value,k)=>near(value,world[k]));
+      near(floorMap.camera.scaleX,initial.scaleX*2);near(floorMap.camera.scaleY,initial.scaleY*2);
+      floorCanvas.listeners.pointerdown({button:0,pointerId:1,clientX:anchor[0],clientY:anchor[1]});
+      floorCanvas.listeners.pointermove({clientX:anchor[0]+25,clientY:anchor[1]+17,offsetX:anchor[0]+25,offsetY:anchor[1]+17});
+      floorCanvas.listeners.pointerup();
+      assert.equal(floorMap.auto,false);assert.ok(floorMap.camera.cx!==initial.cx || floorMap.camera.cy!==initial.cy,`${name}: panning remains available`);
+      const pannedWorld=mapToWorld(anchor,floorMap.camera,floorMap.box);
+      floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);
+      near(floorMap.camera.scaleX,initial.scaleX);near(floorMap.camera.scaleY,initial.scaleY);
+      mapToWorld(anchor,floorMap.camera,floorMap.box).forEach((value,k)=>near(value,pannedWorld[k]));
+      const fittedSpan=JSON.parse(floorCanvas.dataset.view);
+      near(fittedSpan.xmax-fittedSpan.xmin,floorMap.box.w/initial.scaleX);near(fittedSpan.ymax-fittedSpan.ymin,floorMap.box.h/initial.scaleY);
+      const panCenter=[floorMap.camera.cx,floorMap.camera.cy],axisRatio=floorMap.camera.scaleX/floorMap.camera.scaleY;
+      floorCanvas.clientWidth=1400;floorCanvas.clientHeight=700;floorMap.paint(floorCanvas,2);
+      const expected=()=> {
+        let x=floorMap.box.w/(60*1.04),y=floorMap.box.h/(30*1.04);
+        if (mode==='geometry' || aspectMode==='equal') x=y=Math.min(x,y);
+        return [x,y];
+      };
+      let minimum=expected();
+      assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9,`${name}: resize immediately enforces the new default floor`);
+      near(floorMap.camera.cx,panCenter[0]);near(floorMap.camera.cy,panCenter[1]);near(floorMap.camera.scaleX/floorMap.camera.scaleY,axisRatio);
+      floorMap.set({...floorMap.state,layers:{showTruth:true},walls:[[[10,6],[50,24]]]});floorMap.paint(floorCanvas,1);
+      let wallX=floorMap.box.w/(40*1.04),wallY=floorMap.box.h/(18*1.04);
+      if (mode==='geometry' || aspectMode==='equal') wallX=wallY=Math.min(wallX,wallY);
+      assert.ok(floorMap.camera.scaleX>=wallX-1e-9 && floorMap.camera.scaleY>=wallY-1e-9,`${name}: a changed visible range updates the default floor`);
+      near(floorMap.camera.cx,panCenter[0]);near(floorMap.camera.cy,panCenter[1]);
+      floorMap.set({...floorMap.state,layers:{showTruth:false}});floorMap.paint(floorCanvas,1);
+      floorCanvas.clientWidth=360;floorCanvas.clientHeight=220;floorMap.paint(floorCanvas,1);
+      floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);minimum=expected();
+      assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9,`${name}: a smaller viewport allows only its own default floor`);
+      assert.ok(Math.abs(floorMap.camera.scaleX-minimum[0])<1e-9 || Math.abs(floorMap.camera.scaleY-minimum[1])<1e-9,`${name}: zoom-out must reach the floor instead of retaining a stale large-view minimum`);
+      floorMap.fit();floorMap.paint(floorCanvas,1);near(floorMap.camera.scaleX,minimum[0]);near(floorMap.camera.scaleY,minimum[1]);
+      near(floorMap.camera.cx,30);near(floorMap.camera.cy,15);assert.equal(floorMap.state.frame,frame);
+      floorMap.zoom(1e9,anchor);assert.ok(floorMap.camera.scaleX<=100000 && floorMap.camera.scaleY<=100000,`${name}: retain the existing maximum scale`);
+      floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);
+      assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9);
+    }
     canvas.clientHeight=540;
     const mobile=makeCanvas();mobile.clientWidth=250;mobile.clientHeight=385;
     const surf=new SurfaceMap(mobile,()=>{});
