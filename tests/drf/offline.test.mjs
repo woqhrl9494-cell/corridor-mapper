@@ -81,6 +81,6 @@ test('offline bundle is current and its classic Blob workers preserve the field'
   assert.equal(JSON.stringify(offline.scenario.wire), JSON.stringify(module.wire));
   assert.equal(JSON.stringify(offline.scenario.wallModel), JSON.stringify(module.wallModel));
   assert.equal(JSON.stringify(offline.scenario.wallGeneration), JSON.stringify(module.wallGeneration));
-  assert.equal(JSON.stringify(offline.scenario.domain), JSON.stringify([0, 60, -20, 50]));
+  assert.equal(JSON.stringify(offline.scenario.domain), JSON.stringify([0, 80, -20, 50]));
   events.get('beforeunload')(); assert.deepEqual(revoked.sort(), [...blobs.keys()].sort());
 });

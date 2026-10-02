@@ -18,7 +18,7 @@ for (let seed = 0; seed < 2000; seed++) {
   rejected += generation.attempt;
   if (generation.attempt) { seedsWithRejection++; rejectedSeeds.push({ seed, attempt: generation.attempt }); }
   for (const reject of generation.rejections) for (const reason of reject.reasons) reasons[reason] = (reasons[reason] ?? 0) + 1;
-  for (let x = .25; x < 60; x += .5) for (let wall = 0; wall < 2; wall++) {
+  for (let x = .25; x < scene.wallModel.L; x += .5) for (let wall = 0; wall < 2; wall++) {
     const value = evaluateWall(scene.wallModel, x, wall), side = wall ? 1 : -1,
       curvature = -side * value.second / (1 + value.first ** 2) ** 1.5;
     sum += value.second; sum2 += value.second ** 2;
@@ -26,7 +26,7 @@ for (let seed = 0; seed < 2000; seed++) {
   }
 }
 const geometryMs = performance.now() - start, runs = [];
-for (const [vehicles, snapshots] of [[3,60],[3,80],[20,80]]) {
+for (const [vehicles, snapshots] of [[3,60],[3,120],[20,120]]) {
   const started = performance.now(), result = await runExperiment({ vehicles, snapshots });
   assert.ok(result.final.Dbar.every(Number.isFinite) && result.final.betaHat.every(Number.isFinite));
   const { final, ...record } = result;
@@ -38,7 +38,7 @@ for (const [vehicles, snapshots] of [[3,60],[3,80],[20,80]]) {
 const after = sourceHashes(); assert.deepEqual(after, before);
 const report = { schema: 'echomap-layered-validation/1', date: new Date().toISOString(), command: 'node tests/drf/run-layered.mjs',
   runtime: { node: process.version, platform: process.platform, arch: process.arch }, input,
-  domain: [0,60,-20,50], clearanceAxis:'y', validationFleet:{vehicles:20,snapshots:80},
+  domain: [0,80,-20,50], clearanceAxis:'y', validationFleet:{vehicles:20,snapshots:120},
   acceptedWallSample: { seeds:2000, seedRange:[0,1999], totalAttempts:2000+rejected, rejectedAttempts:rejected,
     attemptRejectionRate:rejected/(2000+rejected), seedsWithRejection, reasons, rejectedSeeds,
     n, secondDerivativeStd:Math.sqrt(sum2/n-(sum/n)**2), curvatureStd:Math.sqrt(curvature2/n-(curvatureSum/n)**2), geometryMs },
@@ -48,5 +48,5 @@ const report = { schema: 'echomap-layered-validation/1', date: new Date().toISOS
     'Vertical clearance does not guarantee Euclidean nearest-wall clearance or real vehicle width.',
     'Outer-face outgoing reflections retain the existing vehicle-facing curvature diagnostic.',
     'Browser engine and actual file:// UI checks are separate from this Node run.'] };
-fs.writeFileSync(new URL('./layered-validation.json', import.meta.url), JSON.stringify(report, (_k,v) => typeof v==='number'&&!Number.isFinite(v)?String(v):v,2)+'\n');
+fs.writeFileSync(new URL('./layered80-validation.json', import.meta.url), JSON.stringify(report, (_k,v) => typeof v==='number'&&!Number.isFinite(v)?String(v):v,2)+'\n');
 console.log(JSON.stringify(report.acceptedWallSample));

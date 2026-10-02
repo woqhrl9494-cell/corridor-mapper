@@ -1,8 +1,8 @@
-import { DEFAULT_INPUT, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261002-layered28';
+import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261002-layered29';
 import { createGrid } from './field.mjs';
-import { percentile, snapshotCsv } from './evaluate.mjs';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-layered28';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-layered28';
+import { percentile, snapshotCsv } from './evaluate.mjs?v=20261002-layered29';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-layered29';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-layered29';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
@@ -24,7 +24,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-layered28`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-layered29`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -50,7 +50,7 @@ function controls() {
   $('sweepButton').disabled = active || sweeping; $('sweepCancel').disabled = !sweeping;
   $('timeSlider').max = state.frames.length; $('timeSlider').value = state.selected; $('timeSlider').disabled = !state.frames.length;
   $('replayButton').disabled = !state.frames.length;
-  $('runProgress').max = state.scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value || 80); $('runProgress').value = state.frames.length;
+  $('runProgress').max = state.scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value || DEFAULT_INPUT.snapshots); $('runProgress').value = state.frames.length;
   $('firstSnapshot').disabled = false;
   $('exportJson').disabled = (!state.valid || !state.frames.length) && !state.sweepRuns.length;
   for (const id of ['exportCsv', 'exportPng']) $(id).disabled = !state.valid || !state.frames.length;
@@ -148,13 +148,13 @@ const inspect = point => {
   }, 100);
 };
 const map = new DrfMap($('mapCanvas'),inspect),densityMap=new DrfMap($('densityCanvas'),inspect),contrastMap=new DrfMap($('contrastCanvas'),inspect);
-let previewKey='',preview=[];
+let previewKey='',preview=[],previewBounds;
 function previewWalls() {
   // Static truth preview uses exactly the accepted geometry used by the worker.
   try {
     const input = normalizeInput(Object.fromEntries(new FormData(form))),
-      key = JSON.stringify([input.scene, input.seed, input.sigmaM, input.deltaM, input.sigmaDGeometry, input.deltaD]);
-    if (key !== previewKey) { preview = createSceneGeometry(input).walls; previewKey = key; }
+      key = JSON.stringify([input.scene, input.wallSide, input.seed, input.sigmaM, input.deltaM, input.sigmaDGeometry, input.deltaD]);
+    if (key !== previewKey) { const geometry=createSceneGeometry(input);preview=geometry.walls;previewBounds=geometry.cameraBounds;previewKey=key; }
     return preview;
   } catch (error) { notice(error.message); return []; }
 }
@@ -163,14 +163,17 @@ function renderSelected() {
   $('inspector').textContent = '지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동';
   const frame = state.frames[state.selected - 1], evaluation = state.evaluations[state.selected - 1], scenario = state.scenario;
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
-  const display={ grid: state.grid, domain: state.scenario?.domain ?? [0,60,-20,50], frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),
+  const display={ grid: state.grid, domain: state.scenario?.domain ?? LAYERED_DOMAIN, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),cameraBounds:scenario?.cameraBounds ?? previewBounds,
     proxy: evaluation?.proxy, observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
     history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
-  map.set({...display,mode:'geometry'});
+  map.set({...display,mode:'geometry',xRange:[-10,90]});
   const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
   densityMap.set({...display,layers:fieldLayers,heatField:'Dbar'});
   contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat'});
   $('snapshotLabel').textContent = `${frame?.t ?? 0} / ${scenario?.input.snapshots ?? form.elements.namedItem('snapshots').value}`;
+  const singleWall=(scenario?.input.wallSide ?? form.elements.namedItem('wallSide').value)!=='both';
+  $('evaluationNote').textContent=singleWall ? '한쪽 벽 · 후보점의 최근접 벽 거리' : '기존 평가기 · y=15 m 분할 기준';
+  $('evaluationNote').title=singleWall ? '모든 후보점의 실제 벽 최근접 거리를 평가합니다. 반대쪽 후보점도 포함하고 관측 지점의 누락은 실패로 셉니다. 양쪽 벽의 열별 오차와 정의가 다릅니다. 후보 추출은 기존 y=15 m 분할을 유지합니다.' : '기존 평가 후보점 추출은 y=15 m를 기준으로 위·아래를 구분합니다. 크게 굽은 벽의 정확도를 보장하지 않습니다. 중앙/P95는 기존 x=10–50 m 관측 열에서 평가합니다.';
   $('qValue').textContent = frame?.Q ?? 0; $('acceptedValue').textContent = frame?.admitted ?? 0; $('rejectedValue').textContent = frame?.rejected ?? 0;
   const metricIds = { medianValue: 'medianError', p95Value: 'p95', f1Value: 'f1', msdValue: 'caMsd', hd95Value: 'caHd95' };
   for (const [id, key] of Object.entries(metricIds)) $(id).textContent = fmt(evaluation?.[key]);
@@ -179,7 +182,7 @@ function renderSelected() {
   $('pathValue').textContent = diag ? `정반사 ${diag.specularCount} / diffuse ${diag.diffuseCount}` : '—';
   const times = state.frames.slice(0, state.selected).map(f => f.ms);
   $('timingValue').textContent = times.length ? `p50 ${fmt(percentile(times, .5), 1)} ms · p95 ${fmt(percentile(times, .95), 1)} ms` : '—';
-  drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected),$('historyMetric').value);
+  drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected),$('historyMetric').value,scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value));
   if (diag) {
     $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · 거리 중복 ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: 평균 ${fmt(diag.theoremMean)}, 중앙 ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, 음수=${diag.theoremNegative} · field offset ${fmt(evaluation.offset)} m / fold 예측 ${fmt(diag.foldPrediction)} m`;
     if (!$('diagnosticPanel').hidden) {
@@ -188,7 +191,7 @@ function renderSelected() {
   }
   if (!diag) {
     $('diagnosticSummary').textContent = '실행 결과가 없습니다.';
-    drawHistogram($('diagnosticChart'), []); drawProfile($('profileChart'), []); drawCounts($('countChart'), [], []);
+    drawHistogram($('diagnosticChart'), []); drawProfile($('profileChart'), [],display.domain); drawCounts($('countChart'), [], []);
   }
   const selectedConfig = $('configSelect').value;
   $('configSelect').replaceChildren(...(scenario?.truth[state.selected - 1]?.configs ?? []).map((c, k) => {
@@ -202,7 +205,7 @@ async function updateProfile() {
   const selected = state.selected, generation = state.generation, configIndex = Number($('configSelect').value || 0);
   try {
     const { profile } = await evalWorker.request({ type: 'profile', t: state.frames[selected - 1].t, configIndex });
-    if (generation === state.generation && selected === state.selected && configIndex === Number($('configSelect').value || 0)) drawProfile($('profileChart'), profile.cells);
+    if (generation === state.generation && selected === state.selected && configIndex === Number($('configSelect').value || 0)) drawProfile($('profileChart'), profile.cells,state.scenario.domain);
   } catch (error) { if (error.message !== 'Cancelled') $('diagnosticSummary').textContent = error.message; }
 }
 function replayTick(time) {
@@ -309,10 +312,17 @@ chartResize.observe($('analysis-panel') ?? $('sweepPanel'));
 chartResize.observe($('metricChart'));
 window.addEventListener('resize', () => { renderSelected(); renderSweep(); });
 window.addEventListener('beforeunload', () => { for (const worker of state.workers) worker.stop(); state.sweep?.cancel(); });
+let initialInput = DEFAULT_INPUT;
 try {
   const raw = location.hash.startsWith('#v1=') ? JSON.parse(decodeURIComponent(location.hash.slice(4))) : DEFAULT_INPUT;
-  fillSettings(normalizeInput({ ...raw, scene: 'layered' }));
-} catch (error) { fillSettings(DEFAULT_INPUT); notice(`URL 설정을 불러오지 못했습니다: ${error.message}`); }
+  initialInput = normalizeInput({ ...raw, scene: 'layered' });
+} catch (error) { notice(`URL 설정을 불러오지 못했습니다: ${error.message}`); }
+// Refresh draws once; edits and simulation runs retain the displayed seed for reproducibility.
+let seed = crypto.getRandomValues(new Uint32Array(1))[0];
+if (seed === initialInput.seed) seed = (seed + 1) >>> 0;
+initialInput = { ...initialInput, seed, snapshots: initialInput.snapshots === 80 ? DEFAULT_INPUT.snapshots : initialInput.snapshots };
+fillSettings(initialInput);
+history.replaceState(null, '', `#v1=${encodeURIComponent(JSON.stringify(initialInput))}`);
 (globalThis.__drfOffline ? Promise.resolve(globalThis.__drfOffline.metadata) : Promise.all([fetch(new URL('./provenance.json', import.meta.url)).then(r => r.json()), fetch(new URL('./reference/octave/fixtures.json', import.meta.url)).then(r => r.json())]))
   .then(([p, f]) => { provenance = p; reference = f.statistics; $('provenanceCommit').textContent = `기준 commit ${p.baseCommit.slice(0, 8)}`;
     $('provenanceCore').textContent = `core ${p.coreHash.slice(0, 12)}`; renderSweep(); })

@@ -1,4 +1,4 @@
-import { createEvaluator } from './evaluate.mjs';
+import { createEvaluator } from './evaluate.mjs?v=20261002-layered29';
 import { diffuseProfile } from './diffuse.mjs';
 let evaluator, scenario;
 self.onmessage = ({ data }) => {

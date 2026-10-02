@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput } from '../../drf/scenario.mjs';
 
 const source=readFileSync(new URL('../../drf/app.mjs',import.meta.url),'utf8');
 const section=(start,end)=>{
@@ -9,6 +10,28 @@ const section=(start,end)=>{
   assert.ok(a>=0 && b>a,`Actual app source section: ${start}`);
   return source.slice(a,b);
 };
+
+test('actual page bootstrap refreshes the seed once, keeps other settings and updates the URL',()=>{
+  const initial={...DEFAULT_INPUT,scene:'reference',seed:0xffffffff,vehicles:7,snapshots:80};
+  for (const hash of ['',`#v1=${encodeURIComponent(JSON.stringify(initial))}`,'#v1=invalid']) {
+    const location={hash},filled=[],notices=[];let calls=0;
+    const context=vm.createContext({location,DEFAULT_INPUT,normalizeInput,
+      crypto:{getRandomValues:array=>{calls++;array[0]=hash.includes('invalid') || !hash ? 1 : 0xffffffff;return array;}},
+      fillSettings:input=>filled.push({...input}),notice:text=>notices.push(text),
+      history:{replaceState:(_,__,url)=>{location.hash=url;}}});
+    vm.runInContext(section('let initialInput = DEFAULT_INPUT;','(globalThis.__drfOffline ?'),context);
+    const value=filled.at(-1),restored=JSON.parse(decodeURIComponent(location.hash.slice(4)));
+    assert.deepEqual(restored,value,'The displayed seed and shareable settings must match');
+    assert.equal(calls,1,'Only page bootstrap generates a new seed');
+    assert.equal(value.seed,hash && !hash.includes('invalid') ? 0 : 2,'Even a uint32 collision must produce a different seed');
+    assert.equal(value.scene,'layered');assert.equal(value.snapshots,120,'Migrate the old 80-snapshot default');
+    assert.equal(value.vehicles,hash && !hash.includes('invalid') ? 7 : DEFAULT_INPUT.vehicles);
+    assert.equal(notices.length,hash.includes('invalid') ? 1 : 0);
+    const next=vm.createContext({...context,location,crypto:{getRandomValues:array=>{array[0]=value.seed;return array;}}});
+    vm.runInContext(section('let initialInput = DEFAULT_INPUT;','(globalThis.__drfOffline ?'),next);
+    assert.equal(filled.at(-1).seed,(value.seed+1)>>>0,'Refreshing the resulting URL must change the seed again');
+  }
+});
 
 test('actual full run and single steps preserve the requested length and use the declared experiment domain',async()=>{
   for (const [single,requested] of [[false,60],[true,60],[false,80]]) {
@@ -18,7 +41,7 @@ test('actual full run and single steps preserve the requested length and use the
       settings:()=>({...input}),fillSettings:value=>filled.push({...value}),
       cancel:()=>{state.generation++;},controls(){},notice(){},createGrid:(nx,ny,domain)=>({nx,ny,domain}),
       makeWorker:name=>({stop(){},async request(message){
-        if (name==='scenario') {generated.push({...message.input});return {scenario:{input:message.input,domain:[0,60,-20,50]}};}
+        if (name==='scenario') {generated.push({...message.input});return {scenario:{input:message.input,domain:[0,80,-20,50]}};}
         return {};
       }}),advance:value=>advanced.push(value??false),fail:error=>{throw error;},
     });
@@ -30,7 +53,7 @@ test('actual full run and single steps preserve the requested length and use the
     assert.equal(JSON.parse(decodeURIComponent(location.hash.slice(3))).snapshots,expected);
     assert.equal(generated[0].vehicles,10,'Preserve the restored vehicle count');
     assert.deepEqual(filled,[],'Respect the experiment length shown in the settings');
-    assert.deepEqual(state.grid.domain,[0,60,-20,50],'Pass the predeclared domain without consulting truth wall bounds');
+    assert.deepEqual(state.grid.domain,[0,80,-20,50],'Pass the predeclared domain without consulting truth wall bounds');
     assert.deepEqual(advanced,[single]);
     assert.equal(state.mode,single ? 'paused' : 'running');
   }
@@ -54,7 +77,7 @@ test('actual preview geometry stays cached when the truth overlay is hidden',()=
   let generated=0;
   const context=vm.createContext({$:()=>truth,form:{},
     FormData:class { *[Symbol.iterator]() { yield* Object.entries(input); } },
-    previewKey:'',preview:[],normalizeInput:value=>value,notice:message=>assert.fail(message),
+    previewKey:'',preview:[],previewBounds:undefined,normalizeInput:value=>value,notice:message=>assert.fail(message),
     createSceneGeometry:()=>{generated++;return {walls,domain};}});
   vm.runInContext(section('function previewWalls()','function renderSelected()'),context);
   const initial=context.previewWalls();
@@ -72,15 +95,15 @@ test('actual view reset preserves simulation, selection and replay; experiment r
       removeAttribute(){},replaceChildren(...options){this.options=options;}});
     return nodes.get(id);
   };
-  const snapshots={value:'3'},elements=[snapshots];elements.namedItem=name=>name==='snapshots' ? snapshots : null;
+  const snapshots={value:'3'},elements=[snapshots];elements.namedItem=name=>name==='snapshots' ? snapshots : name==='wallSide' ? {value:'both'} : null;
   const form={elements};$('sweepSettings').elements=[];$('playbackSpeed').value='1';
   const state={mode:'done',frames:[1,2,3].map(t=>({t,Q:t,admitted:t,rejected:0,ms:1})),evaluations:[{},{},{}],
     selected:3,next:3,busy:false,replay:false,replayAt:0,generation:0,valid:true,grid:{},
     scenario:{input:{snapshots:3},truth:[{configs:[]},{configs:[]},{configs:[]}],wire:[],walls:[]},
     workers:[{stop(){stoppedWorkers++;}}],sweep:{cancel(){cancelledSweeps++;}},sweepRuns:[{}]};
   const context=vm.createContext({state,$,form,hoverGeneration:0,hoverTimer:0,replayFrame:0,
-    fieldWorker:{},evalWorker:{},hoverWorker:{},DEFAULT_INPUT:{snapshots:60},location:{hash:'#old'},
-    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){fitCalls++;}},densityMap:{set(){},fit(){fitCalls++;}},contrastMap:{set(){},fit(){fitCalls++;}},previewWalls:()=>[],
+    fieldWorker:{},evalWorker:{},hoverWorker:{},DEFAULT_INPUT:{snapshots:60},LAYERED_DOMAIN,location:{hash:'#old'},
+    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){fitCalls++;}},densityMap:{set(){},fit(){fitCalls++;}},contrastMap:{set(){},fit(){fitCalls++;}},previewWalls:()=>[],previewBounds:undefined,
     fmt:v=>Number.isFinite(v) ? String(v) : '—',percentile:values=>values[0]??null,
     requestAnimationFrame:fn=>{const id=++nextFrame;pending.set(id,fn);return id;},cancelAnimationFrame:id=>pending.delete(id),clearTimeout(){},
     drawMetricHistory:(canvas,data)=>charts.set(canvas.id,data),drawHistogram:(canvas,data)=>charts.set(canvas.id,data),

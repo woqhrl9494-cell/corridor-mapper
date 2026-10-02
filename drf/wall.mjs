@@ -66,7 +66,8 @@ export function createWalls({ scene = 'reference', seed = 1 } = {}) {
  * is (c[j-1]+4*c[j]+c[j+1])/6. Storage/work: O(L/deltaM + L/deltaD).
  * This function draws one attempt; the caller owns rejection thresholds. */
 export function createTwoLayerWallModel({ seed = 1, attempt = 0, L = 60, W = 12,
-  baseline = 15, sigmaM = 6, deltaM = 20, sigmaDGeometry = 0.33, deltaD = 4 } = {}) {
+  baseline = 15, sigmaM = 6, deltaM = 20, sigmaDGeometry = 0.33, deltaD = 4, wallSide = 'both' } = {}) {
+  if (!['both', 'upper', 'lower'].includes(wallSide)) throw new RangeError('Wall side must be both, upper or lower');
   if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('Seed must be a uint32');
   if (!Number.isInteger(attempt) || attempt < 0) throw new RangeError('Wall attempt must be a nonnegative integer');
   if (![L, W, deltaM, deltaD].every(value => Number.isFinite(value) && value > 0)
@@ -80,9 +81,10 @@ export function createTwoLayerWallModel({ seed = 1, attempt = 0, L = 60, W = 12,
     const coefficients = Array.from({ length: Math.ceil(L / spacing) + 4 }, () => Math.SQRT2 * sigma * rng.normal());
     return { spacing, origin, start: -2, coefficients };
   };
-  return { kind: 'two-layer-uniform-cubic', seed, attempt, L, W, baseline,
+  return { kind: 'two-layer-uniform-cubic', seed, attempt, L, W, baseline, wallSide,
     mu: component(deltaM, sigmaM, 'mu'),
-    d: [component(deltaD, sigmaDGeometry, 'd', 0), component(deltaD, sigmaDGeometry, 'd', 1)] };
+    d: [0, 1].map(wall => wallSide === 'both' || wall === (wallSide === 'lower' ? 0 : 1)
+      ? component(deltaD, sigmaDGeometry, 'd', wall) : null) };
 }
 
 /** Scalar value and x derivatives (m, dimensionless, 1/m, 1/m^2), O(1).
@@ -115,6 +117,7 @@ export function evaluateCentre(model, x) {
 }
 export function evaluateWall(model, x, wall) {
   if (wall !== 0 && wall !== 1) throw new RangeError('Wall ID must be 0 (lower) or 1 (upper)');
+  if (!model.d[wall]) throw new RangeError('Requested wall is absent from this model');
   const mu = evaluateCentre(model, x), d = evaluateUniformCubic(model.d[wall], x), side = wall === 1 ? 1 : -1;
   return { value: mu.value + side * (model.W / 2 + d.value),
     first: mu.first + side * d.first, second: mu.second + side * d.second,
@@ -142,6 +145,7 @@ function scalarPower(value, h) {
 export function twoLayerWallSpans(model) {
   const spans = [];
   for (let wall = 0; wall < 2; wall++) {
+    if (!model.d[wall]) continue;
     const knots = unionKnots(model.L, [model.mu, model.d[wall]]);
     for (let k = 0; k < knots.length - 1; k++) {
       const x = knots[k], h = knots[k + 1] - x, C = scalarPower(evaluateWall(model, x, wall), h);
@@ -160,8 +164,15 @@ export function twoLayerWallBounds(model) {
     .map(u => ((C[3] * u + C[2]) * u + C[1]) * u + C[0]);
   const spans = twoLayerWallSpans(model), wallRanges = [0, 1].map(wall => {
     const values = spans.filter(span => span.wall === wall).flatMap(span => extrema(span.C.map(row => row[1])));
-    return [Math.min(...values), Math.max(...values)];
+    return values.length ? [Math.min(...values), Math.max(...values)] : null;
   });
+  if (wallRanges.some(range => range === null)) {
+    const range = wallRanges.find(range => range !== null), knots = unionKnots(model.L, [model.mu]), centres = [];
+    for (let k = 0; k < knots.length - 1; k++)
+      centres.push(...extrema(scalarPower(evaluateCentre(model, knots[k]), knots[k + 1] - knots[k])));
+    return { xmin: 0, xmax: model.L, ymin: range[0], ymax: range[1], wallRanges, minWidth: null, maxWidth: null,
+      centreRange: [Math.min(...centres), Math.max(...centres)] };
+  }
   const knots = unionKnots(model.L, model.d), widths = [];
   for (let k = 0; k < knots.length - 1; k++) {
     const x = knots[k], h = knots[k + 1] - x,
@@ -220,7 +231,7 @@ export function wallCells(spans, step, partition = 'arc') {
   return cells;
 }
 export function sampleWalls(spans, step = 0.1) {
-  const walls = Array.from({ length: Math.max(...spans.map(s => s.wall)) + 1 }, () => []);
+  const walls = Array.from({ length: Math.max(1, ...spans.map(s => s.wall)) + 1 }, () => []);
   for (const cell of wallCells(spans, step)) walls[cell.wall].push(cell.s);
   for (const wall of walls.keys()) {
     const list = spans.filter(s => s.wall === wall);

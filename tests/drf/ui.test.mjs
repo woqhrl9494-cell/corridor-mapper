@@ -11,6 +11,12 @@ test('DRF DOM contract and readable stylesheet', () => {
   const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas densityZoomOut densityZoomIn densityResetView contrastCanvas contrastZoomOut contrastZoomIn contrastResetView historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue medianValue p95Value offwallValue f1Value msdValue hd95Value timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
   for (const id of ids) assert.equal([...html.matchAll(new RegExp(`id="${id}"`,'g'))].length,1,id);
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
+  assert.ok(!html.includes('장면'));
+  assert.match(html,/벽 모델 · 2층 B-spline/);
+  assert.match(html,/input name="scene" type="hidden" value="layered"/);
+  assert.doesNotMatch(html,/<select[^>]*name="scene"/);
+  assert.match(html,/<select name="wallSide"><option value="both">양쪽<\/option><option value="upper">위쪽만<\/option><option value="lower">아래쪽만<\/option>/);
+  assert.match(html,/name="snapshots"[^>]*max="120"[^>]*value="120"/);
   for (const path of ['../../drf/style.css','../../surf/style.css']) {
     const css=readFileSync(new URL(path,import.meta.url),'utf8');
     for (const match of css.matchAll(/font-size:\s*(\d+)px/g)) {
@@ -190,6 +196,23 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.deepEqual([...frame.Dbar],[0,1,2,3]);
     assert.deepEqual([...frame.betaHat],[0,...new Float32Array([.2,.5]),1],'display and export must not mutate either field');
     canvas.clientWidth=700;
+    const fixedCanvas=makeCanvas(),fixedMap=new DrfMap(fixedCanvas),fixedWalls=[[[0,-20],[80,0]],[[0,35],[80,50]]];
+    fixedMap.set({mode:'geometry',xRange:[-10,90],domain:[0,80,-20,50],walls:fixedWalls,frame,layers:{showTruth:true}});
+    const assertFixed=()=>{
+      fixedMap.paint(fixedCanvas,1);const view=JSON.parse(fixedCanvas.dataset.view);
+      assert.ok(Math.abs(view.xmin+10)<1e-9 && Math.abs(view.xmax-90)<1e-9,'RAW default x range is exactly -10..90 m');
+      assert.equal(view.pixelsPerMetreX,view.pixelsPerMetreY,'RAW retains equal metres on both axes');
+      assert.ok(view.ymin<=-20 && view.ymax>=50,'Tall walls must fit rather than be clipped');
+    };
+    assertFixed();const fixedCamera={...fixedMap.camera};
+    fixedMap.set({...fixedMap.state,wire:{configs:[{pHat_i:[104,15],pHat_j:[150,16]}]},layers:{showTruth:false}});assertFixed();
+    assert.deepEqual(fixedMap.camera,fixedCamera,'Vehicles exiting and hiding truth must leave the camera fixed');
+    fixedMap.zoom(1.3);fixedMap.fit();assertFixed();
+    fixedMap.fit(true);assertFixed();
+    fixedMap.camera.cx+=10;fixedMap.auto=false;fixedCanvas.listeners.wheel({preventDefault(){},deltaY:1,offsetX:100,offsetY:80});assertFixed();
+    fixedCanvas.clientWidth=1700;fixedCanvas.clientHeight=350;fixedMap.fit();assertFixed();
+    labels.length=0;drawProfile(canvas,[],[0,80]);assert.ok(labels.filter(text=>text==='80').length>=3,'All three profiles extend to 80 m');
+    labels.length=0;drawMetricHistory(canvas,[],'p95',120);assert.ok(labels.includes('120'),'The default history includes 120 snapshots');
     canvas.clientHeight=540;
     for (const draw of [()=>drawSweep(canvas,[{roughness:2,sigmaD:.1,medianError:{mean:.13,sd:.02}}],[{roughness:2,sigmaD:.1,medianError:.134}]),()=>drawHistogram(canvas,[-.1,.1,.4,1,2]),()=>drawCounts(canvas,[10,20],[11,19])]) {
       rectangles.length=0;gridSegments.length=0;draw();

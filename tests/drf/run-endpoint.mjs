@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { endianness } from 'node:os';
-import { DEFAULT_INPUT, generateScenario, truePoses } from '../../drf/scenario.mjs';
+import { generateScenario, truePoses } from '../../drf/scenario.mjs';
 import { evaluate as wallPoint } from '../../drf/wall.mjs';
 import { createGrid, createField } from '../../drf/field.mjs';
 import { createEvaluator, outerPeak, percentile } from '../../drf/evaluate.mjs';
@@ -19,7 +19,6 @@ const sourceHashes = async () => Object.fromEntries(await Promise.all(sourcePath
 const fieldHash = frame => createHash('sha256').update(new Uint8Array(frame.Dbar.buffer, frame.Dbar.byteOffset, frame.Dbar.byteLength))
   .update(new Uint8Array(frame.betaHat.buffer, frame.betaHat.byteOffset, frame.betaHat.byteLength)).digest('hex');
 const frozenHash = '991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926';
-assert.equal(DEFAULT_INPUT.snapshots, 80, 'Run after the 80-snapshot extension has been applied');
 const beforeSources = await sourceHashes(), runs = [];
 let prefixEqual = false;
 for (const vehicles of [2, 3]) for (const seed of [1, 2, 3, 4, 5]) {

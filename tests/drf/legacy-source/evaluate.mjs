@@ -3,7 +3,7 @@
  * The outer-peak readout uses a corridor prior; it is not a final wall extractor.
  */
 import '../wall_metrics.js';
-import { evaluate as wallPoint } from './wall.mjs?v=20261002-layered29';
+import { evaluate as wallPoint } from './wall.mjs';
 const metrics = globalThis.WallMetrics;
 export const percentile = (values, p) => {
   if (!values.length) return null;
@@ -45,7 +45,6 @@ function graphY(wall, x, spans, wallIndex) {
 /** Evaluation wall samples are independent of the grid; no tolerance is tuned on truth. */
 export function createEvaluator(scenario, grid) {
   const gt = metrics.sampleWallsArcLength(scenario.walls.map(w => w.map(([x, y]) => ({ x, y }))), 0.2);
-  const singleWall = scenario.input.wallSide === 'upper' || scenario.input.wallSide === 'lower';
   const mask = metrics.createObservedMask(gt), specColumns = [new Uint8Array(grid.nx), new Uint8Array(grid.nx)];
   const ratios = [], counts = [], predictedCounts = [], folds = [], duplicateFlags = [];
   let cursor = 0, specularCount = 0, diffuseCount = 0, degenerate = 0;
@@ -87,27 +86,18 @@ export function createEvaluator(scenario, grid) {
       for (let ix = 0; ix < grid.nx; ix++) {
         if (grid.x[ix] < 10 || grid.x[ix] > 50) continue;
         for (let wall = 0; wall < 2; wall++) {
-          if (!scenario.walls[wall].length) continue;
           totalColumns++; if (!specColumns[wall][ix]) continue;
           observedColumns++;
           const referenceY = graphY(scenario.walls[wall], grid.x[ix], scenario.spans, wall);
-          const point = singleWall ? byColumn.find(column => column[ix])?.[ix] : byColumn[wall][ix];
+          const point = byColumn[wall][ix];
           // Missing observed predictions count as failures rather than silently improving errors.
-          if (point) { if (!singleWall) errors.push(Math.abs(point[1] - referenceY)); }
-          else { errors.push(Infinity); missing++; }
+          if (point) errors.push(Math.abs(point[1] - referenceY)); else { errors.push(Infinity); missing++; }
           let peak = -1, peakValue = 0;
           for (let iy = 0; iy < grid.ny; iy++) if (Math.abs(grid.y[iy] - referenceY) <= 1.5 && frame.Dbar[iy * grid.nx + ix] > peakValue) {
             peak = iy; peakValue = frame.Dbar[iy * grid.nx + ix];
           }
           if (peak >= 0) offsets.push((wall === 0 ? 1 : -1) * (grid.y[peak] - referenceY));
         }
-      }
-      // One-wall scoring uses point-to-boundary distances, without changing the
-      // data-only two-sided extractor. All peaks, including false opposite-wall
-      // predictions, remain in the score. This is not the legacy column error.
-      if (singleWall) {
-        for (const [x, y] of proxy) errors.push(metrics.nearestDistance({ x, y }, gt));
-        if (!errors.length && mask.some(Boolean)) errors.push(Infinity);
       }
       const boundary = metrics.computeBoundaryMetrics(proxy.map(([x, y]) => ({ x, y })), gt, mask, 0.4);
       const observed = gt.filter((_, k) => mask[k]).map(p => [p.x, p.y]);

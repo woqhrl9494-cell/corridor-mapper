@@ -1,6 +1,6 @@
-import { generateScenario, normalizeInput } from './scenario.mjs?v=20261002-layered28';
+import { generateScenario, normalizeInput } from './scenario.mjs?v=20261002-layered29';
 import { createGrid, createField } from './field.mjs';
-import { createEvaluator, percentile } from './evaluate.mjs';
+import { createEvaluator, percentile } from './evaluate.mjs?v=20261002-layered29';
 
 /** Same engine for Node validation and browser sweep; seeds, truth and evaluation
  * stay outside the estimator wire. Memory O(G+truth), frames are not retained. */
@@ -72,7 +72,7 @@ export function startSweep(jobs, onProgress, workerCount = Math.max(1, (navigato
   }
   const count = Math.min(jobs.length, workerCount);
   for (let k = 0; k < count; k++) {
-    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261002-layered28', import.meta.url), { type: 'module' }); workers.push(worker);
+    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261002-layered29', import.meta.url), { type: 'module' }); workers.push(worker);
     worker.onmessage = ({ data }) => {
       if (cancelled || settled) return;
       if (data.type === 'error') { settled = true; stop(); fail(new Error(data.message)); return; }

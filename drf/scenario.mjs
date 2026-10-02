@@ -4,14 +4,14 @@
  * Work per snapshot: O(C * (wall cells + emitted paths * visibility cost)).
  */
 import { createWalls, sampleWalls, createTwoLayerWallModel, evaluateCentre, evaluateWall,
-  twoLayerWallSpans, twoLayerWallBounds } from './wall.mjs?v=20261002-layered28';
+  twoLayerWallSpans, twoLayerWallBounds } from './wall.mjs?v=20261002-layered29';
 import { specularPoints } from './specular.mjs?v=20261002-model8';
 import { diffuseProfile, sampleDiffuse } from './diffuse.mjs?v=20261002-model8';
 import { createRng } from './rng.mjs';
 import { makeWire } from './wire.mjs';
 
 export const DEFAULT_INPUT = Object.freeze({
-  scene: 'layered', vehicles: 3, snapshots: 80, sigmaP: 0.1, sigmaD: 0.1,
+  scene: 'layered', wallSide: 'both', vehicles: 3, snapshots: 120, sigmaP: 0.1, sigmaD: 0.1,
   sigmaM: 6, deltaM: 20, sigmaDGeometry: 0.33, deltaD: 4,
   roughness: 2, lambda0: 10, cellStep: 0.02, resolution: 0, specular: true,
   grid: 150, band: 4, perimeter: 'exact', seed: 1,
@@ -26,8 +26,9 @@ export function normalizeInput(raw = {}) {
   p.band = p.band === 'full' ? 'full' : Number(p.band);
   p.specular = p.specular === true || p.specular === 'true';
   if (!['layered', 'reference', 'random'].includes(p.scene)) throw new Error('Unknown corridor scene');
-  if (!Number.isInteger(p.vehicles) || p.vehicles < 2 || p.vehicles > 20 || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 80)
-    throw new Error('Reference trajectories support 2–20 vehicles and 1–80 snapshots');
+  if (!['both', 'upper', 'lower'].includes(p.wallSide)) throw new Error('Wall side must be both, upper or lower');
+  if (!Number.isInteger(p.vehicles) || p.vehicles < 2 || p.vehicles > 20 || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 120)
+    throw new Error('Reference trajectories support 2–20 vehicles and 1–120 snapshots');
   if (![100, 150, 200].includes(p.grid) || ![3, 4, 5, 'full'].includes(p.band) || !['exact', 'ramanujan'].includes(p.perimeter))
     throw new Error('Unsupported numerical setting');
   if (p.sigmaP < 0 || p.sigmaD < 0 || p.sigmaP > 2 || p.sigmaD > 2 || p.sigmaP + p.sigmaD === 0)
@@ -40,42 +41,46 @@ export function normalizeInput(raw = {}) {
     throw new Error('기하 설정 범위: 중심선 진폭 0–12 m / 간격 4–60 m, 요철 진폭 0–3 m / 간격 1–20 m');
   return p;
 }
-export const LAYERED_DOMAIN = Object.freeze([0, 60, -20, 50]);
+export const LAYERED_DOMAIN = Object.freeze([0, 80, -20, 50]);
 /** Truth-only rejection against the fixed supported fleet, independent of V/T,
  * noise and estimator settings. Clearance is vertical at each pose's x, like W.
- * Work O(attempts*(spans + 20*80)); attempts bounded to prevent a stuck worker.
+ * Work O(attempts*(spans + 20*120)); attempts bounded to prevent a stuck worker.
  * Accepted statistics are conditional on this protocol, not iid Gaussian walls. */
 export function createSceneGeometry(input) {
+  const wallSide = input.wallSide ?? 'both', activeWalls = wallSide === 'both' ? [0, 1] : [wallSide === 'lower' ? 0 : 1];
   if (input.scene !== 'layered') {
-    const spans = createWalls(input);
+    const spans = createWalls(input).filter(span => activeWalls.includes(span.wall));
     return { spans, walls: sampleWalls(spans, 0.1), wallModel: null, domain: [0, 60, 0, 30], wallGeneration: null };
   }
   const rejections = [];
   for (let attempt = 0; attempt < 256; attempt++) {
-    const wallModel = createTwoLayerWallModel({ ...input, attempt }), bounds = twoLayerWallBounds(wallModel), reasons = [];
-    if (!(bounds.minWidth > 4)) reasons.push('passage-width');
+    const wallModel = createTwoLayerWallModel({ ...input, wallSide, L: LAYERED_DOMAIN[1], attempt }), bounds = twoLayerWallBounds(wallModel), reasons = [];
+    if (wallSide === 'both' && !(bounds.minWidth > 4)) reasons.push('passage-width');
     if (bounds.ymin < LAYERED_DOMAIN[2] || bounds.ymax > LAYERED_DOMAIN[3]) reasons.push('domain');
     let minVehicleClearance = Infinity;
-    for (let t = 1; t <= 80; t++) for (const [x, y] of truePoses(t, 20, wallModel)) {
+    for (let t = 1; t <= 120; t++) for (const [x, y] of truePoses(t, 20, wallModel)) {
       if (x > wallModel.L) continue; // Open exit: poses continue, finite walls do not.
-      minVehicleClearance = Math.min(minVehicleClearance,
-        y - evaluateWall(wallModel, x, 0).value, evaluateWall(wallModel, x, 1).value - y);
+      for (const wall of activeWalls) minVehicleClearance = Math.min(minVehicleClearance,
+        wall === 0 ? y - evaluateWall(wallModel, x, wall).value : evaluateWall(wallModel, x, wall).value - y);
     }
     if (minVehicleClearance < 1) reasons.push('vehicle-clearance');
     if (reasons.length) { rejections.push({ attempt, reasons }); continue; }
     const spans = twoLayerWallSpans(wallModel);
     return { spans, walls: sampleWalls(spans, 0.1), wallModel, domain: [...LAYERED_DOMAIN],
+      // Static display envelope: existing wall + all centreline offsets, never future measurements.
+      ...(wallSide === 'both' ? {} : { cameraBounds: [0, wallModel.L,
+        Math.min(bounds.ymin, bounds.centreRange[0] - 2), Math.max(bounds.ymax, bounds.centreRange[1] + 2)] }),
       wallGeneration: { attempt, attempts: attempt + 1, rejections, bounds, minVehicleClearance,
-        minWidthRequired: 4, vehicleClearanceRequired: 1, clearanceAxis: 'y',
-        validationFleet: { vehicles: 20, snapshots: 80, wallInterval: [0, 60] } } };
+        wallSide, activeWalls, minWidthRequired: wallSide === 'both' ? 4 : null, vehicleClearanceRequired: 1, clearanceAxis: 'y',
+        validationFleet: { vehicles: 20, snapshots: 120, wallInterval: [0, wallModel.L] } } };
   }
   throw new Error('256회 벽 생성이 모두 기각되었습니다. 기하 진폭을 줄이거나 seed를 변경하세요.');
 }
 export function truePoses(t, vehicles = 3, wallModel = null) {
   return Array.from({ length: vehicles }, (_, v) => {
     // Preserve V1–V3 and all shared RNG addresses. Fixed extra slots keep fleet prefixes equal.
-    // Point vehicles retain 0.75 m/snapshot independently of the requested duration.
-    // x0 in [1,14]: t=1..60 stays inside; by t=80 all exit the open wall end x=60.
+    // Point vehicles retain 0.75 m/snapshot independently of requested duration.
+    // x0 in [1,14]: by t=120 all exit the finite 80 m wall.
     // Only the centreline is tangent-continued beyond the finite open exit.
     const x0 = v < 3 ? 4 + 3 * v : 1 + 13 * (v - 3) / 16;
     const x = x0 + 0.75 * t;
@@ -86,7 +91,8 @@ export function truePoses(t, vehicles = 3, wallModel = null) {
 /** Independent streams preserve standard pose/specular noise across paired sweeps. */
 export function generateSnapshot(input, spans, t, wallModel = null) {
   if (input.scene === 'layered' && !wallModel) throw new Error('Layered snapshots require their accepted truth wall model');
-  const p = truePoses(t, input.vehicles, wallModel), sigma2 = input.sigmaP ** 2;
+  const p = truePoses(t, input.vehicles, wallModel), sigma2 = input.sigmaP ** 2,
+    activeWalls = [...new Set(spans.map(span => span.wall))];
   const poseNoise = p.map((_, v) => {
     // Stream addresses use the same 1-based vehicle IDs as the wire.
     const r = createRng(input.seed, 'pose', t, v + 1);
@@ -99,13 +105,14 @@ export function generateSnapshot(input, spans, t, wallModel = null) {
     const specRng = createRng(input.seed, 'specNoise', t, i + 1, j + 1);
     const diffRng = createRng(input.seed, 'diffNoise', t, i + 1, j + 1);
     const profile = diffuseProfile(spans, p[i], p[j], input.roughness * Math.PI / 180, input.lambda0, input.cellStep);
-    const diffuse = [], diffuseSampling = { beforeThinning: [], afterThinning: [] };
-    for (let wall = 0; wall < 2; wall++) {
+    // Keep logical lower/upper indices even if one physical wall is absent.
+    const diffuse = [], diffuseSampling = { beforeThinning: [0, 0], afterThinning: [0, 0] };
+    for (const wall of activeWalls) {
       const cells = profile.cells.filter(c => c.wall === wall);
       const wallProfile = { cells, lambdaTotal: profile.lambdaTotal };
       const diagnostics = {}, points = sampleDiffuse(spans, p[i], p[j], wallProfile, createRng(input.seed, 'diffuse', t, i + 1, j + 1, wall), diagnostics);
-      diffuseSampling.beforeThinning.push(diagnostics.generated);
-      diffuseSampling.afterThinning.push(points.length);
+      diffuseSampling.beforeThinning[wall] = diagnostics.generated;
+      diffuseSampling.afterThinning[wall] = points.length;
       diffuse.push(...points);
     }
     const tagged = [

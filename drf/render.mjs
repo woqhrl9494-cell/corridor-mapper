@@ -179,16 +179,24 @@ export class DrfMap {
     const domain=g?.domain ?? this.state.domain ?? (g ? [g.xmin,g.xmax,g.ymin,g.ymax] : [0,60,0,30]);
     // Static scene bounds keep all spatial views fixed as vehicles leave the visible map.
     // Wall candidates and measured poses affect overlays only, never the camera or inference.
-    const wallPoints=this.state.walls?.flat(),bounds=!this.fullDomain && wallPoints?.length
-      ? boundsOf(wallPoints) : {xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]};
+    const xRange=geometry && this.state.xRange;
+    const wallPoints=this.state.walls?.flat(),cameraBounds=this.state.cameraBounds;
+    const bounds=(!this.fullDomain || xRange) && cameraBounds
+      ? {xmin:cameraBounds[0],xmax:cameraBounds[1],ymin:cameraBounds[2],ymax:cameraBounds[3]}
+      : (!this.fullDomain || xRange) && wallPoints?.length ? boundsOf(wallPoints) : {xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]};
     const panel=this.canvas.closest?.('.map-panel');
     // CSS owns the full card size; fit metres inside it without shrinking the frame.
     // CSS pixels/metre: every viewport and visible-range change updates the zoom floor.
     let scaleX=box.w/(Math.max(1,bounds.xmax-bounds.xmin)*1.04),scaleY=box.h/(Math.max(1,bounds.ymax-bounds.ymin)*1.04);
     if (this.state.aspectMode==='equal') scaleX=scaleY=Math.min(scaleX,scaleY);
+    if (xRange) {
+      // Exact horizontal limits and equal metres: narrow only when needed to fit tall walls.
+      const span=xRange[1]-xRange[0],w=Math.min(box.w,box.h*span/(Math.max(1,bounds.ymax-bounds.ymin)*1.04));
+      box.x+=(box.w-w)/2;box.w=w;scaleX=scaleY=w/span;
+    }
     this.defaultScale={scaleX,scaleY};
     if (!this.camera) {
-      this.camera={cx:(bounds.xmin+bounds.xmax)/2,cy:(bounds.ymin+bounds.ymax)/2,scaleX,scaleY};
+      this.camera={cx:xRange ? (xRange[0]+xRange[1])/2 : (bounds.xmin+bounds.xmax)/2,cy:(bounds.ymin+bounds.ymax)/2,scaleX,scaleY};
     } else {
       const factor=Math.max(1,scaleX/this.camera.scaleX,scaleY/this.camera.scaleY);
       if (factor>1) this.camera=zoomMap(this.camera,factor,[box.x+box.w/2,box.y+box.h/2],box);
@@ -382,13 +390,13 @@ function extent(points,includeZero=true) {
   const padding=(max-min || 1)*.12;
   return [min<0 ? min-padding : 0,max+padding];
 }
-export function drawMetricHistory(canvas,evaluations,selection='all') {
+export function drawMetricHistory(canvas,evaluations,selection='all',snapshots=evaluations.at(-1)?.t ?? 60) {
   const surface=chartSurface(canvas);if (!surface) return;
   const metrics=[["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
   metrics.forEach(([key,title,unit],k) => {
     const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(key==="offwall" ? 100 : 1)})),[ymin,ymax]=extent(points);
     // A single selected metric is already named by the card's selector.
-    const axes=chartAxes(surface,{title:metrics.length>1 ? title : '',xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/metrics.length,height:surface.height/metrics.length,compact:surface.height<420});
+    const axes=chartAxes(surface,{title:metrics.length>1 ? title : '',xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,snapshots),ymin,ymax,top:k*surface.height/metrics.length,height:surface.height/metrics.length,compact:surface.height<420});
     chartLine(surface,axes,points,surface.color("eval"),[],false,false,true);
   });
 }
@@ -420,11 +428,11 @@ export function drawHistogram(canvas,ratios) {
   for (const p of density) ctx.fillRect(axes.x(p.x-step*.45),axes.y(p.y),(axes.x(xmin+step)-axes.x(xmin))*.9,axes.y(0)-axes.y(p.y));
   ctx.restore();chartLine(surface,axes,theoretical,surface.color("ink"),[6,5]);
 }
-export function drawProfile(canvas,cells) {
+export function drawProfile(canvas,cells,xRange=[0,60]) {
   const surface=chartSurface(canvas);if (!surface) return;
   const fields=[["delta","$δ$ [deg]","deg",180/Math.PI],["w","$w(s)$ · 무차원","w",1],["lambda","$Λ(s)$ · 셀 기대 개수","count",1]];
   fields.forEach(([key,title,unit,multiplier],k) => {
-    const all=cells.map(c=>({x:c.s[0],y:c[key]*multiplier})),[ymin,ymax]=extent(all),axes=chartAxes(surface,{title,xLabel:"$x$ [m] · 아래 실선 / 위 점선",yLabel:unit,xmin:0,xmax:60,ymin,ymax,top:k*surface.height/3,height:surface.height/3,metreX:true});
+    const all=cells.map(c=>({x:c.s[0],y:c[key]*multiplier})),[ymin,ymax]=extent(all),axes=chartAxes(surface,{title,xLabel:"$x$ [m] · 아래 실선 / 위 점선",yLabel:unit,xmin:xRange[0],xmax:xRange[1],ymin,ymax,top:k*surface.height/3,height:surface.height/3,metreX:true});
     for (const wall of [0,1]) chartLine(surface,axes,cells.filter(c=>c.wall===wall).map(c=>({x:c.s[0],y:c[key]*multiplier})),surface.color("eval"),wall ? [6,4] : []);
   });
 }

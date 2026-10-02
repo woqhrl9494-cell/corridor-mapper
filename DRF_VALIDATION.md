@@ -1,10 +1,28 @@
 # EchoMap DRF 검증 기록
 
-상태: 공개 기본 생성기를 중심선과 독립 상하 요철의 2층 uniform cubic B-spline으로 교체했다. 계산 영역 [0,60]×[−20,50] m, 최소 수직 폭 4 m, 수직 차량 여유 1 m를 사용한다. 기본 주행은 80회이고 명세 비교는 60회다. 아래 과거 160회 / 84/96 기록은 이전 not-a-knot 벽과 [0,60]×[0,30] m 조건의 역사적 검증이다. 새 벽 모델의 성능 검증으로 적용하지 않는다. 기존 평가기의 y=15 m 분할은 크게 굽은 새 벽에서 부정확할 수 있다. 원본 MATLAB/Octave 전체 구현 parity는 여전히 미검증이다.
+상태: 공개 벽 모델은 중심선과 독립 상하 요철의 2층 uniform cubic B-spline이다. 벽 구간과 계산 영역은 각각 [0,80] m, [0,80]×[−20,50] m이며 벽 구성은 양쪽 / 위쪽만 / 아래쪽만을 지원한다. 양쪽 구성은 최소 수직 폭 4 m, 모든 구성은 존재하는 벽에 대한 수직 차량 여유 1 m를 검사한다. 기본 및 최대 주행은 120회이며 명세 비교는 60회다. 아래 과거 160회 / 84/96 기록과 60 m 벽의 80회 검증은 당시 조건의 기록이다. 새 벽 모델의 성능 검증으로 적용하지 않는다. 양쪽 벽 평가의 기존 y=15 m 분할은 크게 굽은 벽에서 부정확할 수 있다. 한쪽 벽의 추정 정확도와 원본 MATLAB/Octave 전체 구현 parity는 여전히 미검증이다.
 
-## 2026-10-02 독립 요철 2층 B-spline 검증
+## 2026-10-02 80 m 벽, 120회 주행과 벽 구성 선택
 
-재현 명령은 `node --test tests/drf/two-layer-wall.test.mjs tests/drf/layered-scenario.test.mjs`와 `node tests/drf/run-layered.mjs`이다. 결과는 [layered-validation.json](tests/drf/layered-validation.json)에 코드 SHA, 입력, 환경과 제한을 함께 기록했다. 과거 160회 JSON은 변경하지 않았다.
+상단 RAW의 기본 x 범위는 −10–90 m이다. 기본 보기, 전체 보기, 처음으로와 축소 하한은 이 범위를 사용하며 x/y 등척을 유지한다. 벽의 전체 높이를 담을 공간이 부족하면 카드 크기를 바꾸지 않고 plot 폭을 줄인다. 하단 두 필드와 산란 profile은 전체 벽 구간 0–80 m를 표시한다. 차량이나 벽 후보점이 화면 밖에 나가도 camera가 자동으로 이동하거나 축소되지 않는다.
+
+기본 및 최대 snapshot 수는 120으로 늘렸으며 이동량 0.75 m/snapshot은 유지한다. 요청한 미래 snapshot 수에 맞춰 과거 궤적을 다시 늘이거나 압축하지 않는다. 고정 20대/120회 내부 궤적을 기준으로 벽의 차량 여유를 검사한다. 기본 120회 뒤 20대의 실제 x 범위는 91–104 m이며 열린 출구 x=80 m를 통과한다. 출구 밖에서는 중심선 끝의 접선 방향으로 계속 주행한다. 명세 비교 Sweep은 60회로 유지하며 물리적 시간 간격과 실제 속도를 별도로 정하지 않았다.
+
+화면의 장면 표기는 벽 모델로 교체했다. 모델은 2층 B-spline으로 고정 표시하고, 벽 구성에서 양쪽 / 위쪽만 / 아래쪽만을 선택한다. 한쪽 구성은 존재하는 벽만 생성, 반사, 산란과 가시성 판정에 사용한다. 없는 벽은 통로 폭 및 차량 여유 검사에 포함하지 않는다. 아래/위 벽의 논리 ID 0/1과 RNG 주소는 유지하며 scene / wallSide는 wire에 포함하지 않는다. 같은 seed와 attempt에서 선택한 벽의 중심선 및 요철 계수 주소는 유지하지만, 벽 구성별 기각 조건이 달라 채택 attempt는 달라질 수 있다. 기존 순차 noise stream의 모든 경로 잡음이 구성 간 같다고 보장하지 않는다. 생성기의 실제 벽 정보는 truth 쪽과 사후 평가에만 사용한다.
+
+한쪽 벽에서도 기존 y=15 m 분할의 두 영역에서 추출한 후보를 모두 유지한다. 존재하지 않는 벽 쪽에 나온 후보를 실제 벽 정보로 미리 지우지 않는다. 한쪽 구성의 중앙 오차 / P95 / off-wall은 전체 추출 후보와 존재하는 실제 벽의 최근접 거리를 사후 평가하며, 양쪽 구성의 기존 열별 오차와 정의가 다르다. 관측 열에서 후보가 없으면 Infinity 실패를 유지한다. CA 거리와 F1의 실제 벽 표본 및 관측 mask는 존재하는 벽만 포함하므로 없는 벽 쪽의 불필요한 후보는 오탐으로 반영된다. 관측 열과 signed offset 진단은 기존 x=10–50 m 구간을 유지한다. 이 진단만으로 80 m 전체 벽의 관측률을 판정하지 않는다. 두 구성의 지표를 같은 정의의 공정 비교로 해석하지 않는다. 기존 y=15 m 분할의 추출 한계는 남아 있으며 실제 벽은 후보 생성이나 Field 누적에 들어가지 않는다.
+
+새로고침할 때 Web Crypto로 uint32 seed를 한 번 생성하고 입력칸과 URL에 함께 반영한다. URL에 남은 seed와 우연히 같으면 다음 uint32 값으로 바꾼다. 직접 seed를 입력한 뒤 실행하면 입력한 값을 그대로 사용한다. 같은 실험의 재현은 기록된 seed의 수동 입력과 동일한 나머지 설정을 사용한다. URL 열기나 새로고침 자체를 고정 seed 재현 절차로 해석하지 않는다.
+
+[layered80-validation.json](tests/drf/layered80-validation.json)은 최종 통합 source의 양쪽 벽 80 m / 120회 재실행을 기록한다. Node v26.7.0 / darwin arm64, seed 1, 150×150 격자에서 3대60회 Q=2348, 3대120회 Q=3866, 20대120회 Q=269374를 확인했다. 각각의 실행 시간은 0.901 s, 1.745 s, 95.082 s였다. 20대120회의 측정 생성은 58.259 s, field p50/p95=264.711/418.176 ms였다. 채택 조건의 seed 0–1999에서는 2,000개 벽이 2,000번 시도로 통과했고 640,000개 표본의 2차 미분 표준편차는 0.0589366755 m⁻¹이었다. 보고서의 수치 source 10개 SHA가 현재 파일과 일치하며 실행 전후 source가 같았다. 이 전체 120회 보고서는 wallSide=both 조건이며 한쪽 구성의 전체 주행 수치나 정확도를 검증하지 않는다. Browser Worker의 시간과 RAM, 실제 file:// 화면 검증으로 확대하지 않는다.
+
+최종 통합 뒤 `npm test`는 135/135 통과, 실패 0, 22.358 s였다. 벽 구성별 생성, 반복 및 측정 정보 경계, 단위 검사와 한쪽 구성의 초기 2 snapshots 연결을 포함한다. 전체 120회 수치 보고서의 양쪽 벽 범위와 구분한다.
+
+한쪽 벽 평가 변경의 관련 자동 검사는 `node --test tests/drf/one-wall-evaluation.test.mjs tests/drf/integration.test.mjs tests/drf/integrity.test.mjs` 16/16 통과다. 실제 벽이 y=15 m 분할선을 넘는 조건, 반대 영역의 오탐 후보 보존, 관측 열의 누락 실패, 미래 truth 접근 차단과 양쪽 구성의 기존 평가기 전체 반환값 일치를 확인했다. 이 검사는 평가 연결과 회귀 검사이며 한쪽 벽의 추정 정확도나 공개 브라우저 실행 검증이 아니다.
+
+## 2026-10-02 독립 요철 2층 B-spline 검증, 이전 60 m / 80회 조건
+
+이 절의 [layered-validation.json](tests/drf/layered-validation.json)은 60 m 벽 / 80회 주행 당시의 코드 SHA, 입력, 환경과 제한을 기록한다. 당시 재현 명령은 `node --test tests/drf/two-layer-wall.test.mjs tests/drf/layered-scenario.test.mjs`와 `node tests/drf/run-layered.mjs`이다. 현재 같은 명령을 실행하면 80 m / 120회 및 선택한 벽 구성의 조건을 사용하므로 이 절의 수치와 직접 비교하지 않는다. 과거 160회 JSON은 변경하지 않았다.
 
 - 자동 검사 130/130 통과, 실패 0, 6.726530459 s. 마지막 CSS 여백 조정은 별도 표시/배포 검사로 확인한다.
 - 기각 전 2,000 seed, 480,000 표본에서 std(y'')=0.0590893834 m⁻¹, 예측 0.0588960949와 0.328% 차이. 곡률 RMS=0.0516353493 m⁻¹. 독립 위/아래 요철, full support, C2 연속성, exact cubic extrema/최소 폭, 중심차분, RNG 주소를 검사했다.
@@ -23,10 +41,10 @@ HTTP 실제 화면에서 3대80회 Q=2798, Float32 SHA `c440d958289c1ffb54b7179d
 - 기준 저장소 commit: `751f34e3d8d7ee1317554672152d6a2563ce2e0c`, 작업 branch: `feat/drf-lab`.
 - 최초에는 SURF 홈을 유지하고 `drf.html`을 별도로 추가했다. 현재 공개 배포는 DRF만 포함하며 아래 DRF 전용 배포 기록을 따른다. 승인된 기존 변경은 nav 링크와 글자/컨트롤/표시 여백/문자 대비이다. 기존 알고리즘과 나머지 44개 보호 파일의 SHA-256은 유지한다.
 - 사용자 요청에 따라 첫 화면의 정보량을 늘렸다. 폭 1680 px 이상의 화면에서 342 px 사이드바는 설정만 표시하고, 상단 RAW 오른쪽 300 px 성능창에 Q, 채택/거부 수, path 구성, 평가 6지표와 계산 시간을 배치한다. 하단 세 그래프는 전체 폭에 맞춘다. 상하 행 비율은 1.9:1이며 성능창의 지표 라벨은 한 줄이다. 모바일 DOM 글자는 16 px 이상, 버튼 높이는 44 px 이상이다.
-- 밝은 clay 스타일의 표면과 컨트롤, 흰 plot 배경 및 내부 격자를 적용했다. RAW는 등척을 유지하며 panel 크기를 표시할 metre 범위에 맞춘다. 하단 두 필드에도 기본 등척을 적용하며 선택 가능한 채움 방식을 유지한다. 화면의 도구명은 DRF 시뮬레이터, 소속 표기는 한양대학교 WSL이다.
+- 밝은 clay 스타일의 표면과 컨트롤, 흰 plot 배경 및 내부 격자를 적용했다. RAW는 등척을 유지하며 상단 x=−10–90 m와 정적 벽의 전체 y 범위를 담도록 plot 크기를 정한다. 하단 두 필드에도 기본 등척을 적용하며 선택 가능한 채움 방식을 유지한다. 화면의 도구명은 DRF 시뮬레이터, 소속 표기는 한양대학교 WSL이다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
 - `file://` 실행을 위한 classic bundle 추가. 기존 esbuild로 동일한 앱과 scenario/field/eval/sweep Worker를 묶고, Worker는 4종의 classic Blob script로 실행한다. provenance와 참조 fixtures JSON도 bundle에 포함하므로 로컬 파일에서 module import나 JSON fetch에 의존하지 않는다.
-- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. 이 truth-side 변경은 model8에 적용했다. 현재 주행 연장은 scenario의 기본/최대 snapshot 수와 cache URL을 변경하며 0.75 m/snapshot 궤적, 벽, 산란 생성식과 Field/evaluator 누적식은 유지한다.
+- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. 이 truth-side 변경은 model8에 적용했다. 현재 주행은 0.75 m/snapshot을 유지하고 기본/최대 snapshot 수 120, 공개 벽 길이 80 m를 사용한다. 한쪽 벽 구성은 실제 존재하는 span만 생성기에 전달하며 Field 누적식과 wire의 측정 정보 경계는 유지한다.
 
 ```sh
 npm run build:drf-offline
@@ -226,13 +244,13 @@ HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 �
 
 ## 화면 용어 정리
 
-대용점 표기를 벽 후보점으로 변경하고 누적 필드의 바깥쪽 봉우리에서 선택한 평가용 후보임을 설명했다. 참 벽은 실제 벽으로 표시하며 시뮬레이션이 생성한 실제 위치라는 설명을 붙였다. 장면 선택은 Reference corridor / Random corridor, 관련 화면·방법 설명도 corridor로 표기한다. 생성 중 안내와 미리보기는 벽 모델로 표기한다. JSON 키 proxy, scene 값 reference/random 및 수치 처리와 camera 코드는 유지한다.
+대용점 표기를 벽 후보점으로 변경하고 누적 필드의 바깥쪽 봉우리에서 선택한 평가용 후보임을 설명했다. 참 벽은 실제 벽으로 표시하며 시뮬레이션이 생성한 실제 위치라는 설명을 붙였다. 당시 장면 선택은 Reference corridor / Random corridor로 표시했다. 현재 공개 화면은 벽 모델을 2층 B-spline으로 고정 표시하고 벽 구성만 양쪽 / 위쪽만 / 아래쪽만 선택한다. 생성 중 안내와 미리보기도 벽 모델로 표기한다. JSON 키 proxy와 내부 scene 키는 유지하며 과거 reference/random 값은 기존 재현 자료용으로 보존한다.
 
 용어 수정 뒤 실제 HTML 선택/현재 22-source offline bundle·classic Blob worker·DOM·renderer 관련 검사 5/5가 통과했다(512.599 ms). 직전 로직 회귀 검사 118/118 결과와 구분하며 수치 source 11개는 계속 같다.
 
 ## 한글 단어 단위 줄바꿈
 
-본문에 word-break:keep-all과 overflow-wrap:normal을 적용하고 상태·조회·지표·provenance의 anywhere 줄바꿈을 제거했다. 코드 문자열은 별도 anywhere를 유지한다. 장면 선택은 좁은 입력칸에 맞춰 Reference / Random으로 짧게 표시하고 title에 전체 corridor 이름을 유지한다. 일반 설명의 corridor 표기는 같다. 변경 뒤 표시·offline 관련 5/5 검사가 통과했다(466.007541 ms). 로컬 HTTP 1920×930 및 390×844의 설정 안내·설명 대화창·상태·조회 문구에서 computed word-break=keep-all, overflow-wrap=normal을 확인했고 문단 및 대화창 scrollWidth/clientWidth가 같았다. 이는 CSS/폭 검사이며 모든 단어의 문자별 줄 위치를 자동 비교한 결과는 아니다.
+본문에 word-break:keep-all과 overflow-wrap:normal을 적용하고 상태·조회·지표·provenance의 anywhere 줄바꿈을 제거했다. 코드 문자열은 별도 anywhere를 유지한다. 당시 장면 선택은 좁은 입력칸에 맞춰 Reference / Random으로 짧게 표시하고 title에 전체 corridor 이름을 유지했다. 현재 공개 화면은 벽 모델 고정 표시와 별도의 벽 구성 선택을 사용한다. 일반 설명의 corridor 표기는 같다. 변경 뒤 표시·offline 관련 5/5 검사가 통과했다(466.007541 ms). 로컬 HTTP 1920×930 및 390×844의 설정 안내·설명 대화창·상태·조회 문구에서 computed word-break=keep-all, overflow-wrap=normal을 확인했고 문단 및 대화창 scrollWidth/clientWidth가 같았다. 이는 CSS/폭 검사이며 모든 단어의 문자별 줄 위치를 자동 비교한 결과는 아니다.
 
 
 ## 2026-10-02 DRF 전용 공개 배포와 고정 지도 시점

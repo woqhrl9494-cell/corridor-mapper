@@ -11,9 +11,9 @@ test('vehicle limits and fixed trajectories support 2–20 vehicles without movi
   assert.equal(normalizeInput({vehicles:'20'}).vehicles,20);
   for (const vehicles of [-1,0,1,2.5,20.5,21,NaN,Infinity,'twenty'])
     assert.throws(()=>normalizeInput({vehicles}),/vehicles|trajectories/);
-  assert.equal(normalizeInput().snapshots,80);
-  for (let snapshots=1;snapshots<=80;snapshots++) assert.equal(normalizeInput({snapshots}).snapshots,snapshots);
-  for (const snapshots of [0,80.5,81,NaN,Infinity]) assert.throws(()=>normalizeInput({snapshots}),/snapshots/);
+  assert.equal(normalizeInput().snapshots,120);
+  for (let snapshots=1;snapshots<=120;snapshots++) assert.equal(normalizeInput({snapshots}).snapshots,snapshots);
+  for (const snapshots of [0,120.5,121,NaN,Infinity]) assert.throws(()=>normalizeInput({snapshots}),/snapshots/);
   const spans=createWalls({ scene: 'reference' });
   for (let t=1;t<=60;t++) {
     const fleet=truePoses(t,20);
