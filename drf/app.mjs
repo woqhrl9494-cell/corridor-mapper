@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-endpass17';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-uniformgap19';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 

@@ -8,13 +8,6 @@ export function zoomMap(c,factor,anchor,box) {
   return {cx:p[0]-(anchor[0]-box.x-box.w/2)/scaleX,cy:p[1]+(anchor[1]-box.y-box.h/2)/scaleY,scaleX,scaleY};
 }
 
-// Plot width/height = world span x/y; 60/62 CSS pixels are axis margins.
-export function rawPanelSize(width,maxCanvasHeight,bounds) {
-  const aspect=Math.max(1,bounds.xmax-bounds.xmin)/Math.max(1,bounds.ymax-bounds.ymin);
-  const plotWidth=Math.min(Math.max(1,width-60),Math.max(1,maxCanvasHeight-62)*aspect);
-  return {width:plotWidth+60,height:plotWidth/aspect+62};
-}
-
 function drawGrid(ctx,box,xs,ys,color) {
   ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.beginPath();
   for (const x of xs) if (x>box.x+1 && x<box.x+box.w-1) {ctx.moveTo(x,box.y);ctx.lineTo(x,box.y+box.h);}
@@ -150,16 +143,8 @@ export class DrfMap {
         bounds={xmin:Math.min(bounds.xmin,p[0]),xmax:Math.max(bounds.xmax,p[0]),ymin:Math.min(bounds.ymin,p[1]),ymax:Math.max(bounds.ymax,p[1])};
       }
     }
-    const panel=this.canvas.closest?.('.map-panel'),dashboard=panel?.parentElement,body=this.canvas.parentElement;
-    if (geometry && target===this.canvas && dashboard && body && dashboard.clientWidth>0) {
-      const rowHeight=matchMedia('(min-width: 1000px)').matches ? parseFloat(getComputedStyle(dashboard).gridTemplateRows) : Infinity;
-      const size=rawPanelSize(dashboard.clientWidth-2,Math.max(64,rowHeight-panel.firstElementChild.offsetHeight-2),bounds);
-      if (Math.abs((parseFloat(panel.style.width)||0)-size.width-2)>.1 || Math.abs((parseFloat(body.style.height)||0)-size.height)>.1) {
-        panel.style.width=`${Math.round((size.width+2)*100)/100}px`;body.style.height=`${Math.round(size.height*100)/100}px`;
-        if (this.auto) this.camera=null;
-        this.draw();return;
-      }
-    }
+    const panel=this.canvas.closest?.('.map-panel');
+    // CSS owns the full card size; fit metres inside it without shrinking the frame.
     // CSS pixels/metre: every viewport and visible-range change updates the zoom floor.
     let scaleX=box.w/(Math.max(1,bounds.xmax-bounds.xmin)*1.04),scaleY=box.h/(Math.max(1,bounds.ymax-bounds.ymin)*1.04);
     if (this.state.aspectMode==='equal') scaleX=scaleY=Math.min(scaleX,scaleY);

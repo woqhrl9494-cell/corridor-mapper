@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DrfMap, mapToScreen, mapToWorld, zoomMap, rawPanelSize, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from '../../drf/render.mjs';
+import { DrfMap, mapToScreen, mapToWorld, zoomMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from '../../drf/render.mjs';
 import { SurfaceMap } from '../../surf/map.mjs';
 import { generateSnapshot, normalizeInput } from '../../drf/scenario.mjs';
 import { createWalls, sampleWalls } from '../../drf/wall.mjs';
@@ -30,18 +30,6 @@ test('axis-fitted camera preserves metre coordinates and the zoom anchor', () =>
   close(mapToWorld(anchor,zoomed,box),world);
   close([zoomed.scaleX,zoomed.scaleY],[camera.scaleX*1.7,camera.scaleY*1.7]);
   assert.deepEqual(camera,{cx:30,cy:15,scaleX:21,scaleY:11},'zoom must leave the old camera untouched');
-});
-
-test('RAW panel follows its metre range within desktop and mobile space', () => {
-  const desktop=rawPanelSize(1595,377,{xmin:0,xmax:60,ymin:6,ymax:24});
-  assert.equal(desktop.width,1110);
-  assert.equal(desktop.height,377);
-  assert.ok(desktop.width<=1595 && desktop.height<=377);
-  assert.ok(Math.abs((desktop.width-60)/(desktop.height-62)-60/18)<1e-12);
-  const mobile=rawPanelSize(364,Infinity,{xmin:0,xmax:60,ymin:0,ymax:30});
-  assert.equal(mobile.width,364);
-  assert.equal(mobile.height,214);
-  assert.ok(Math.abs((mobile.width-60)/(mobile.height-62)-2)<1e-12);
 });
 
 test('render keeps world row order, uses real DPR/300 dpi pixels, and charts execute', async () => {
@@ -122,8 +110,11 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.deepEqual(JSON.parse(canvas.dataset.view),view,'hidden truth cannot change the view');
     map.fit(true);map.paint(canvas,2);assert.equal(map.camera.cx,30,'full view returns to the public domain');
     map.fit();canvas.clientWidth=1700;canvas.clientHeight=350;
+    const card={style:{},parentElement:{clientWidth:1702},firstElementChild:{offsetHeight:68}},body={style:{}};
+    canvas.closest=()=>card;canvas.parentElement=body;
     gridSegments.length=0;
     map.set({...display,focus:false,mode:'geometry',aspectMode:'fill',layers:{showTruth:true},walls:[[[0,6],[60,24]]]});map.paint(canvas,2);
+    assert.deepEqual([card.style,body.style],[{},{}],'RAW fitting must leave CSS frame and plot-body dimensions unchanged');
     const wideView=JSON.parse(canvas.dataset.view);
     assert.equal(wideView.plotWidth,1640,'the graph must use the full available panel width');
     assert.equal(wideView.plotHeight,288,'the graph must use the full available panel height');

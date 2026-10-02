@@ -1,0 +1,647 @@
+{
+  "schema": "echomap-drf-uniform-spacing/1",
+  "date": "2026-10-02T05:56:46.427Z",
+  "scope": "HTTP browser; actual file UI not verified",
+  "tests": {
+    "command": "npm test",
+    "passed": 116,
+    "failed": 0,
+    "durationMs": 3691.665959,
+    "removedObsoleteTest": "rawPanelSize was removed; the renderer test now asserts that card/body styles stay untouched"
+  },
+  "stylesheetFollowUp": {
+    "command": "node --test tests/drf/ui.test.mjs",
+    "passed": 3,
+    "failed": 0,
+    "durationMs": 454.340333
+  },
+  "desktop1920x930": {
+    "idle": {
+      "aligned": {
+        "left": 0,
+        "lowerTop": 0,
+        "right": 0,
+        "upperBottom": 0
+      },
+      "gaps": {
+        "contrastMetrics": 10,
+        "densityContrast": 10,
+        "performanceMetrics": 10,
+        "rawContrast": 10,
+        "rawDensity": 10,
+        "rawPerformance": 10
+      },
+      "inlineDimensions": {
+        "bodyHeight": "",
+        "panelWidth": ""
+      },
+      "rects": {
+        "contrast": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 871.65625,
+          "right": 1379.328125,
+          "top": 562.125,
+          "width": 507.671875
+        },
+        "density": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 354,
+          "right": 861.65625,
+          "top": 562.125,
+          "width": 507.65625
+        },
+        "metrics": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 1389.328125,
+          "right": 1896.984375,
+          "top": 562.125,
+          "width": 507.65625
+        },
+        "performance": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 1596.984375,
+          "right": 1896.984375,
+          "top": 66,
+          "width": 300
+        },
+        "raw": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 354,
+          "right": 1586.984375,
+          "top": 66,
+          "width": 1232.984375
+        },
+        "row": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 354,
+          "right": 1896.984375,
+          "top": 66,
+          "width": 1542.984375
+        }
+      },
+      "scale": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 17.58827066802759,
+        "pixelsPerMetreY": 17.58827066802759,
+        "plotHeight": 357,
+        "plotWidth": 1171,
+        "xmax": 63.289230706708246,
+        "xmin": -3.2892307067082456,
+        "ymax": 25.222579143224223,
+        "ymin": 4.924961103437983
+      },
+      "state": "idle"
+    },
+    "done": {
+      "aligned": {
+        "left": 0,
+        "lowerTop": 0,
+        "right": 0,
+        "upperBottom": 0
+      },
+      "gaps": {
+        "contrastMetrics": 10,
+        "densityContrast": 10,
+        "performanceMetrics": 10,
+        "rawContrast": 10,
+        "rawDensity": 10,
+        "rawPerformance": 10
+      },
+      "inlineDimensions": {
+        "bodyHeight": "",
+        "panelWidth": ""
+      },
+      "rects": {
+        "contrast": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 871.65625,
+          "right": 1379.328125,
+          "top": 562.125,
+          "width": 507.671875
+        },
+        "density": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 354,
+          "right": 861.65625,
+          "top": 562.125,
+          "width": 507.65625
+        },
+        "metrics": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 1389.328125,
+          "right": 1896.984375,
+          "top": 562.125,
+          "width": 507.65625
+        },
+        "performance": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 1596.984375,
+          "right": 1896.984375,
+          "top": 66,
+          "width": 300
+        },
+        "raw": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 354,
+          "right": 1586.984375,
+          "top": 66,
+          "width": 1232.984375
+        },
+        "row": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 354,
+          "right": 1896.984375,
+          "top": 66,
+          "width": 1542.984375
+        }
+      },
+      "scale": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 16.10019451554141,
+        "pixelsPerMetreY": 16.10019451554141,
+        "plotHeight": 357,
+        "plotWidth": 1171,
+        "xmax": 71.33334744012865,
+        "xmin": -1.3986930870613463,
+        "ymax": 26.160592697287903,
+        "ymin": 3.9869475493743014
+      },
+      "state": "done"
+    },
+    "zoom": {
+      "aligned": {
+        "left": 0,
+        "lowerTop": 0,
+        "right": 0,
+        "upperBottom": 0
+      },
+      "gaps": {
+        "contrastMetrics": 10,
+        "densityContrast": 10,
+        "performanceMetrics": 10,
+        "rawContrast": 10,
+        "rawDensity": 10,
+        "rawPerformance": 10
+      },
+      "inlineDimensions": {
+        "bodyHeight": "",
+        "panelWidth": ""
+      },
+      "rects": {
+        "contrast": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 871.65625,
+          "right": 1379.328125,
+          "top": 562.125,
+          "width": 507.671875
+        },
+        "density": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 354,
+          "right": 861.65625,
+          "top": 562.125,
+          "width": 507.65625
+        },
+        "metrics": {
+          "bottom": 817.984375,
+          "height": 255.859375,
+          "left": 1389.328125,
+          "right": 1896.984375,
+          "top": 562.125,
+          "width": 507.65625
+        },
+        "performance": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 1596.984375,
+          "right": 1896.984375,
+          "top": 66,
+          "width": 300
+        },
+        "raw": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 354,
+          "right": 1586.984375,
+          "top": 66,
+          "width": 1232.984375
+        },
+        "row": {
+          "bottom": 552.125,
+          "height": 486.125,
+          "left": 354,
+          "right": 1896.984375,
+          "top": 66,
+          "width": 1542.984375
+        }
+      },
+      "scale": {
+        "aspectMode": "equal",
+        "auto": false,
+        "pixelsPerMetreX": 20.930252870203834,
+        "pixelsPerMetreY": 20.930252870203834,
+        "plotHeight": 357,
+        "plotWidth": 1171,
+        "xmax": 62.94118891776057,
+        "xmin": 6.993465435306728,
+        "ymax": 23.60209518022095,
+        "ymin": 6.545445066441255
+      },
+      "state": "done"
+    },
+    "layout": {
+      "charts": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 16.10019451554141,
+          "pixelsPerMetreY": 16.10019451554141,
+          "plotHeight": 357,
+          "plotWidth": 1171,
+          "xmax": 71.33334744012865,
+          "xmin": -1.3986930870613463,
+          "ymax": 26.160592697287903,
+          "ymin": 3.9869475493743014
+        }
+      },
+      "contrast": {
+        "clientHeight": 254,
+        "height": 255.859375,
+        "scrollHeight": 254,
+        "width": 507.671875,
+        "x": 871.65625,
+        "y": 562.125
+      },
+      "dashboardVisibility": "visible",
+      "density": {
+        "clientHeight": 254,
+        "height": 255.859375,
+        "scrollHeight": 254,
+        "width": 507.65625,
+        "x": 354,
+        "y": 562.125
+      },
+      "mapRow": {
+        "clientHeight": 486,
+        "height": 486.125,
+        "scrollHeight": 486,
+        "width": 1542.984375,
+        "x": 354,
+        "y": 66
+      },
+      "metrics": {
+        "clientHeight": 254,
+        "height": 255.859375,
+        "scrollHeight": 254,
+        "width": 507.65625,
+        "x": 1389.328125,
+        "y": 562.125
+      },
+      "performance": {
+        "clientHeight": 484,
+        "height": 486.125,
+        "scrollHeight": 484,
+        "width": 300,
+        "x": 1596.984375,
+        "y": 66
+      },
+      "raw": {
+        "clientHeight": 484,
+        "height": 486.125,
+        "scrollHeight": 484,
+        "width": 1232.984375,
+        "x": 354,
+        "y": 66
+      },
+      "sidebar": {
+        "clientHeight": 876,
+        "height": 876,
+        "scrollHeight": 876,
+        "width": 342,
+        "x": 0,
+        "y": 54
+      },
+      "snapshots": "80",
+      "state": "done",
+      "statsInsideSidebar": false,
+      "viewsScrollTop": 0,
+      "wrappedMetricLabels": []
+    },
+    "run": {
+      "hash": "99ed8989b86da39ddd824608f05bf6178ca2efc06b07e50de69b858246755049",
+      "q": "3609",
+      "state": "done",
+      "status": "계산 완료 · 측정 생성 0.67 s · 참조 .m 원본 대조 미완료",
+      "time": "80 / 80",
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 16.10019451554141,
+          "pixelsPerMetreY": 16.10019451554141,
+          "plotHeight": 357,
+          "plotWidth": 1171,
+          "xmax": 71.33334744012865,
+          "xmin": -1.3986930870613463,
+          "ymax": 26.160592697287903,
+          "ymin": 3.9869475493743014
+        }
+      }
+    }
+  },
+  "desktop1920x1080": {
+    "aligned": {
+      "left": 0,
+      "lowerTop": 0,
+      "right": 0,
+      "upperBottom": 0
+    },
+    "gaps": {
+      "contrastMetrics": 10,
+      "densityContrast": 10,
+      "performanceMetrics": 10,
+      "rawContrast": 10,
+      "rawDensity": 10,
+      "rawPerformance": 10
+    },
+    "inlineDimensions": {
+      "bodyHeight": "",
+      "panelWidth": ""
+    },
+    "rects": {
+      "contrast": {
+        "bottom": 967.984375,
+        "height": 307.578125,
+        "left": 871.65625,
+        "right": 1379.328125,
+        "top": 660.40625,
+        "width": 507.671875
+      },
+      "density": {
+        "bottom": 967.984375,
+        "height": 307.578125,
+        "left": 354,
+        "right": 861.65625,
+        "top": 660.40625,
+        "width": 507.65625
+      },
+      "metrics": {
+        "bottom": 967.984375,
+        "height": 307.578125,
+        "left": 1389.328125,
+        "right": 1896.984375,
+        "top": 660.40625,
+        "width": 507.65625
+      },
+      "performance": {
+        "bottom": 650.40625,
+        "height": 584.40625,
+        "left": 1596.984375,
+        "right": 1896.984375,
+        "top": 66,
+        "width": 300
+      },
+      "raw": {
+        "bottom": 650.40625,
+        "height": 584.40625,
+        "left": 354,
+        "right": 1586.984375,
+        "top": 66,
+        "width": 1232.984375
+      },
+      "row": {
+        "bottom": 650.40625,
+        "height": 584.40625,
+        "left": 354,
+        "right": 1896.984375,
+        "top": 66,
+        "width": 1542.984375
+      }
+    },
+    "scale": {
+      "aspectMode": "equal",
+      "auto": true,
+      "pixelsPerMetreX": 16.10019451554141,
+      "pixelsPerMetreY": 16.10019451554141,
+      "plotHeight": 455,
+      "plotWidth": 1171,
+      "xmax": 71.33334744012865,
+      "xmin": -1.3986930870613463,
+      "ymax": 29.204034188178007,
+      "ymin": 0.9435060584842
+    },
+    "state": "done"
+  },
+  "desktop1440x900": {
+    "aligned": {
+      "left": 0,
+      "lowerTop": 0,
+      "right": 0,
+      "upperBottom": 0
+    },
+    "gaps": {
+      "contrastMetrics": 10,
+      "densityContrast": 10,
+      "performanceMetrics": 10,
+      "rawContrast": 10,
+      "rawDensity": 10,
+      "rawPerformance": 10
+    },
+    "inlineDimensions": {
+      "bodyHeight": "",
+      "panelWidth": ""
+    },
+    "rects": {
+      "contrast": {
+        "bottom": 787.984375,
+        "height": 245.515625,
+        "left": 691.65625,
+        "right": 1049.328125,
+        "top": 542.46875,
+        "width": 357.671875
+      },
+      "density": {
+        "bottom": 787.984375,
+        "height": 245.515625,
+        "left": 324,
+        "right": 681.65625,
+        "top": 542.46875,
+        "width": 357.65625
+      },
+      "metrics": {
+        "bottom": 787.984375,
+        "height": 245.515625,
+        "left": 1059.328125,
+        "right": 1416.984375,
+        "top": 542.46875,
+        "width": 357.65625
+      },
+      "performance": {
+        "bottom": 532.46875,
+        "height": 466.46875,
+        "left": 1157.796875,
+        "right": 1416.984375,
+        "top": 66,
+        "width": 259.1875
+      },
+      "raw": {
+        "bottom": 532.46875,
+        "height": 466.46875,
+        "left": 324,
+        "right": 1147.796875,
+        "top": 66,
+        "width": 823.796875
+      },
+      "row": {
+        "bottom": 532.46875,
+        "height": 466.46875,
+        "left": 324,
+        "right": 1416.984375,
+        "top": 66,
+        "width": 1092.984375
+      }
+    },
+    "scale": {
+      "aspectMode": "equal",
+      "auto": true,
+      "pixelsPerMetreX": 10.476813168951798,
+      "pixelsPerMetreY": 10.476813168951798,
+      "plotHeight": 337,
+      "plotWidth": 762,
+      "xmax": 71.33334744012865,
+      "xmin": -1.3986930870613463,
+      "ymax": 31.156905069304216,
+      "ymin": -1.009364822642011
+    },
+    "state": "done"
+  },
+  "mobile390": {
+    "documentWidth": 375,
+    "gaps": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "rects": [
+      {
+        "bottom": 1965.875,
+        "height": 496.390625,
+        "id": "#viewMain",
+        "left": 12,
+        "right": 363,
+        "top": 1469.484375
+      },
+      {
+        "bottom": 2499.828125,
+        "height": 523.953125,
+        "id": ".performance-panel",
+        "left": 12,
+        "right": 363,
+        "top": 1975.875
+      },
+      {
+        "bottom": 2926.21875,
+        "height": 416.390625,
+        "id": "#viewDensity",
+        "left": 12,
+        "right": 363,
+        "top": 2509.828125
+      },
+      {
+        "bottom": 3352.609375,
+        "height": 416.390625,
+        "id": "#viewContrast",
+        "left": 12,
+        "right": 363,
+        "top": 2936.21875
+      },
+      {
+        "bottom": 3796.609375,
+        "height": 434,
+        "id": "#viewMetrics",
+        "left": 12,
+        "right": 363,
+        "top": 3362.609375
+      }
+    ],
+    "scale": {
+      "aspectMode": "equal",
+      "auto": true,
+      "pixelsPerMetreX": 3.973489508959409,
+      "pixelsPerMetreY": 3.973489508959409,
+      "plotHeight": 278,
+      "plotWidth": 289,
+      "xmax": 71.33334744012865,
+      "xmin": -1.3986930870613463,
+      "ymax": 50.05561660526677,
+      "ymin": -19.908076358604568
+    },
+    "viewport": 390
+  },
+  "consoleWarningsOrErrors": []
+}

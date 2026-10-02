@@ -237,6 +237,12 @@ HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 �
 
 [endpoint-validation.json](tests/drf/endpoint-validation.json)의 10개 조건에서 양벽 끝단 관측률은 0%에서 100%로 증가했다. 기본 3대/seed 1의 아래/위 벽 proxy P95는 5.852/5.174 m에서 0.0589/0.1354 m로 감소했고, Q는 2904에서 3609로 증가했다. 같은 조건의 내부 x=10–50 m P95는 0.829에서 0.937 m로 증가했다. 2대에서는 관측률 100%에도 proxy 모호성이 남으므로 전체 정확도 개선이나 최종 wall extractor 성능을 주장하지 않는다. 독립 60/80 생성의 첫 60개 truth/wire와 기존 최종 필드 SHA가 같고, 미래 truth 추가가 실제 60번째 평가 출력에 영향을 주지 않는 것도 검사했다.
 
-현재 `npm test`는 117/117 통과, 실패 0, 17.856888625 s이다. 새 source로 명시적 60 snapshot 조건의 160회 참조 실험도 다시 실행했다. 완료 160/160, 실행 오류 0, sourcesStable=true, 47.503462416 s이며 이전 input/summary/final, aggregate와 comparisons가 모두 같다. 참조 수용 조건은 84/96 통과, 기존 12개 미충족을 유지한다. 현재 보고서는 [validation-results.json](tests/drf/validation-results.json)이다.
+주행 연장과 성능창 이동 당시 `npm test`는 117/117 통과, 실패 0, 17.856888625 s이다. 새 source로 명시적 60 snapshot 조건의 160회 참조 실험도 다시 실행했다. 완료 160/160, 실행 오류 0, sourcesStable=true, 47.503462416 s이며 이전 input/summary/final, aggregate와 comparisons가 모두 같다. 참조 수용 조건은 84/96 통과, 기존 12개 미충족을 유지한다. 현재 보고서는 [validation-results.json](tests/drf/validation-results.json)이다.
 
 HTTP 1920×930 화면 검사에서 우측 성능창의 clientHeight/scrollHeight는 484/484 px, 설정 사이드바는 876/876 px이고 평가 라벨은 한 줄이다. 기본 80/80 실행의 Q=3609와 Float32 field SHA `99ed8989b86da39ddd824608f05bf6178ca2efc06b07e50de69b858246755049`는 Node와 일치했다. 휠 축소 하한에서 해당 지도 기본 보기로 복원하고 하단 지도별 −/＋/처음으로가 현재 snapshot과 기록을 유지한다. [view-controls-validation.json](tests/drf/view-controls-validation.json)의 `finalEndpointAndPerformanceLayout`에 최종 117개 검사와 새 성능창 검사를 기록했으며 초기 116개 검사와 이전 배치 증거는 따로 유지한다. 이 절은 로컬 HTTP/Node 검증이며 공개 배포 완료나 실제 file 화면 실행을 의미하지 않는다.
+
+## 그래프 간격 고정
+
+RAW가 물리적 종횡비에 맞춰 바깥 카드까지 줄이던 크기 조정식을 제거했다. CSS grid가 카드의 전체 크기를 정하고 등척 camera는 그 내부에서만 계산한다. 상단 RAW와 성능창의 바닥/양끝을 하단 세 그래프에 맞추고 가로/세로 카드 간격을 모두 10 px로 유지한다. 진단 그래프 사이도 10 px이다.
+
+이 수정 후 `npm test`는 116/116 통과, 실패 0, 3.691665959 s였다. 제거한 크기 helper의 단위 검사 1개를 삭제하고 실제 renderer 검사에서 카드/본문 style을 변경하지 않는지 확인한다. 마지막 CSS 간격 변경 뒤 관련 표시 검사 3개도 통과했다. HTTP의 실행 전/80회 완료/확대 상태와 1920×930, 1920×1080, 1440×900, 모바일 세로 배치에서 간격 10 px를 확인했다. 실제 80회 필드와 Q는 이전 결과와 같고 추정기 source 11개는 변경하지 않았다. [uniform-spacing-validation.json](tests/drf/uniform-spacing-validation.json)에 로컬 증거를 기록한다.
