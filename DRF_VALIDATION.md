@@ -184,6 +184,6 @@ HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 �
 
 현재 전체 `npm test`는 117/117 통과, 실패 0, 17.856888625 s이다. 명시적 60 snapshot 조건의 160회 재실행은 47.503462416 s, 완료 160/160, 실행 오류 0, sourcesStable=true이며 기존 input/summary/final/aggregate/comparisons/failures를 모두 유지했다. 수용 조건 84/96 통과와 12개 미충족은 그대로이며 80 snapshot의 새 통계 수용 판정을 의미하지 않는다.
 
-작은 그래프 틀의 첫 페인트는 RAW가 CSS 초기 크기에서 최종 등척 크기로 조정되기 전에 보이던 화면이다. `#mapCanvas[data-view]` 준비 전 dashboard를 숨겨 최종 camera와 표시 크기 계산 뒤 공개한다. RAW 자동 범위에는 현재/과거 측정 pHat만 합치며 미래는 제외한다. 기본 축소 하한에서 휠 축소를 하면 해당 지도만 기본 보기로 돌아가고, 하단 Dbar/β̂의 −/＋/처음으로는 각 지도를 독립 조작하며 snapshot과 기록을 유지한다.
+작은 그래프 틀의 첫 페인트는 RAW가 CSS 초기 크기에서 최종 등척 크기로 조정되기 전에 보이던 화면이다. `#mapCanvas[data-view]` 준비 전 dashboard의 그래프 틀을 숨겨 최종 camera와 표시 크기 계산 뒤 공개한다. 우측 성능창의 실행 상태와 측정 생성 시간은 로딩/오류 안내를 위해 계속 표시한다. RAW 자동 범위에는 현재/과거 측정 pHat만 합치며 미래는 제외한다. 기본 축소 하한에서 휠 축소를 하면 해당 지도만 기본 보기로 돌아가고, 하단 Dbar/β̂의 −/＋/처음으로는 각 지도를 독립 조작하며 snapshot과 기록을 유지한다.
 
 상단 행의 RAW 오른쪽에 300 px 성능창을 배치하고 왼쪽은 설정만 남겼다. 하단 세 그래프는 전체 폭에 맞춘다. 실제 HTTP 1920×930에서 성능창 clientHeight/scrollHeight는 484/484 px, 사이드바는 876/876 px이고 평가 라벨의 두 줄 표시가 없었다. 실제 기본 80/80 실행, 하단 독립 조작과 휠 하한 복원의 상태 보존, 모바일 버튼 44 px 및 콘솔 경고/오류 0개는 [view-controls-validation.json](tests/drf/view-controls-validation.json)의 `finalEndpointAndPerformanceLayout`에 기록했다. 같은 파일의 초기 116개 검사와 이전 배치 기록은 당시 증거로 유지한다. 이 기록은 로컬 HTTP/Node 검증이며 공개 배포 완료와 실제 file 화면 실행의 검증은 별도로 판정한다.

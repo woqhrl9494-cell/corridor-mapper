@@ -120,7 +120,8 @@ dd { margin: 3px 0 0; font: 600 18px/1.15 "DM Mono", ui-monospace, SFMono-Regula
 .map-row { grid-column: 1/-1; display: grid; grid-template-columns: minmax(0,1fr) clamp(240px,18vw,300px); grid-template-rows: minmax(0,1fr); gap: 10px; min-width: 0; min-height: 0; }
 .map-slot { display: grid; grid-template-rows: minmax(0,1fr); min-width: 0; min-height: 0; }
 .map-panel { justify-self: center; align-self: start; max-width: 100%; }
-.performance-panel { padding: 10px; gap: 6px; overflow-y: auto; }
+/* Loading/failure status remains visible while the graph frames await their first paint. */
+.performance-panel { visibility: visible; padding: 10px; gap: 6px; overflow-y: auto; }
 .performance-panel > .section-title { margin: 0; font-size: 15px; }
 .performance-panel h3.section-title { margin: 0; font-size: 14px; }
 .performance-panel .metrics { gap: 5px; }

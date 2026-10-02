@@ -499,11 +499,11 @@
     },
     "consoleWarningsOrErrors": [],
     "followUpHtmlChange": {
-      "change": "Moved run status and measurement generation time into the right performance panel. Final public layout is verified separately.",
+      "change": "Moved run status/generation time into the right performance panel; kept that panel visible during graph initialization and errors. Final public layout is verified separately.",
       "command": "node --test tests/drf/ui.test.mjs tests/drf/offline.test.mjs",
       "passed": 6,
       "failed": 0,
-      "durationMs": 458.853958
+      "durationMs": 478.504833
     }
   }
 }
