@@ -1,9 +1,9 @@
 {
-  "baseCommit": "14aa2c88aa9207e3a4aa3734ef305c7c567a13f4",
+  "baseCommit": "a82f5f5081af97a3e0f1215ca174c2c6580e6c9b",
   "branch": "feat/drf-lab",
   "deployed": false,
   "sha256": {
-    "drf.html": "e64bb0f1c71ca73694bad31242c5cee82487361b8f3d40f2b9897858ddeccdba",
+    "drf.html": "18d6dff07bda075e03e0d3f283a4643866f788b47ef0ef23d3558641d1f81132",
     "drf/app.mjs": "94c21447de35113e325b5a1ed53172008eb7b97f4ca388fefd711b5c864499af",
     "drf/diffuse.mjs": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
     "drf/eval.worker.mjs": "15a5d15418cfeea319c6a90f93e5304f431fdd01288b21c027cc32b2347e9b1c",
@@ -19,7 +19,7 @@
     "drf/scenario.mjs": "f4b357c6e1fe85aac371d0476f11068ac937e0b5a7025ca8e08e2a4ce7e86d31",
     "drf/scenario.worker.mjs": "f129eacec3946bedb6d2d3e9cebdfa62c8c5c844ae2e4045e5040bca4dfb0d86",
     "drf/specular.mjs": "4d9b42edcd25625078f8239813108ef08dbd5fb59da60ebc3ae4a90a853f2eb4",
-    "drf/style.css": "e0f1aa2647ac968fe12948942eeb9a72a3628a6e009d88663e30db985887989b",
+    "drf/style.css": "94bac50f0fbc79f330a9d8ee972bf9d9d85e50e89a046ba8e320453f13bd5c5c",
     "drf/sweep.mjs": "6b038e75bf9895f575a96a7cd8424a24fb75a88cc42566687c2bd4d06a478800",
     "drf/sweep.worker.mjs": "ad5028327d0e3c0ffaf2f02d5a9af148259f13d508f70a9335789054aa7c738a",
     "drf/wall.mjs": "dc2a7ce0404c9034c47b83365a3575462f4b8e32043ee90dcc6ba9e7cd90e440",
@@ -29,5 +29,5 @@
     "surf/map.mjs": "9a8c31b8c87c0c157f73db4a22d0f8b8a7cafa7c13bacaf60b6b8c4136b39d60",
     "surf/style.css": "e62e5bb7c4cfd1ee3e1f38e5d80dda5e7b9bb4c12d0836c1956d6a34026ef27e"
   },
-  "status": "pre-deployment source snapshot with actual-wall, wall-candidate and English corridor labels; numerical algorithms unchanged"
+  "status": "pre-deployment source snapshot with Korean word-preserving wrapping and compact scene labels"
 }

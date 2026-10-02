@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261002-uniformgap19" />
+    <link rel="stylesheet" href="drf/style.css?v=20261002-keepwords23" />
   </head>
   <body>
     <header class="site-header">
@@ -22,7 +22,7 @@
         </section>
         <form id="settings" class="sidebar-section">
           <fieldset><legend class="section-title">장면과 측정</legend>
-            <div class="input-pair"><label>장면<select name="scene"><option value="reference">Reference corridor</option><option value="random">Random corridor</option></select></label><label>seed<input name="seed" type="number" min="0" max="4294967295" step="1" value="1" required /></label></div>
+            <div class="input-pair"><label>장면<select name="scene"><option value="reference" title="Reference corridor">Reference</option><option value="random" title="Random corridor">Random</option></select></label><label>seed<input name="seed" type="number" min="0" max="4294967295" step="1" value="1" required /></label></div>
             <div class="input-pair"><label>차량 수<input name="vehicles" type="number" min="2" max="20" step="1" value="3" required title="2–20대 · 모든 차량 쌍의 측정 생성" /></label><label>snapshot 수<input name="snapshots" type="number" min="1" max="80" step="1" value="80" required title="전체 실행은 최소 80회 · 한 step은 입력한 횟수 사용" /></label></div>
             <div class="input-pair"><label>위치 σ_p [m]<input name="sigmaP" type="number" min="0" max="2" step="0.01" value="0.1" required /></label><label>거리 σ_d [m]<input name="sigmaD" type="number" min="0" max="2" step="0.01" value="0.1" required /></label></div>
           </fieldset>

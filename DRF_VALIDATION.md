@@ -213,3 +213,7 @@ HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 �
 대용점 표기를 벽 후보점으로 변경하고 누적 필드의 바깥쪽 봉우리에서 선택한 평가용 후보임을 설명했다. 참 벽은 실제 벽으로 표시하며 시뮬레이션이 생성한 실제 위치라는 설명을 붙였다. 장면 선택은 Reference corridor / Random corridor, 관련 화면·방법 설명도 corridor로 표기한다. 생성 중 안내와 미리보기는 벽 모델로 표기한다. JSON 키 proxy, scene 값 reference/random 및 수치 처리와 camera 코드는 유지한다.
 
 용어 수정 뒤 실제 HTML 선택/현재 22-source offline bundle·classic Blob worker·DOM·renderer 관련 검사 5/5가 통과했다(512.599 ms). 직전 로직 회귀 검사 118/118 결과와 구분하며 수치 source 11개는 계속 같다.
+
+## 한글 단어 단위 줄바꿈
+
+본문에 word-break:keep-all과 overflow-wrap:normal을 적용하고 상태·조회·지표·provenance의 anywhere 줄바꿈을 제거했다. 코드 문자열은 별도 anywhere를 유지한다. 장면 선택은 좁은 입력칸에 맞춰 Reference / Random으로 짧게 표시하고 title에 전체 corridor 이름을 유지한다. 일반 설명의 corridor 표기는 같다. 변경 뒤 표시·offline 관련 5/5 검사가 통과했다(466.007541 ms). 로컬 HTTP 1920×930 및 390×844의 설정 안내·설명 대화창·상태·조회 문구에서 computed word-break=keep-all, overflow-wrap=normal을 확인했고 문단 및 대화창 scrollWidth/clientWidth가 같았다. 이는 CSS/폭 검사이며 모든 단어의 문자별 줄 위치를 자동 비교한 결과는 아니다.
