@@ -34,7 +34,7 @@ const numberLabel = (x) => !Number.isFinite(x) ? "—" : x !== 0 && (Math.abs(x)
 
 /** Presentation only. Input field is iy*nx+ix with y ascending; canvas y is inverted.
  * O(nx*ny + history pairs + displayed paths) per field update; O(nx*ny) heatmap memory.
- * Simulator truth is used only by explicit evaluation overlays, never sent to field.
+ * Scene geometry sets display bounds; truth overlays are optional and never sent to field.
  */
 export class DrfMap {
   constructor(canvas, onInspect) {
@@ -82,8 +82,8 @@ export class DrfMap {
     const previous=this.state;
     this.state=state;
     if (state.aspectMode !== previous.aspectMode) {this.auto=true;this.camera=null;}
-    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || state.layers?.showTruth !== previous.layers?.showTruth || (state.focus && !this.fullDomain && state.frame !== previous.frame)
-      || (state.mode==='geometry' && (state.frame !== previous.frame || state.wire !== previous.wire || state.layers?.showVehicles !== previous.layers?.showVehicles)))) this.camera=null;
+    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || (state.focus && !this.fullDomain && state.frame !== previous.frame)
+      || (state.mode==='geometry' && (state.frame !== previous.frame || state.wire !== previous.wire)))) this.camera=null;
     if (state.frame !== previous.frame || state.grid !== previous.grid || state.heatField !== previous.heatField || state.scaleMode !== previous.scaleMode) this.buildHeat();
     this.draw();
   }
@@ -133,10 +133,10 @@ export class DrfMap {
         const cx=Math.max(domain[0]+12,Math.min(domain[1]-12,n ? poses.reduce((s,p)=>s+p[0],0)/n : (domain[0]+domain[1])/2));
         const cy=Math.max(domain[2]+12,Math.min(domain[3]-12,n ? poses.reduce((s,p)=>s+p[1],0)/n : (domain[2]+domain[3])/2));
         bounds={xmin:cx-12,xmax:cx+12,ymin:cy-12,ymax:cy+12};
-    } else if (!this.fullDomain && this.state.layers?.showTruth && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
+    } else if (!this.fullDomain && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
     // RAW includes only poses measured through the selected snapshot, including the open exit.
     // The inference grid and the lower field maps retain their fixed [0,60] x [0,30] m domain.
-    if (geometry && this.state.layers?.showVehicles) {
+    if (geometry) {
       const snapshots=[...(this.state.history ?? []).filter(s=>s.t<=(this.state.frame?.t ?? 0)),this.state.wire];
       for (const snapshot of snapshots) for (const c of snapshot?.configs ?? []) for (const p of [c.pHat_i,c.pHat_j]) {
         if (snapshot.t>(this.state.frame?.t ?? 0) || p?.length!==2 || !p.every(Number.isFinite)) continue;

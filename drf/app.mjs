@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-uniformgap19';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-stablelayers21';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -74,7 +74,13 @@ function cancel(clear = false) {
 }
 async function prepare(single = false) {
   try {
-    const input = settings(); cancel(true); state.mode = 'running'; const generation = state.generation; controls();
+    const input = settings();
+    // A full drive must pass the finite wall exit, including restored shorter URLs.
+    if (!single && input.snapshots < DEFAULT_INPUT.snapshots) {
+      input.snapshots = DEFAULT_INPUT.snapshots;
+      fillSettings(input);
+    }
+    cancel(true); state.mode = 'running'; const generation = state.generation; controls();
     location.hash = `v1=${encodeURIComponent(JSON.stringify(input))}`;
     notice('참 장면과 측정 기록을 생성하는 중입니다.');
     const scenarioWorker = makeWorker('scenario', ({ t, total }) => { if (generation === state.generation) notice(`측정 생성 ${t} / ${total}`); });
@@ -148,7 +154,6 @@ const inspect = point => {
 const map = new DrfMap($('mapCanvas'),inspect),densityMap=new DrfMap($('densityCanvas'),inspect),contrastMap=new DrfMap($('contrastCanvas'),inspect);
 let previewKey='',preview=[];
 function previewWalls() {
-  if (!$('showTruth').checked) return [];
   const scene=form.elements.namedItem('scene').value,seed=Number(form.elements.namedItem('seed').value),key=`${scene}:${seed}`;
   if (!Number.isInteger(seed) || seed<0 || seed>0xffffffff) return [];
   // Geometry preview belongs to display/evaluation only; no wire or inferred field is fabricated.

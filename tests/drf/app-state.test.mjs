@@ -10,6 +10,31 @@ const section=(start,end)=>{
   return source.slice(a,b);
 };
 
+test('actual full run extends a restored 60-snapshot URL to the exit; single steps retain their experiment length',async()=>{
+  for (const [single,requested,expected] of [[false,60,80],[true,60,60],[false,80,80]]) {
+    const input={vehicles:10,snapshots:requested,grid:150,band:4,perimeter:'exact'},generated=[],filled=[],advanced=[];
+    const state={generation:0,scenario:null,mode:'idle'},location={hash:'#v1=old'};
+    const context=vm.createContext({state,location,DEFAULT_INPUT:{snapshots:80},
+      settings:()=>({...input}),fillSettings:value=>filled.push({...value}),
+      cancel:()=>{state.generation++;},controls(){},notice(){},createGrid:(nx,ny)=>({nx,ny}),
+      makeWorker:name=>({stop(){},async request(message){
+        if (name==='scenario') {generated.push({...message.input});return {scenario:{input:message.input}};}
+        return {};
+      }}),advance:value=>advanced.push(value??false),fail:error=>{throw error;},
+    });
+    vm.runInContext(section('async function prepare(','function fail('),context);
+    await context.prepare(single);
+    assert.equal(generated.length,1);
+    assert.equal(generated[0].snapshots,expected,'Generate the same length stored in the URL');
+    assert.equal(state.scenario.input.snapshots,expected);
+    assert.equal(JSON.parse(decodeURIComponent(location.hash.slice(3))).snapshots,expected);
+    assert.equal(generated[0].vehicles,10,'Preserve the restored vehicle count');
+    assert.deepEqual(filled,single || requested===expected ? [] : [{...input,snapshots:expected}],'Synchronize the visible settings when extending the drive');
+    assert.deepEqual(advanced,[single]);
+    assert.equal(state.mode,single ? 'paused' : 'running');
+  }
+});
+
 test('actual lower-map buttons affect only their own camera',()=>{
   const nodes=new Map(),calls=[],$=id=>{if (!nodes.has(id)) nodes.set(id,{});return nodes.get(id);};
   const view=name=>({zoom:factor=>calls.push([name,'zoom',factor]),fit:()=>calls.push([name,'fit'])});
@@ -20,6 +45,18 @@ test('actual lower-map buttons affect only their own camera',()=>{
   }
   assert.deepEqual(calls,[['density','zoom',1.3],['density','zoom',1/1.3],['density','fit'],
     ['contrast','zoom',1.3],['contrast','zoom',1/1.3],['contrast','fit']]);
+});
+
+test('actual preview geometry stays cached when the truth overlay is hidden',()=>{
+  const truth={checked:true},fields={scene:{value:'reference'},seed:{value:'1'}};
+  let generated=0;
+  const context=vm.createContext({$:()=>truth,form:{elements:{namedItem:name=>fields[name]}},
+    previewKey:'',preview:[],createWalls:()=>{generated++;return [[0,6],[60,24]];},sampleWalls:walls=>walls});
+  vm.runInContext(section('function previewWalls()','function renderSelected()'),context);
+  const initial=context.previewWalls();
+  truth.checked=false;assert.equal(context.previewWalls(),initial,'Hiding the preview must keep the scene extent');
+  truth.checked=true;assert.equal(context.previewWalls(),initial);
+  assert.equal(generated,1,'Layer toggles must reuse the scene, without regenerating it');
 });
 
 test('actual view reset preserves simulation, selection and replay; experiment reset still clears them',async()=>{

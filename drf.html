@@ -18,12 +18,12 @@
     <main class="workspace">
       <aside class="sidebar settings-panel" aria-label="실험 설정">
         <section class="sidebar-section run-section">
-          <div class="run-actions"><button id="runButton" class="primary" type="button" disabled>실행</button><button id="stepButton" type="button" disabled>한 step</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="resetButton" type="button">재설정</button><button id="cancelButton" class="danger" type="button" disabled>취소</button></div>
+          <div class="run-actions"><button id="runButton" class="primary" type="button" disabled title="벽 끝을 통과하도록 최소 80 snapshot 전체 주행">실행</button><button id="stepButton" type="button" disabled>한 step</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="resetButton" type="button">재설정</button><button id="cancelButton" class="danger" type="button" disabled>취소</button></div>
         </section>
         <form id="settings" class="sidebar-section">
           <fieldset><legend class="section-title">장면과 측정</legend>
             <div class="input-pair"><label>장면<select name="scene"><option value="reference">기준 코리도</option><option value="random">랜덤 코리도</option></select></label><label>seed<input name="seed" type="number" min="0" max="4294967295" step="1" value="1" required /></label></div>
-            <div class="input-pair"><label>차량 수<input name="vehicles" type="number" min="2" max="20" step="1" value="3" required title="2–20대 · 모든 차량 쌍의 측정 생성" /></label><label>snapshot 수<input name="snapshots" type="number" min="1" max="80" step="1" value="80" required /></label></div>
+            <div class="input-pair"><label>차량 수<input name="vehicles" type="number" min="2" max="20" step="1" value="3" required title="2–20대 · 모든 차량 쌍의 측정 생성" /></label><label>snapshot 수<input name="snapshots" type="number" min="1" max="80" step="1" value="80" required title="전체 실행은 최소 80회 · 한 step은 입력한 횟수 사용" /></label></div>
             <div class="input-pair"><label>위치 σ_p [m]<input name="sigmaP" type="number" min="0" max="2" step="0.01" value="0.1" required /></label><label>거리 σ_d [m]<input name="sigmaD" type="number" min="0" max="2" step="0.01" value="0.1" required /></label></div>
           </fieldset>
           <fieldset><legend class="section-title">산란</legend>
@@ -89,8 +89,8 @@
     <dialog id="aboutDialog"><div class="dialog-title"><h2>방법과 검증 범위</h2><button id="closeAbout" type="button" aria-label="방법 설명 닫기">닫기</button></div><p>wall-shape-model-free Direct Residual Field. 현재 snapshot까지의 측정만 누적합니다.</p><div class="information-flow"><span>참 장면 → 측정 생성</span><span>측정 wire → F10–F40 → 필드</span><span class="evaluation">필드 + 참값 → 사후 평가</span></div><p>F10–11: 유효 경로 선택. F16–22: 타원 둘레. F24–33: 잔차와 위치·거리 불확실성. F36–40: 누적, 채택 경로 평균과 β̂.</p><p>β̂는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">Outer-Peak: corridor prior · 평가용 · 최종 extractor 아님. 벽 추출법은 미확정이며 검증 범위는 코리도 장면입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-uniformgap19';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-uniformgap19'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-stablelayers21';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-stablelayers21'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>

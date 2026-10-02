@@ -132,10 +132,17 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       assert.equal(bottom.camera.scaleX,bottom.camera.scaleY,`${heatField}: metres must remain isometric`);
       assert.equal(bottom.camera.scaleX,Math.min(bottom.box.w/(60*1.04),bottom.box.h/(18*1.04)),`${heatField}: automatic fit uses the visible wall range`);
       assert.ok(bottomView.xmin<=0 && bottomView.xmax>=60 && bottomView.ymin<=6 && bottomView.ymax>=24,`${heatField}: both wall endpoints must fit the smaller panel`);
+      const visibleView=bottomCanvas.dataset.view,visibleFloor={...bottom.defaultScale};
       bottom.set({...bottom.state,layers:{showTruth:false}});bottom.paint(bottomCanvas,2);
-      const hiddenView=bottomCanvas.dataset.view;
-      bottom.set({...bottom.state,walls:[[[0,-1000],[60,1000]]]});bottom.paint(bottomCanvas,2);
-      assert.equal(bottomCanvas.dataset.view,hiddenView,`${heatField}: hidden truth must not change the public full view`);
+      assert.equal(bottomCanvas.dataset.view,visibleView,`${heatField}: hiding truth preserves the automatic camera`);
+      assert.deepEqual(bottom.defaultScale,visibleFloor,`${heatField}: hiding truth preserves the zoom floor`);
+      bottom.fit();bottom.paint(bottomCanvas,2);
+      assert.equal(bottomCanvas.dataset.view,visibleView,`${heatField}: reset while truth is hidden uses the same view`);
+      bottom.zoom(1.3,[100,80]);bottom.paint(bottomCanvas,2);
+      const manualView=bottomCanvas.dataset.view;
+      bottom.set({...bottom.state,layers:{showTruth:true}});bottom.paint(bottomCanvas,2);
+      assert.equal(bottomCanvas.dataset.view,manualView,`${heatField}: showing truth preserves the manual camera`);
+      assert.deepEqual(bottom.defaultScale,visibleFloor);
     }
     const beforeExit=map.state,exitWire={t:80,configs:[{pHat_i:[64,15],pHat_j:[70,16]}]};
     map.set({...beforeExit,frame:{...frame,t:80},wire:exitWire,layers:{showTruth:true,showVehicles:true},
@@ -143,6 +150,13 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     map.paint(canvas,1);const exitView=JSON.parse(canvas.dataset.view);
     assert.ok(exitView.xmax>=70 && exitView.xmax<100,'RAW fits the measured open-exit poses and ignores future history');
     assert.equal(exitView.pixelsPerMetreX,exitView.pixelsPerMetreY);
+    const exitCamera=canvas.dataset.view,exitFloor={...map.defaultScale};
+    map.set({...map.state,layers:{showTruth:false,showVehicles:false}});map.paint(canvas,1);
+    assert.equal(canvas.dataset.view,exitCamera,'RAW layer toggles preserve the full measured exit range');
+    assert.deepEqual(map.defaultScale,exitFloor,'RAW layer toggles preserve the zoom floor');
+    map.fit();map.paint(canvas,1);assert.equal(canvas.dataset.view,exitCamera,'RAW reset is independent of layer visibility');
+    map.set({...map.state,layers:{showTruth:true,showVehicles:true}});map.paint(canvas,1);
+    assert.equal(canvas.dataset.view,exitCamera);
     const exitField=new DrfMap(makeCanvas());exitField.set({...map.state,mode:undefined,heatField:'Dbar'});exitField.paint(exitField.canvas,1);
     assert.equal(exitField.camera.cx,30,'Lower field maps retain the wall domain when vehicles pass the exit');
     map.set(beforeExit);map.paint(canvas,1);
@@ -269,8 +283,9 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       pan();
       const panCenter=[floorMap.camera.cx,floorMap.camera.cy],axisRatio=floorMap.camera.scaleX/floorMap.camera.scaleY;
       floorCanvas.clientWidth=1400;floorCanvas.clientHeight=700;floorMap.paint(floorCanvas,2);
+      let extent=[60,30];
       const expected=()=> {
-        let x=floorMap.box.w/(60*1.04),y=floorMap.box.h/(30*1.04);
+        let x=floorMap.box.w/(extent[0]*1.04),y=floorMap.box.h/(extent[1]*1.04);
         if (mode==='geometry' || aspectMode==='equal') x=y=Math.min(x,y);
         return [x,y];
       };
@@ -278,11 +293,16 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9,`${name}: resize immediately enforces the new default floor`);
       near(floorMap.camera.cx,panCenter[0]);near(floorMap.camera.cy,panCenter[1]);near(floorMap.camera.scaleX/floorMap.camera.scaleY,axisRatio);
       floorMap.set({...floorMap.state,layers:{showTruth:true},walls:[[[10,6],[50,24]]]});floorMap.paint(floorCanvas,1);
+      extent=[40,18];
       let wallX=floorMap.box.w/(40*1.04),wallY=floorMap.box.h/(18*1.04);
       if (mode==='geometry' || aspectMode==='equal') wallX=wallY=Math.min(wallX,wallY);
       assert.ok(floorMap.camera.scaleX>=wallX-1e-9 && floorMap.camera.scaleY>=wallY-1e-9,`${name}: a changed visible range updates the default floor`);
       near(floorMap.camera.cx,panCenter[0]);near(floorMap.camera.cy,panCenter[1]);
+      const beforeHide=JSON.parse(floorCanvas.dataset.view),defaultBeforeHide={...floorMap.defaultScale};
       floorMap.set({...floorMap.state,layers:{showTruth:false}});floorMap.paint(floorCanvas,1);
+      const afterHide=JSON.parse(floorCanvas.dataset.view);
+      for (const key of Object.keys(beforeHide)) typeof beforeHide[key]==='number' ? near(afterHide[key],beforeHide[key]) : assert.equal(afterHide[key],beforeHide[key],`${name}: hiding truth preserves the panned camera`);
+      assert.deepEqual(floorMap.defaultScale,defaultBeforeHide,`${name}: hiding truth preserves the resize floor`);
       floorCanvas.clientWidth=360;floorCanvas.clientHeight=220;floorMap.paint(floorCanvas,1);
       floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);minimum=expected();
       assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9,`${name}: a smaller viewport allows only its own default floor`);
