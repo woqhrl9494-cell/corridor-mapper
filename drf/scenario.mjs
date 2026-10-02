@@ -1,5 +1,6 @@
 /** Truth-side simulator. Units: m and rad; no estimator output is read here.
  * Input: experiment settings. Output: truth and a separately copied measurement wire.
+ * C = V(V-1)/2 unordered Tx/Rx pairs, V in [2,20].
  * Work per snapshot: O(C * (wall cells + emitted paths * visibility cost)).
  */
 import { createWalls, sampleWalls } from './wall.mjs';
@@ -23,8 +24,8 @@ export function normalizeInput(raw = {}) {
   p.band = p.band === 'full' ? 'full' : Number(p.band);
   p.specular = p.specular === true || p.specular === 'true';
   if (!['reference', 'random'].includes(p.scene)) throw new Error('Unknown corridor scene');
-  if (![2, 3].includes(p.vehicles) || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 60)
-    throw new Error('Reference trajectories support 2–3 vehicles and 1–60 snapshots');
+  if (!Number.isInteger(p.vehicles) || p.vehicles < 2 || p.vehicles > 20 || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 60)
+    throw new Error('Reference trajectories support 2–20 vehicles and 1–60 snapshots');
   if (![100, 150, 200].includes(p.grid) || ![3, 4, 5, 'full'].includes(p.band) || !['exact', 'ramanujan'].includes(p.perimeter))
     throw new Error('Unsupported numerical setting');
   if (p.sigmaP < 0 || p.sigmaD < 0 || p.sigmaP > 2 || p.sigmaD > 2 || p.sigmaP + p.sigmaD === 0)
@@ -35,7 +36,10 @@ export function normalizeInput(raw = {}) {
   return p;
 }
 export function truePoses(t, vehicles = 3) {
-  return [4, 7, 10].slice(0, vehicles).map((x0, v) => {
+  return Array.from({ length: vehicles }, (_, v) => {
+    // Preserve V1–V3 and all shared RNG addresses. Fixed extra slots keep fleet prefixes equal.
+    // Point-vehicle trajectories: x0 in [1,14], so x(t) remains inside [0,60] for t=1..60.
+    const x0 = v < 3 ? 4 + 3 * v : 1 + 13 * (v - 3) / 16;
     const x = x0 + 0.75 * t;
     return [x, 15 + 2 * Math.sin(2 * Math.PI * x / 30 + v + 1)];
   });

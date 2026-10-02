@@ -1,6 +1,6 @@
 # EchoMap DRF 검증 기록
 
-상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. model8 배포 당시 자동 검사 113/113과 현재 수치 source SHA에 연결된 160회 통계를 확인했다. 이번 수정은 보기와 버튼 동작이며 기존 통계 결과를 유지한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
+상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. model8 배포 당시 자동 검사 113/113과 현재 수치 source SHA에 연결된 160회 통계를 확인했다. 현재 차량 수를 2–20대로 확장했으며 기본 3대 160회 통계의 수치 결과를 유지한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
 
 ## 변경과 재현 조건
 
@@ -10,7 +10,7 @@
 - 밝은 clay 스타일의 표면과 컨트롤, 흰 plot 배경 및 내부 격자를 적용했다. RAW는 등척을 유지하며 panel 크기를 표시할 metre 범위에 맞춘다. 하단 두 필드에도 기본 등척을 적용하며 선택 가능한 채움 방식을 유지한다. 화면의 도구명은 DRF 시뮬레이터, 소속 표기는 한양대학교 WSL이다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
 - `file://` 실행을 위한 classic bundle 추가. 기존 esbuild로 동일한 앱과 scenario/field/eval/sweep Worker를 묶고, Worker는 4종의 classic Blob script로 실행한다. provenance와 참조 fixtures JSON도 bundle에 포함하므로 로컬 파일에서 module import나 JSON fetch에 의존하지 않는다.
-- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. 이 truth-side 변경은 model8에 적용했다. 현재 UI 변경에서는 Field/evaluator 누적식과 수치 소스 11개를 수정하지 않았다.
+- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. 이 truth-side 변경은 model8에 적용했다. 직전 UI 변경에서는 Field/evaluator 누적식과 수치 소스 11개를 수정하지 않았다. 이번 차량 확장은 scenario의 궤적과 입력 범위, sweep의 cache URL을 변경했으며 Field/evaluator 누적식은 유지한다.
 
 ```sh
 npm run build:drf-offline
@@ -147,4 +147,18 @@ RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도�
 
 현재 HTTP 기본 60 snapshot 실행은 Q=2904이며 Dbar/β̂ Float32 SHA-256은 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 기존 결과와 같았다. 실행 전 `처음으로` 실제 클릭은 확대된 RAW camera를 기본 배율로 복원하고 snapshot 0 / 60과 설정을 유지했다. 실행 후 실제 클릭은 선택 1, slider max=60과 세 지도 자동 보기를 유지했다. 이는 HTTP 검사이며 실제 file 화면 검증으로 확대하지 않는다.
 
-현재 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. VM 회귀 검사에는 기록 없는 idle/측정 준비 중 버튼 활성화와 세 camera 복원, 설정/기록/worker/실행 상태 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지가 포함된다. Offline 22개 source bundle과 classic Blob Worker, 44개 보호 파일, 기존 160회 보고서의 수치 source SHA 검사도 통과했다. 이번 수정에서는 수치 소스 11개의 SHA가 그대로이므로 160회를 다시 실행하지 않았다. 참조 수용 기준의 12개 미충족도 유지한다.
+직전 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. VM 회귀 검사에는 기록 없는 idle/측정 준비 중 버튼 활성화와 세 camera 복원, 설정/기록/worker/실행 상태 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지가 포함된다. Offline 22개 source bundle과 classic Blob Worker, 44개 보호 파일, 기존 160회 보고서의 수치 source SHA 검사도 통과했다. 직전 표시 수정에서는 수치 소스 11개의 SHA가 그대로여서 160회를 다시 실행하지 않았다. 이번 차량 확장은 다음 별도 기록을 따른다. 참조 수용 기준의 12개 미충족도 유지한다.
+
+## 차량 2–20대 확장
+
+기존 3대 제한을 확장하고 실제 20대 궤적과 190쌍을 생성한다. 기존 1–3번 궤적과 공통 쌍의 RNG 주소를 보존한다. 추가 차량은 고정 x0∈[1,14] m 슬롯을 사용하며 60개 시점에서 벽 내부에 머문다. 차량의 차폭과 접속 스케줄은 모델에 포함하지 않는다.
+
+[fleet-validation.json](tests/drf/fleet-validation.json)의 Node 기본 20대 전체 실행은 60/60, 187,631개 경로, 모든 field 값 유한, 최종 SHA `3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254`를 확인했다. 단일 seed 완료 검사이며 20대 성능의 모집단 통계가 아니다. 계산 시간과 단일 process의 표본 메모리는 HTTP 화면 및 Worker 메모리와 구분한다.
+
+기본 3대 160회 통계도 새 source로 다시 실행했다. 46.974087 s, 실행 오류 0, sourcesStable=true이며 이전 160개의 input/summary/final과 aggregate/comparisons/failures는 정확히 같다. 참조 수용 조건은 84/96 통과, 기존 12개 미충족이다.
+
+타원 표시량은 최대 600개로 제한하며 원본 wire와 추정 경로는 모두 유지한다. 표시 수와 측정 수를 RAW 제목에 표시한다. 20대 차량점과 궤적을 유지하고 번호는 plot 안에만 배치한다. 이는 큰 차량 수의 Canvas 표시 비용과 번호 잘림을 해결하는 표시 변경이다.
+
+차량 확장 후 `npm test`는 115/115 통과, 실패 0, 18.282778 s였다. 실제 20대 생성기 연결 검사와 표시 600개 상한, 전 차량점 유지, 번호 bbox/차량점 겹침과 plot 경계 검사가 포함된다.
+
+최종 HTTP module 화면에서 차량 20대, 60/60, Q=187631과 같은 최종 필드 SHA를 확인했다. 1920×930 content viewport에서 사이드바는 342 px, clientHeight/scrollHeight=876/876 px이고 28개 설정 컨트롤과 네 canvas가 모두 첫 화면에 보였다. 마지막 시점의 측정 4326개 중 타원 541개가 표시됐다. 생성 중 취소는 기록 0개와 실행 가능 상태로 돌아갔고, 완료 후 `처음으로`는 1/60을 선택하며 60개 기록을 유지했다. Console warning/error는 0개였다. 20대 수치 폭으로 하단 설명이 5 px 잘린 문제는 desktop section 상하 여백 2→1 px로 해결했다. 이 마지막 CSS/cache/bundle 수정 후 관련 7개 표시·버튼·offline 검사는 모두 통과했다. 실제 file 화면 검증으로 확대하지 않는다.

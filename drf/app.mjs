@@ -1,8 +1,8 @@
-import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-model8';
+import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-fleet11';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-model8';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-view10';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-fleet11';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-fleet13';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -24,7 +24,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-model8`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-fleet11`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;

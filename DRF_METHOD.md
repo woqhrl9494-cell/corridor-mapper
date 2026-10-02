@@ -8,8 +8,9 @@ DRF 시뮬레이터는 simulator, estimator, evaluator를 분리한 브라우저
 
 기준 장면은 world coordinate system의 `[0,60] × [0,30]` m 영역이다. 아래 벽 knot 높이는 `[8,6,9,7.5,10,8,7]`, 위 벽은 `[22,24,21,23.5,20,22.5,23]`, knot x는 `0:10:60` m이다. `notAKnot`은 cubic interpolating spline이며 B-spline 근사가 아니다. 같은 길이의 x/y 입력에 not-a-knot 경계조건을 쓰는 [MATLAB spline 문서](https://www.mathworks.com/help/matlab/ref/spline.html)에 따른다. 랜덤 장면은 이 knot 높이를 seed로 ±0.5 m 이내에서 변경하는 탐색용 장면이며 참조 통계 비교 대상에서 제외한다.
 
-차량 ID v=1,2,3의 참 위치는 x=4,7,10 m에서 출발해 snapshot마다 0.75 m씩 증가한다. y는 `15 + 2 sin(2πx/30 + v)` m이다. 새 명세의 0-based 궤적 인덱스에 1을 더한 ID이며 RNG와 wire에서도 이 ID를 유지한다. 기준 입력은 차량 3대, snapshot 60개, isotropic 위치 표준편차 0.1 m, range 표준편차 0.1 m, roughness 2°, intensity 10/m, 목표 cell 길이 0.02 m, resolution 0 m, specular true, seed 1이다. 기준 추정기 설정은 격자 150×150, band 4, exact perimeter이다. grid/band/perimeter는 입력 envelope에 보관하지만 벽과 측정 생성식에는 사용하지 않는다. UI가 허용하는 범위는 차량 2–3대, snapshot 1–60개, 격자 100/150/200이다.
+차량 ID v=1,2,3의 참 위치는 x=4,7,10 m에서 출발해 snapshot마다 0.75 m씩 증가한다. y는 `15 + 2 sin(2πx/30 + v)` m이다. 새 명세의 0-based 궤적 인덱스에 1을 더한 ID이며 RNG와 wire에서도 이 ID를 유지한다. 기준 입력은 차량 3대, snapshot 60개, isotropic 위치 표준편차 0.1 m, range 표준편차 0.1 m, roughness 2°, intensity 10/m, 목표 cell 길이 0.02 m, resolution 0 m, specular true, seed 1이다. 기준 추정기 설정은 격자 150×150, band 4, exact perimeter이다. grid/band/perimeter는 입력 envelope에 보관하지만 벽과 측정 생성식에는 사용하지 않는다. UI가 허용하는 범위는 차량 2–20대, snapshot 1–60개, 격자 100/150/200이다.
 
+추가 차량 ID v=4,…,20은 x0=1+13(v−4)/16 m에서 출발하고 같은 0.75 m/snapshot 이동식과 y 식을 사용한다. 고정 슬롯을 쓰므로 차량 수나 전체 snapshot 수를 바꿔도 공통 차량의 궤적과 RNG 주소는 바뀌지 않는다. t=1,…,60에서 모든 참 위치가 코리도 내부에 머문다. 이들은 점 차량이며 실제 차량의 차폭, 충돌 회피와 무선 접속 스케줄을 모사하지 않는다. 160회 참조 통계는 기본 3대 조건이며 20대 단일 실행을 그 통계와 혼용하지 않는다.
 입력 제한은 위치/range 표준편차 각각 0–2 m, roughness 0–20°, intensity 0–30/m, cell step 0.005–0.2 m, resolution ablation 0–2 m, seed uint32이다. 두 표준편차를 동시에 0으로 만들 수 없다. 실제 cell의 양의 residual variance 조건은 field가 추가로 검사한다.
 
 - 위치와 산란점: 길이 2의 `[x,y]`, 단위 m.
@@ -125,14 +126,14 @@ $$
 
 `createRng`는 seed와 stream 주소로 초기화하는 xoshiro128**이다. 주소는 `JSON.stringify([seed,...parts])`로 직렬화하고 각 문자의 UTF-16 code unit에 FNV-1a를 적용한다. 초기값은 2166136261, 곱셈 상수는 16777619이며 모든 연산은 uint32이다. 네 state word는 해시에 차례로 `0x9e3779b9`를 더한 뒤 xor-shift와 `0x21f0aaad`, `0x735a2d97` 곱셈을 적용해 만든다. 정확한 shift 순서는 `rng.mjs`의 재현 규약이다. Uniform은 `(output+0.5)/2^32`로 열린 구간 (0,1)에 있고, Box–Muller normal은 cos 값을 먼저 반환한 뒤 sin 값을 다음 호출까지 보관한다. Stream 주소는 다음과 같다.
 
-- 위치: `(seed,'pose',t,v)`, 차량 ID v=1,2,3.
+- 위치: `(seed,'pose',t,v)`, 차량 ID v=1,…,V, V≤20. 기존 세 차량의 주소는 유지한다.
 - 정반사 표준잡음: `(seed,'specNoise',t,i,j)`.
 - Diffuse 생성: `(seed,'diffuse',t,i,j,wall)`, 벽마다 독립.
 - Diffuse range 표준잡음: `(seed,'diffNoise',t,i,j)`.
 - Wire 순서 섞기: `(seed,'shuffle',t,i,j)`.
 - 탐색용 랜덤 벽: `(seed,'wall')`.
 
-Configuration은 `(1,2),(1,3),(2,3)` 순서이고 monostatic은 없다. 정반사점은 span 순회와 근의 u 순서, diffuse 점은 아래 벽에서 위 벽 순서이며 각 벽 내부에서는 Poisson draw의 생성 순서를 유지한다. 정반사와 diffuse를 이 순서로 연결하고 각 유형의 noise stream에서 z를 배정한다. Range는 모두 참 위치로 계산하고 σd는 모든 path 유형에 동일하게 적용한다. 랜덤 벽 stream은 각 knot에서 아래/위 높이 잡음을 번갈아 소비한다.
+Configuration은 `1≤i<j≤V`를 i, j 오름차순으로 순회한다. 기본 3대에서는 `(1,2),(1,3),(2,3)` 순서이고 monostatic은 없다. 20대에서는 snapshot마다 190쌍이다. 정반사점은 span 순회와 근의 u 순서, diffuse 점은 아래 벽에서 위 벽 순서이며 각 벽 내부에서는 Poisson draw의 생성 순서를 유지한다. 정반사와 diffuse를 이 순서로 연결하고 각 유형의 noise stream에서 z를 배정한다. Range는 모두 참 위치로 계산하고 σd는 모든 path 유형에 동일하게 적용한다. 랜덤 벽 stream은 각 knot에서 아래/위 높이 잡음을 번갈아 소비한다.
 
 같은 seed에서 σ 또는 σd를 바꿔도 pose 표준잡음과 정반사 표준잡음은 동일하다. Path resolution ablation은 기본 OFF이며, ON일 때 noise-free range를 stable sort한 뒤 직전에 채택한 range와 εres 미만인 path를 버린다. 채택점에는 병합 전에 배정한 z를 그대로 사용한다. 마지막 Fisher–Yates shuffle로 wire의 path 순서를 섞고 label을 제거한다. 이 ablation을 실제 레이더 MPC 분해능 검증으로 해석하지 않는다.
 
@@ -195,10 +196,24 @@ HTTP(S)는 module 앱/Worker를 사용하고 `file://`은 `drf/offline.bundle.js
 
 model8 배포 당시 자동 검사는 113/113 통과, 실패 0, 실행 시간 16.108287 s였다. `truth-model.test.mjs`의 7개 검사는 실제 flat/curved profile의 thinning 전 Poisson 평균/분산, categorical CDF, 곡선 위 점과 same-side/visibility, 차폐 전 생성 수 보존, 재실행/prefix/call-order/추정기 설정 불변성, 0 roughness/intensity의 난수 미소비를 포함한다. Near-caustic Newton 검사 1개를 추가했으며 classic Blob scenario Worker의 2 snapshot truth/wire도 module 경로와 정확히 같았다.
 
-model8의 truth-side 진단과 근 보호, module/Worker 캐시 URL 수정 후 160회, 10-seed 실행은 완료 160/160, 오류 0, **96개 수용 조건 중 84개 통과, 12개 실패**였다. 이전 보고서와 160개 run의 input/summary/final 체크섬 및 aggregate/실패 행이 정확히 같았다. 중앙 절대오차, diffuse 수, 중복 비율, observed 비율과 σ2° Theorem 2 기준은 통과했지만 P95 3조건과 off-wall 9조건이 실패했다. 전체 reference acceptance는 실패이다. 최종 기록은 2026-10-02T02:14:22.179Z, 실행 시간 48.057688 s이며 수치 소스 11개의 실행 전후 SHA가 현재 파일과 같았다. 생성기 source가 바뀌면 같은 난수 소비와 기존 수치의 보존 여부를 회귀 검사하고 160회 실행을 다시 수행한다.
+model8의 truth-side 진단과 근 보호, module/Worker 캐시 URL 수정 후 160회, 10-seed 실행은 완료 160/160, 오류 0, **96개 수용 조건 중 84개 통과, 12개 실패**였다. 이전 보고서와 160개 run의 input/summary/final 체크섬 및 aggregate/실패 행이 정확히 같았다. 중앙 절대오차, diffuse 수, 중복 비율, observed 비율과 σ2° Theorem 2 기준은 통과했지만 P95 3조건과 off-wall 9조건이 실패했다. 전체 reference acceptance는 실패이다. 최종 기록은 2026-10-02T02:14:22.179Z, 실행 시간 48.057688 s이며 수치 소스 11개의 실행 전후 SHA가 당시 파일과 같았다. 생성기 source가 바뀌면 같은 난수 소비와 기존 수치의 보존 여부를 회귀 검사하고 160회 실행을 다시 수행한다.
 
 Runner는 browser sweep과 같은 `runExperiment`/`aggregateRuns`를 사용한다. Seed별 통계의 평균과 sample SD를 계산하며, 표준편차를 confidence interval로 부르지 않는다. 원본 참조 3-seed 집계 상세는 미확인이다. Runner 종료 상태는 실행/소스 오류 1, seed≥10에서 참조 수용 실패 2이다. 작은 `--seed-count` 실행은 smoke이며 통계 수용 검증으로 보고하지 않는다.
 
 `drf/provenance.json`은 기준 Git commit, field/wire source hash와 core 묶음 hash를 기록한다. 배포 여부는 별도 증거로 확인한다. JSON은 input, measurement, result, evaluation, truth를 분리한다. CSV는 snapshot별 지표를 기록한다. PNG 버튼은 선택한 필드를 CSS 크기의 300/96 배로 다시 그린 뒤 `surf/exports.mjs`의 `png300dpi`를 적용한다. PNG의 pHYs 목표는 11811 px/m이며 metadata가 선명한 label이나 모든 chart의 내보내기를 자동 보장하지 않는다. 현재 clay UI는 Dbar의 warm 순차색과 β̂의 blue 순차색, 흰 plot 배경과 RAW/하단 필드의 기본 등척을 유지한다. 읽을 수 있는 label, 선 굵기, 선택한 표시축과 ±1 SD error bar는 실제 화면과 저장본에서 검사한다.
 
-현재 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. 실행 전/측정 준비 중 `처음으로`의 camera 복원과 설정/기록/worker 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지도 VM 회귀 검사에 포함한다. 수치 소스 11개의 SHA가 기존 160회 통계 보고서와 일치하므로 이번에는 160회를 다시 실행하지 않았다. 원본 22개 offline bundle과 44개 보호 파일 검사도 통과했다. 최신 실제 화면 기록은 [density-validation.json](tests/drf/density-validation.json)의 schema 5이며, 이전 schema 4는 `previousLayoutEvidence`에 보존한다.
+직전 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. 실행 전/측정 준비 중 `처음으로`의 camera 복원과 설정/기록/worker 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지도 VM 회귀 검사에 포함한다. 수치 소스 11개의 SHA가 기존 160회 통계 보고서와 일치하므로 그 표시 수정에서는 160회를 다시 실행하지 않았다. 원본 22개 offline bundle과 44개 보호 파일 검사도 통과했다. 최신 실제 화면 기록은 [density-validation.json](tests/drf/density-validation.json)의 schema 5이며, 이전 schema 4는 `previousLayoutEvidence`에 보존한다.
+
+## 20대 규모 확장 검증
+
+차량 수 입력은 정수 2–20을 허용한다. 실제 생성기와 field 연결을 검사하는 `node --test tests/drf/fleet.test.mjs`는 190개 유일 차량 쌍, 쌍 간 공유 pHat, 기존 3대/5대 공통 쌍의 truth와 wire 일치, 미래 snapshot 설정 독립성과 유한 필드를 확인한다.
+
+20대 기본값, 60 snapshot, 150×150, seed 1의 Node 전체 실행은 187,631개 경로를 모두 채택했다. 생성 17.186 s, 전체 31.949 s, field snapshot p50/p95 217.028/232.608 ms였다. 모든 frame과 evaluation을 보존한 단일 Node process의 snapshot별 표본 RSS 최대값은 330,694,656 byte였다. 이는 browser Worker 복제 메모리나 정확한 process 최대 RSS를 측정한 값이 아니다. 최종 필드 SHA는 `3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254`이다. 조건과 결과는 [fleet-validation.json](tests/drf/fleet-validation.json)에 기록한다.
+
+새 생성기 source로 기본 3대 160회를 다시 실행했다. 완료 160/160, 실행 오류 0, 46.974087 s이며 기존 160개 input/summary/final 체크섬, aggregate와 실패 행이 정확히 같았다. 84/96 수용 조건 통과와 12개 미충족은 유지된다. 새 report의 실행 전후 수치 source SHA가 일치한다.
+
+RAW 타원은 전체 측정 중 일정 stride로 최대 600개만 그린다. 현재 표시 개수와 전체 측정 개수를 제목에 구분한다. wire, 누적 field, evaluator와 JSON/CSV의 경로를 줄이지 않는다. 차량점과 궤적은 전부 유지하고 번호만 plot 내부의 빈 공간에 배치하며 자리가 없으면 번호를 생략한다.
+
+차량 확장 후 `npm test`는 115/115 통과, 실패 0, 18.282778 s였다. 실제 20대 생성기 연결 검사와 표시 600개 상한, 전 차량점 유지, 번호 bbox/차량점 겹침과 plot 경계 검사가 포함된다.
+
+최종 HTTP module 화면에서 차량 20대, 60/60, Q=187631과 같은 최종 필드 SHA를 확인했다. 1920×930 content viewport에서 사이드바는 342 px, clientHeight/scrollHeight=876/876 px이고 28개 설정 컨트롤과 네 canvas가 모두 첫 화면에 보였다. 마지막 시점의 측정 4326개 중 타원 541개가 표시됐다. 생성 중 취소는 기록 0개와 실행 가능 상태로 돌아갔고, 완료 후 `처음으로`는 1/60을 선택하며 60개 기록을 유지했다. Console warning/error는 0개였다. 20대 수치 폭으로 하단 설명이 5 px 잘린 문제는 desktop section 상하 여백 2→1 px로 해결했다. 이 마지막 CSS/cache/bundle 수정 후 관련 7개 표시·버튼·offline 검사는 모두 통과했다. 실제 file 화면 검증으로 확대하지 않는다.

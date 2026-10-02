@@ -1,0 +1,321 @@
+{
+  "schema": "echomap-drf-fleet-validation/1",
+  "date": "2026-10-02T04:53:33.401Z",
+  "environment": {
+    "node": "v26.7.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "scope": "Node main process retaining all frames/evaluations; not browser worker memory",
+  "input": {
+    "scene": "reference",
+    "vehicles": 20,
+    "snapshots": 60,
+    "sigmaP": 0.1,
+    "sigmaD": 0.1,
+    "roughness": 2,
+    "lambda0": 10,
+    "cellStep": 0.02,
+    "resolution": 0,
+    "specular": true,
+    "grid": 150,
+    "band": 4,
+    "perimeter": "exact",
+    "seed": 1
+  },
+  "vehicles": 20,
+  "pairsPerSnapshot": 190,
+  "totalPairs": 11400,
+  "paths": 187631,
+  "generationMs": 17185.568625,
+  "totalMs": 31948.690042,
+  "fieldP50Ms": 217.02800000000207,
+  "fieldP95Ms": 232.60762500000055,
+  "sampledPeakBytes": {
+    "rss": 330694656,
+    "heapTotal": 285114368,
+    "heapUsed": 233569856,
+    "external": 13916249,
+    "arrayBuffers": 11666947
+  },
+  "final": {
+    "t": 60,
+    "Q": 187631,
+    "admitted": 187631,
+    "rejected": 0,
+    "hash": "3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254",
+    "medianError": 0.13149632212772744,
+    "p95": 0.1699373218426885,
+    "offwall": 0
+  },
+  "finite": true,
+  "numericalSourceSHA256": {
+    "drf/rng.mjs": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
+    "drf/poly.mjs": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
+    "drf/wall.mjs": "dc2a7ce0404c9034c47b83365a3575462f4b8e32043ee90dcc6ba9e7cd90e440",
+    "drf/specular.mjs": "4d9b42edcd25625078f8239813108ef08dbd5fb59da60ebc3ae4a90a853f2eb4",
+    "drf/diffuse.mjs": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
+    "drf/scenario.mjs": "ba8642f183d8d59a04f1c72cf7c47f88c9a8f0acd46cbcc6ca31153fafeeec51",
+    "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72",
+    "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+    "drf/evaluate.mjs": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
+    "drf/sweep.mjs": "d970206e5ab789b3f658a758abeb07be301e884405656c22315191b43397e899",
+    "wall_metrics.js": "f8ff5b04d61c9cdbfbd6208851e7c947732df67402d907e92e35567b7a0be290"
+  },
+  "referenceRegression": {
+    "completed": 160,
+    "errors": 0,
+    "totalMs": 46974.086749999995,
+    "acceptance": {
+      "statisticallyEligible": true,
+      "comparisons": 96,
+      "passed": 84,
+      "failed": 12,
+      "referenceWithinTolerance": false
+    },
+    "unchangedRunsAndAggregates": true
+  },
+  "automaticChecks": {
+    "command": "npm test",
+    "passed": 115,
+    "failed": 0,
+    "durationMs": 18282.778292
+  },
+  "localHttp": {
+    "date": "2026-10-02T05:01:41.478Z",
+    "input": {
+      "scene": "reference",
+      "vehicles": 20,
+      "snapshots": 60,
+      "sigmaP": 0.1,
+      "sigmaD": 0.1,
+      "roughness": 2,
+      "lambda0": 10,
+      "cellStep": 0.02,
+      "resolution": 0,
+      "specular": true,
+      "grid": 150,
+      "band": 4,
+      "perimeter": "exact",
+      "seed": 1
+    },
+    "final": {
+      "configCount": 190,
+      "ellipseShown": 541,
+      "ellipseTotal": 4326,
+      "hash": "3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254",
+      "q": 187631,
+      "status": "계산 완료 · 측정 생성 14.96 s · 참조 .m 원본 대조 미완료",
+      "time": "60 / 60",
+      "vehicles": "20"
+    },
+    "layout": {
+      "viewport": [
+        1920,
+        930
+      ],
+      "overflow": 0,
+      "sidebar": {
+        "width": 342,
+        "clientHeight": 876,
+        "scrollHeight": 876,
+        "scrollTop": 0
+      },
+      "settings": {
+        "count": 28,
+        "fullyVisible": 28,
+        "minFont": 14,
+        "minControlHeight": 28
+      },
+      "details": [
+        {
+          "open": true,
+          "title": "산란·필드 세부 설정"
+        },
+        {
+          "open": true,
+          "title": "표시 · 레이어"
+        }
+      ],
+      "metrics": [
+        {
+          "label": "중앙 [m]",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "P95 [m]",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "off-wall [%]",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "F1 · 0.4 m",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "CA-MSD [m]",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "CA-HD95 [m]",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
+          "oneLine": true,
+          "unclipped": true
+        }
+      ],
+      "views": {
+        "contrastCanvas": {
+          "bitmap": [
+            506,
+            200
+          ],
+          "bottom": 816.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 199.765625,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 6.378205128205128,
+            "pixelsPerMetreY": 6.378205128205128,
+            "plotHeight": 138,
+            "plotWidth": 398,
+            "xmax": 61.2,
+            "xmin": -1.2000000000000028,
+            "ymax": 25.89186057559241,
+            "ymin": 4.255679671069796
+          },
+          "width": 505.671875,
+          "x": 872.65625,
+          "y": 617.21875
+        },
+        "densityCanvas": {
+          "bitmap": [
+            506,
+            200
+          ],
+          "bottom": 816.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 199.765625,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 6.378205128205128,
+            "pixelsPerMetreY": 6.378205128205128,
+            "plotHeight": 138,
+            "plotWidth": 398,
+            "xmax": 61.2,
+            "xmin": -1.2000000000000028,
+            "ymax": 25.89186057559241,
+            "ymin": 4.255679671069796
+          },
+          "width": 505.65625,
+          "x": 355,
+          "y": 617.21875
+        },
+        "mapCanvas": {
+          "bitmap": [
+            1155,
+            418
+          ],
+          "bottom": 550.625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 418.125,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 17.539003803411266,
+            "pixelsPerMetreY": 17.539003803411266,
+            "plotHeight": 356,
+            "plotWidth": 1095,
+            "xmax": 61.21614010332294,
+            "xmin": -1.2161401033229424,
+            "ymax": 25.222579143224223,
+            "ymin": 4.924961103437983
+          },
+          "width": 1154.8125,
+          "x": 548.078125,
+          "y": 132.5
+        },
+        "metricChart": {
+          "bitmap": [
+            506,
+            214
+          ],
+          "bottom": 816.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 213.859375,
+          "view": null,
+          "width": 505.65625,
+          "x": 1390.328125,
+          "y": 603.125
+        }
+      },
+      "rawPanel": {
+        "bottom": 551.625,
+        "font": "14px",
+        "fullyVisible": true,
+        "height": 485.625,
+        "width": 1156.8125,
+        "x": 547.078125,
+        "y": 66
+      },
+      "rawCaption": {
+        "bottom": 132.5,
+        "font": "14px",
+        "fullyVisible": true,
+        "height": 65.5,
+        "width": 1154.8125,
+        "x": 548.078125,
+        "y": 67
+      }
+    },
+    "cancelWhileGenerating": {
+      "q": "0",
+      "runEnabled": true,
+      "status": "취소했습니다. 완전히 계산된 snapshot만 남겼습니다.",
+      "time": "0 / 60"
+    },
+    "firstSnapshot": {
+      "ellipseShown": 565,
+      "ellipseTotal": 7905,
+      "max": "60",
+      "time": "1 / 60",
+      "value": "1"
+    },
+    "consoleWarningsErrors": [],
+    "protocolScope": "HTTP module runtime; file UI not verified"
+  },
+  "finalDisplayChecks": {
+    "passed": 7,
+    "failed": 0,
+    "durationMs": 576.019291
+  }
+}

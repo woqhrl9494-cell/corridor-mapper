@@ -164,20 +164,28 @@ export class DrfMap {
       ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);
       points.forEach((p,i) => { const [x,y]=screen(p); i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });ctx.stroke();ctx.setLineDash([]);
     };
-    const dot=(p,color,r=4,open=false) => { if (!p) return; const [x,y]=screen(p);ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=2;open ? ctx.stroke() : ctx.fill(); };
+    const dot=(p,color,r=4,open=false) => { if (!p) return; const point=screen(p),[x,y]=point;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=2;open ? ctx.stroke() : ctx.fill();return point; };
     const {layers={},wire,truth,walls=[],proxy=[],observed=[],history=[]}=this.state;
     if (layers.showObserved) for (const p of observed) dot(p,evalColor,5,true);
     if (layers.showTruth) for (const wall of walls) path(wall,ink,2.5,[8,6]);
     if (layers.showProxy) for (const p of proxy) dot(p,accent,4,true);
+    // Drawing budget only: the estimator still receives every measured path.
+    const ellipseTotal=(wire?.configs ?? []).reduce((sum,config)=>sum+(config.paths?.length ?? 0),0),ellipseStride=Math.max(1,Math.ceil(ellipseTotal/600));
+    let ellipseIndex=0,ellipseShown=0;
     ctx.globalAlpha=.16;
     if (layers.showEllipses) for (const config of wire?.configs ?? []) {
       const a=config.pHat_i,b=config.pHat_j,dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),cos=Math.cos(angle),sin=Math.sin(angle);
       for (const q of config.paths) {
-        if (!(q.dHat>distance)) continue;
+        if (ellipseIndex++%ellipseStride!==0 || !(q.dHat>distance)) continue;
         const major=q.dHat/2,minor=Math.sqrt(major*major-distance*distance/4),points=[];
         for (let k=0;k<=96;k++) { const t=k*2*Math.PI/96,x=major*Math.cos(t),y=minor*Math.sin(t);points.push([(a[0]+b[0])/2+x*cos-y*sin,(a[1]+b[1])/2+x*sin+y*cos]); }
-        path(points,accent,1.5);
+        path(points,accent,1.5);ellipseShown++;
       }
+    }
+    if (target===this.canvas && geometry) {
+      this.canvas.dataset.ellipseTotal=String(ellipseTotal);this.canvas.dataset.ellipseShown=String(ellipseShown);
+      const stats=panel?.querySelector?.('#ellipseStats');
+      if (stats) stats.textContent=layers.showEllipses ? `타원 표시 ${ellipseShown}개 · 측정 ${ellipseTotal}개` : '타원 숨김';
     }
     ctx.globalAlpha=1;
     if (layers.showSpecular || layers.showDiffuse) for (const config of truth?.configs ?? []) {
@@ -193,16 +201,24 @@ export class DrfMap {
       const current=new Map();
       for (const config of wire?.configs ?? []) { current.set(config.i,config.pHat_i);current.set(config.j,config.pHat_j); }
       for (const track of tracks.values()) path(track.map((q) => q.p),accent,2);
-      const labels=[];
-      for (const [id,p] of current) {
-        dot(p,accent,5);
-        const [x,y]=screen(p),text=`V${id}`,tw=ctx.measureText(text).width;
-        let ly=y-12;
-        while (labels.some((a) => Math.abs(a[0]-x)<tw+12 && Math.abs(a[1]-ly)<24)) ly-=24;
-        labels.push([x,ly]);
-        if (ly < y-12) { ctx.beginPath();ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.moveTo(x,y-6);ctx.lineTo(x,ly+8);ctx.stroke(); }
-        ctx.fillStyle=background;ctx.fillRect(x-tw/2-4,ly-18,tw+8,24);
-        ctx.textAlign="center";ctx.fillStyle=ink;ctx.fillText(text,x,ly);
+      const labels=[],positions=[...current].map(([id,p])=>[id,dot(p,accent,5)]);
+      for (const [id,[x,y]] of positions) {
+        const text=`V${id}`,tw=ctx.measureText(text).width;
+        const candidates=[[x,y-13],[x,y+25],[x-tw/2-14,y+6],[x+tw/2+14,y+6]];
+        for (let offset=37;offset<=box.h;offset+=24) candidates.push([x,y-offset],[x,y+offset+12]);
+        const position=candidates.find(([lx,ly])=> {
+          const left=lx-tw/2-4,right=lx+tw/2+4,top=ly-18,bottom=ly+6;
+          return left>=box.x+2 && right<=box.x+box.w-2 && top>=box.y+2 && bottom<=box.y+box.h-2
+            && !labels.some(a=>left<a.right && right>a.left && top<a.bottom && bottom>a.top)
+            && !positions.some(([, [vx,vy]])=>left<vx+7 && right>vx-7 && top<vy+7 && bottom>vy-7);
+        });
+        // Keep every vehicle dot/track; omit only a number that has no room in the plot.
+        if (!position) continue;
+        const [lx,ly]=position;
+        labels.push({left:lx-tw/2-4,right:lx+tw/2+4,top:ly-18,bottom:ly+6});
+        if (lx!==x || ly!==y-13) { ctx.beginPath();ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.moveTo(x,y);ctx.lineTo(lx,ly-6);ctx.stroke(); }
+        ctx.fillStyle=background;ctx.fillRect(lx-tw/2-4,ly-18,tw+8,24);
+        ctx.textAlign="center";ctx.fillStyle=ink;ctx.fillText(text,lx,ly);
       }
     }
     ctx.restore();

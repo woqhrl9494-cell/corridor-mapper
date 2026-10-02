@@ -206,7 +206,7 @@ dialog p + p { margin-top: 14px; }
 }
 @media (min-width: 1680px) {
   :root { --sidebar: 342px; }
-  .sidebar-section { padding: 2px 12px; }
+  .sidebar-section { padding: 1px 12px; }
   .sidebar .section-title { margin-bottom: 4px; line-height: 1.2; }
   .sidebar .run-actions { grid-template-columns: 1fr 1.15fr 1.35fr 1.05fr .85fr; gap: 4px; margin-bottom: 4px; }
   .sidebar .run-actions .primary { grid-column: auto; }

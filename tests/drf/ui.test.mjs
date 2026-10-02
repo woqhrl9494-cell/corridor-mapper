@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DrfMap, mapToScreen, mapToWorld, zoomMap, rawPanelSize, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from '../../drf/render.mjs';
 import { SurfaceMap } from '../../surf/map.mjs';
+import { generateSnapshot, normalizeInput } from '../../drf/scenario.mjs';
+import { createWalls, sampleWalls } from '../../drf/wall.mjs';
 
 test('DRF DOM contract and readable stylesheet', () => {
   const html=readFileSync(new URL('../../drf.html',import.meta.url),'utf8');
-  const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot aspectMode densityCanvas contrastCanvas historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue medianValue p95Value offwallValue f1Value msdValue hd95Value timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
+  const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas contrastCanvas historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue medianValue p95Value offwallValue f1Value msdValue hd95Value timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
   for (const id of ids) assert.equal([...html.matchAll(new RegExp(`id="${id}"`,'g'))].length,1,id);
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   for (const path of ['../../drf/style.css','../../surf/style.css']) {
@@ -43,7 +45,7 @@ test('RAW panel follows its metre range within desktop and mobile space', () => 
 });
 
 test('render keeps world row order, uses real DPR/300 dpi pixels, and charts execute', async () => {
-  const snapshots={},created=[],rectangles=[],labels=[],gridSegments=[],gridColor='#c4d3e2';
+  const snapshots={},created=[],rectangles=[],labels=[],gridSegments=[],labelPositions=[],dots=[],ellipseStarts=[],gridColor='#c4d3e2';
   const context=() => {
     let path=[],point;
     return new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{
@@ -51,7 +53,9 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       if (key==='moveTo') point=args;
       if (key==='lineTo') {if (point) path.push([point,args]);point=args;}
       if (key==='stroke' && target.strokeStyle===gridColor) gridSegments.push(...path);
-      if (key==='fillText') {assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=14,args[0]);labels.push(args[0]);}
+      if (key==='stroke' && target.strokeStyle!==gridColor && path.length===96) ellipseStarts.push(path[0][0]);
+      if (key==='arc') dots.push(args);
+      if (key==='fillText') {assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=14,args[0]);labels.push(args[0]);if (/^V\d+$/.test(args[0])) labelPositions.push(args);}
       if (key==='strokeRect') rectangles.push(args);
     };}});
   };
@@ -183,6 +187,40 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       vertical.forEach(([a],k)=>assert.ok(Math.abs((a[0]-x)/w*60-(k+1)*10)<1e-8));
     }
     for (const tick of ['0','10','20','30','40','50','60']) assert.ok(labels.filter(text=>text===tick).length>=3,`each profile must label ${tick} m`);
+    const spans=createWalls(),fleet=generateSnapshot(normalizeInput({vehicles:20,snapshots:1}),spans,1),wireBefore=JSON.stringify(fleet.wire),fleetCanvas=makeCanvas(),stats={textContent:''};
+    fleetCanvas.clientWidth=480;fleetCanvas.clientHeight=220;fleetCanvas.closest=()=>({querySelector:()=>stats});
+    const fleetMap=new DrfMap(fleetCanvas),fleetState={grid:{nx:2,ny:2,domain:[0,60,0,30]},frame:{...frame,t:1},wire:fleet.wire,walls:sampleWalls(spans),history:[fleet.wire],aspectMode:'equal',layers:{showTruth:true,showVehicles:true,showEllipses:true}};
+    labelPositions.length=0;dots.length=0;ellipseStarts.length=0;
+    fleetMap.set({...fleetState,mode:'geometry'});fleetMap.paint(fleetCanvas,1);
+    const allPaths=fleet.wire.configs.flatMap(c=>c.paths.map(q=>({c,q}))),stride=Math.ceil(allPaths.length/600);
+    const sampled=allPaths.filter(({c,q},i)=>i%stride===0 && q.dHat>Math.hypot(c.pHat_j[0]-c.pHat_i[0],c.pHat_j[1]-c.pHat_i[1]));
+    assert.ok(allPaths.length>600 && ellipseStarts.length<=600,'large fleets must retain a bounded ellipse overlay');
+    assert.equal(ellipseStarts.length,sampled.length,'ellipse sampling follows global wire order rather than a per-pair limit');
+    sampled.forEach(({c,q},i)=> {
+      const a=c.pHat_i,b=c.pHat_j,angle=Math.atan2(b[1]-a[1],b[0]-a[0]),expected=mapToScreen([(a[0]+b[0])/2+q.dHat/2*Math.cos(angle),(a[1]+b[1])/2+q.dHat/2*Math.sin(angle)],fleetMap.camera,fleetMap.box);
+      expected.forEach((value,k)=>assert.ok(Math.abs(value-ellipseStarts[i][k])<1e-8,'sampled ellipse must come from the unchanged measured path'));
+    });
+    assert.equal(fleetCanvas.dataset.ellipseTotal,String(allPaths.length));assert.equal(fleetCanvas.dataset.ellipseShown,String(sampled.length));
+    assert.equal(stats.textContent,`타원 표시 ${sampled.length}개 · 측정 ${allPaths.length}개`);
+    const smallWire={...fleet.wire,configs:fleet.wire.configs.filter(c=>c.i<=3 && c.j<=3)};
+    ellipseStarts.length=0;fleetMap.set({...fleetState,wire:smallWire,mode:'geometry'});fleetMap.paint(fleetCanvas,1);
+    const smallPaths=smallWire.configs.reduce((sum,c)=>sum+c.paths.length,0);
+    assert.ok(smallPaths<600);assert.equal(Number(fleetCanvas.dataset.ellipseShown),smallPaths,'small fleets retain every valid ellipse');
+    for (const mode of ['geometry',undefined]) {
+      labelPositions.length=0;dots.length=0;
+      fleetMap.set({...fleetState,mode,layers:{...fleetState.layers,showEllipses:false}});fleetMap.fit();fleetMap.paint(fleetCanvas,1);
+      assert.equal(dots.length,20,'every measured vehicle must retain its point when a number is omitted');
+      assert.ok(labelPositions.length>0 && labelPositions.length<=20);
+      const boxes=labelPositions.map(([text,x,y])=>({left:x-text.length*9/2-4,right:x+text.length*9/2+4,top:y-18,bottom:y+6})),b=fleetMap.box;
+      for (const [i,box] of boxes.entries()) {
+        assert.ok(box.left>=b.x && box.right<=b.x+b.w && box.top>=b.y && box.bottom<=b.y+b.h,'20-vehicle number labels must stay inside either plot');
+        assert.ok(boxes.slice(i+1).every(other=>box.right<=other.left || box.left>=other.right || box.bottom<=other.top || box.top>=other.bottom),'number labels must not overlap');
+        assert.ok(dots.every(([x,y])=>box.right<=x-7 || box.left>=x+7 || box.bottom<=y-7 || box.top>=y+7),'number backgrounds must not cover any vehicle marker or its 2 px margin');
+      }
+      if (mode==='geometry') {assert.equal(stats.textContent,'타원 숨김');assert.equal(fleetCanvas.dataset.ellipseShown,'0');}
+    }
+    assert.equal(JSON.stringify(fleet.wire),wireBefore,'drawing limits must not remove or reorder estimator measurements');
+    assert.deepEqual([...frame.Dbar],[0,1,2,3]);assert.deepEqual([...frame.betaHat],[0,...new Float32Array([.2,.5]),1]);
     canvas.clientHeight=540;
     const mobile=makeCanvas();mobile.clientWidth=250;mobile.clientHeight=385;
     const surf=new SurfaceMap(mobile,()=>{});
