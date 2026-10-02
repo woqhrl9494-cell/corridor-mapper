@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-stablelayers21';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-walllabels22';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -82,7 +82,7 @@ async function prepare(single = false) {
     }
     cancel(true); state.mode = 'running'; const generation = state.generation; controls();
     location.hash = `v1=${encodeURIComponent(JSON.stringify(input))}`;
-    notice('참 장면과 측정 기록을 생성하는 중입니다.');
+    notice('벽 모델과 측정 기록을 생성하는 중입니다.');
     const scenarioWorker = makeWorker('scenario', ({ t, total }) => { if (generation === state.generation) notice(`측정 생성 ${t} / ${total}`); });
     const { scenario } = await scenarioWorker.request({ type: 'generate', input });
     if (generation !== state.generation) return;

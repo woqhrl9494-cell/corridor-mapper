@@ -239,7 +239,7 @@ export class DrfMap {
     for (const y of ys) if ((y/10)%labelStepY===0) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(String(y),box.x-10,sy+6); }
     ctx.textAlign="center";ctx.fillText("x [m]",box.x+box.w/2,height-8);ctx.save();ctx.translate(14,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText("y [m]",0,0);ctx.restore();
     if (geometry) {
-      if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "참 장면 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
+      if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "벽 모델 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
       return;
     }
     const palette=palettes[this.state.heatField ?? "Dbar"],barX=width-43,barY=box.y+27,barH=Math.max(1,box.h-54),gradient=ctx.createLinearGradient(0,barY+barH,0,barY);

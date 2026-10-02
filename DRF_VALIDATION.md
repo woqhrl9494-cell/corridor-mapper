@@ -207,3 +207,9 @@ HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 �
 참 벽 체크가 renderer의 자동 카메라 초기화와 bounds 선택에 동시에 사용되어 해제할 때 벽 bbox에서 전체 계산 domain으로 범위가 바뀌었다. 실행 전에는 previewWalls도 빈 배열로 바뀌었다. 이제 scene:seed에 해당하는 표시용 장면 extent를 캐시에 유지하고, 카메라 범위와 축소 하한은 참 벽/차량 표시 여부와 무관하게 계산한다. 실제 벽 점선과 차량·궤적 그리기는 각 체크를 따른다. RAW pose 범위는 현재 및 과거 noisy poses만 사용한다. scene geometry는 표시 범위에만 쓰며 추정 grid/worker 입력/누적식은 변경하지 않는다.
 
 현재 npm test는 118/118, 실패 0, 25.002200459 s이다. 실행 전 장면 캐시, 세 지도의 자동/수동·이동·리사이즈·기본 배율/초기화 보존과 현재 시점 제한을 실제 app/renderer 검사에 포함했다. 현재 22 source offline bundle의 VM/Blob 검사도 통과했다. 로컬 HTTP에서 10대의 60회 저장 링크를 실행해 80/80, Q=59285와 동일 field SHA를 확인했다. 실행 전/후 참 벽 토글, 세 지도의 수동 확대 중 참 벽·차량 토글, 참 벽 해제 상태의 처음으로가 같은 camera를 유지/복원했다. 수치 source 11개는 변경되지 않았다. 실제 file 화면 검증으로 확대하지 않는다.
+
+## 화면 용어 정리
+
+대용점 표기를 벽 후보점으로 변경하고 누적 필드의 바깥쪽 봉우리에서 선택한 평가용 후보임을 설명했다. 참 벽은 실제 벽으로 표시하며 시뮬레이션이 생성한 실제 위치라는 설명을 붙였다. 장면 선택은 Reference corridor / Random corridor, 관련 화면·방법 설명도 corridor로 표기한다. 생성 중 안내와 미리보기는 벽 모델로 표기한다. JSON 키 proxy, scene 값 reference/random 및 수치 처리와 camera 코드는 유지한다.
+
+용어 수정 뒤 실제 HTML 선택/현재 22-source offline bundle·classic Blob worker·DOM·renderer 관련 검사 5/5가 통과했다(512.599 ms). 직전 로직 회귀 검사 118/118 결과와 구분하며 수치 source 11개는 계속 같다.

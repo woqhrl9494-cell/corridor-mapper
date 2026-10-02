@@ -1,20 +1,20 @@
 {
-  "baseCommit": "05499aaa0b4200ffb229732ab8b67d58beb3bc7e",
+  "baseCommit": "14aa2c88aa9207e3a4aa3734ef305c7c567a13f4",
   "branch": "feat/drf-lab",
   "deployed": false,
   "sha256": {
-    "drf.html": "108590a271c677fbea8c9fc4e08b6c52233ce85e42e602bdce39bae27a79ee55",
-    "drf/app.mjs": "b2d318f25b0daa0126729c3dba4173808a17ca6c844adfa604d6fa9bbeb34392",
+    "drf.html": "e64bb0f1c71ca73694bad31242c5cee82487361b8f3d40f2b9897858ddeccdba",
+    "drf/app.mjs": "94c21447de35113e325b5a1ed53172008eb7b97f4ca388fefd711b5c864499af",
     "drf/diffuse.mjs": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
     "drf/eval.worker.mjs": "15a5d15418cfeea319c6a90f93e5304f431fdd01288b21c027cc32b2347e9b1c",
     "drf/evaluate.mjs": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/field.worker.mjs": "f1c991b422e7b5f93d36d7df29496088c9f83708e30f90bb0378453bda85ad64",
-    "drf/offline.bundle.js": "7ec03a1c9e6d962ea51699ce0f709fdb8afa98f71a9b0d01a1406ca665b3fb0f",
+    "drf/offline.bundle.js": "0b75ee45ec206d64fad54b3118e64688404880a845f92f4d0e844ff3c53742cb",
     "drf/poly.mjs": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
     "drf/provenance.json": "d967ebc636ffc4254b673893449d8a37253b69b1fb45748023fd3f6164650406",
     "drf/reference/octave/fixtures.json": "563d63edf14d334c86c07769ff7bde6453d88875214082e87e4a196c567c39c4",
-    "drf/render.mjs": "8d2263a61cae55ea357977e054803798da67edd2a617d7a7629794bb340495d2",
+    "drf/render.mjs": "631c60a788394349de764273ac863046368652e257a4c71f090e48e529b33db4",
     "drf/rng.mjs": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
     "drf/scenario.mjs": "f4b357c6e1fe85aac371d0476f11068ac937e0b5a7025ca8e08e2a4ce7e86d31",
     "drf/scenario.worker.mjs": "f129eacec3946bedb6d2d3e9cebdfa62c8c5c844ae2e4045e5040bca4dfb0d86",
@@ -29,5 +29,5 @@
     "surf/map.mjs": "9a8c31b8c87c0c157f73db4a22d0f8b8a7cafa7c13bacaf60b6b8c4136b39d60",
     "surf/style.css": "e62e5bb7c4cfd1ee3e1f38e5d80dda5e7b9bb4c12d0836c1956d6a34026ef27e"
   },
-  "status": "pre-deployment source snapshot with full-route completion and layer-independent map framing"
+  "status": "pre-deployment source snapshot with actual-wall, wall-candidate and English corridor labels; numerical algorithms unchanged"
 }
