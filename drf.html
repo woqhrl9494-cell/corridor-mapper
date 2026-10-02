@@ -19,7 +19,6 @@
       <aside class="sidebar settings-panel" aria-label="실험 설정">
         <section class="sidebar-section run-section">
           <div class="run-actions"><button id="runButton" class="primary" type="button" disabled>실행</button><button id="stepButton" type="button" disabled>한 step</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="resetButton" type="button">재설정</button><button id="cancelButton" class="danger" type="button" disabled>취소</button></div>
-          <p id="status" class="status" role="status" aria-live="polite">설정을 확인한 뒤 실행하세요.</p>
         </section>
         <form id="settings" class="sidebar-section">
           <fieldset><legend class="section-title">장면과 측정</legend>
@@ -61,6 +60,7 @@
               </div>
               <section class="view results-panel performance-panel" aria-labelledby="resultsTitle">
                 <h2 id="resultsTitle" class="section-title">성능 · 사후 평가</h2>
+                <p id="status" class="status" role="status" aria-live="polite">설정을 확인한 뒤 실행하세요.</p>
                 <dl class="metrics path-metrics"><div><dt>누적 채택 Q_t</dt><dd id="qValue">0</dd></div><div><dt>채택 / 거부</dt><dd><span id="acceptedValue">0</span> / <span id="rejectedValue">0</span></dd></div><div class="path-composition evaluation"><dt>평가용 경로</dt><dd id="pathValue">—</dd></div></dl>
                 <h3 class="section-title evaluation">참값 사후 평가</h3>
                 <dl class="metrics evaluation-metrics evaluation"><div><dt title="중앙 절대 오차 [m]">중앙 [m]</dt><dd id="medianValue">—</dd></div><div><dt>P95 [m]</dt><dd id="p95Value">—</dd></div><div><dt>off-wall [%]</dt><dd id="offwallValue">—</dd></div><div><dt title="Boundary F1 · 허용 거리 0.4 m">F1 · 0.4 m</dt><dd id="f1Value">—</dd></div><div><dt>CA-MSD [m]</dt><dd id="msdValue">—</dd></div><div><dt>CA-HD95 [m]</dt><dd id="hd95Value">—</dd></div></dl>
