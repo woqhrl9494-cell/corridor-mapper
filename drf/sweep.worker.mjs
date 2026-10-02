@@ -1,4 +1,4 @@
-import { runExperiment } from './sweep.mjs';
+import { runExperiment } from './sweep.mjs?v=20261002-model8';
 self.onmessage = async ({ data }) => {
   if (data.type !== 'run') return;
   try {

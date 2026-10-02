@@ -1,6 +1,6 @@
 # EchoMap DRF 검증 기록
 
-상태: Phase 3 통계 수용 기준 12개 미충족을 남긴 연구용 버전이다. 사용자는 이 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 구현 parity는 미검증이다.
+상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 최종 자동 검사 113/113과 현재 source SHA에 연결된 160회 통계를 확인했다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
 
 ## 변경과 재현 조건
 
@@ -10,6 +10,7 @@
 - 밝은 clay 스타일의 표면과 컨트롤, 흰 plot 배경 및 내부 격자를 적용했다. RAW는 등척을 유지하며 panel 크기를 표시할 metre 범위에 맞춘다. 하단 두 필드에는 별도의 채움/등척 선택을 유지한다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
 - `file://` 실행을 위한 classic bundle 추가. 기존 esbuild로 동일한 앱과 scenario/field/eval/sweep Worker를 묶고, Worker는 4종의 classic Blob script로 실행한다. provenance와 참조 fixtures JSON도 bundle에 포함하므로 로컬 파일에서 module import나 JSON fetch에 의존하지 않는다.
+- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. Field/evaluator 누적식과 clay UI는 이번 변경 대상이 아니다.
 
 ```sh
 npm run build:drf-offline
@@ -24,16 +25,20 @@ HTTP(S)에서는 기존 module 앱과 module Worker를 사용하고, `file://`�
 
 ## 수치 및 정보 경계 검사
 
-- not-a-knot 12개 span 계수 오차 ≤ 1e-12, 제공 정반사점/미분/산란 적분 fixture 재현.
-- 닫힌 24-control B-spline, 자체 seed의 300개 내부 Tx/Rx 쌍: 독립 물리 잔차 bracket과 근 1824/1824개 일치. 최대 u 오차 6.11e-15, 최대 |sin δ| 4.03e-16. 원본 Octave의 쌍 목록이 없어 제공된 2040개 근과 직접 대조하지 않았다.
+- MATLAB R2025b batch의 `spline(x,y)`와 기준 두 벽의 local power basis 계수를 직접 비교했다. 최대 절대 계수 오차는 아래 벽 1.1102230246251565e-16, 위 벽 7.6327832942979512e-17이었다. 같은 길이의 x/y 입력에 not-a-knot 경계조건을 쓰는 [MathWorks spline 문서](https://www.mathworks.com/help/matlab/ref/spline.html)를 확인했다. 이 검사는 벽 계수 비교이며 원본 전체 .m 구현의 parity가 아니다.
+- 이전 닫힌 24-control B-spline, 자체 seed의 300개 내부 Tx/Rx 쌍 검사: 독립 물리 잔차 bracket과 근 1824/1824개 일치. 최대 u 오차 6.11e-15, 최대 abs(sin δ) 4.03e-16. 원본 Octave의 쌍 목록이 없어 제공된 2040개 근과 직접 대조하지 않았다. 임의 ill-conditioned root의 정확도나 완전한 개수를 이 결과로 보장하지 않는다.
+- 고정 cell midpoint는 임의 정반사근과 정확히 겹치지 않는다. 평평한 벽 거울상 해의 연속 sinδ와 cell step 0.04/0.02/0.01 m에서 최근접 midpoint 거리의 반 cell 경계를 구분해 검사했다. Grid 정렬에 따라 이 거리는 단조 감소하지 않을 수 있다. w는 facet slope의 선택 가중치이며 확률이나 정규화 pdf가 아니다.
+- Float64 visibility의 특정 1e−15 m gap 검사에서는 다항식 근의 roundoff 불확실성으로 실제 교차 없이 보수적으로 차단했다. Near-multiple cluster는 unresolved 진단에 더하며 완전한 근 개수나 임의 작은 gap의 정확한 판정을 보장하지 않는다.
 - AGM E(m), 경로별 DRF, A factorization, 3/4/5σ 절단 오차 경계, Float64 상태와 Float32 전송, 과거 scalar prefix hover 일치 검사.
 - 현재 시점 뒤의 wire와 모든 truth를 오염시켜도 완료 prefix 필드가 byte 동일. whitelist 외 getter를 읽지 않으며 field Worker에는 wall/scenario/evaluator import가 없다.
 - 동일 seed의 위치 오차와 정반사 표준 잡음을 σ_d 및 거칠기 조건 간 공유한다. GT 변경은 평가에만 영향을 준다.
+- RNG 주소의 차량 ID는 기존 1,2,3을 유지한다. 주소 직렬화와 FNV mixer, Box–Muller spare, 정반사/아래 벽 diffuse/위 벽 diffuse의 noise 소비 순서는 [DRF_METHOD.md](DRF_METHOD.md)의 재현 규약을 따른다. grid/band/perimeter는 생성식에 사용하지 않고 seed와 진단량은 wire에 포함하지 않는다.
+- `diffuseSampling.beforeThinning`과 `afterThinning`은 각각 아래/위 벽의 개수 배열이다. ΣΛ와 Poisson 평균/분산을 비교할 때는 beforeThinning을 사용한다. 예를 들어 seed 1, roughness 20°, t=57, pair (1,3), 위 벽의 ΣΛ=83.04223891984988에서 Poisson draw 90개 중 89개가 thinning을 통과했다. 병합 후 `truth.diffuse.length`와 이 수들을 혼용하지 않는다.
 - 관측 열의 누락 출력은 Infinity 실패, off-wall 실패로 포함한다. seed 집계는 finite 수/failed/missing을 별도로 보존하고 실패를 정상 평균에서 제거하지 않는다.
 
 ## 160회 통계 재현
 
-환경: v26.7.0, darwin arm64, 3 workers. 각 조건은 60 snapshots, 150 × 150 격자, seed 1–10. 완료 160/160, 실행 오류 0, 소스 변경 없음. 전체 49.790 s. 아래 ±는 seed 간 표본 표준편차다.
+환경: v26.7.0, darwin arm64, 3 workers. 각 조건은 60 snapshots, 150 × 150 격자, seed 1–10. Truth-side 진단과 근 보호, 캐시 URL 수정 후 2026-10-02T02:14:22.179Z 실행은 완료 160/160, 실행 오류 0, 실행 중 소스 변경 없음, 전체 48.057688 s였다. 이전 49.790 s 실행의 160개 input/summary/final 체크섬, aggregate와 실패 행이 모두 정확히 같았다. 수치 소스 11개의 실행 전후 SHA가 현재 파일과 일치한다. 아래 수치 표는 그대로 유지하며 ±는 seed 간 표본 표준편차다.
 
 중앙 절대오차 16조건, diffuse 수, 중복 비율, 관측 열 비율, 거칠기 2°의 Theorem 2 평균/중앙은 통과했다. **전체 판정 84/96 통과, 12개 실패**다. 참고 수치는 제공 문서의 3-seed 값이며 원본 집계 정의는 아직 확인하지 못했다.
 
@@ -79,20 +84,22 @@ HTTP(S)에서는 기존 module 앱과 module Worker를 사용하고, `file://`�
 
 - Outer-Peak은 아래/위 반평면을 사용하는 corridor prior 평가 대용점이다. 최종 wall extractor의 성능으로 주장하지 않는다. offset은 참 벽 ±1.5 m 창 안의 필드 peak에서 참 y를 뺀 값의 평균이다. 제공 +0.139 m의 집계 정의를 모르는 상태에서 중앙값으로 바꾸지 않았다.
 - Theorem 2 비율은 같은 벽의 최근접 정반사점을 사용하며 정의된 x gate를 적용한다. 국소 근사 가정의 유효 범위와 원본 최근접 정의 대조가 남았다.
-- MATLAB 설치 경로는 확인된 사용자 지침이나 원본 .m 파일 실행은 하지 않았다. 임의 파일을 만들어 Octave reference로 표시하지 않았다.
+- MATLAB R2025b batch에서 `spline` 계수 비교는 수행했다. 미제공 원본 .m 세 파일과 메인 알고리즘 실행, 전체 MATLAB/Octave parity 대조는 수행하지 않았다.
 - 물리 dt, 안테나/거리 보정, 가시성 외 실제 수신 검출 확률, amplitude 및 하드웨어 지연 모델은 없다. 웹 수치 재현이 실제 레이더의 검증을 대신하지 않는다.
 - 배포 대상은 기존 Pages의 `main:/`이다. 홈은 SURF를 유지하고 DRF는 `https://woqhrl9494-cell.github.io/corridor-mapper/drf.html`이다. 배포 완료는 Pages의 built 상태와 배포 commit 일치, 공개 자산 SHA-256 일치, 공개 화면에서 기본 실행을 확인한 뒤 판정한다.
 - 실제 `file://` 파일 화면의 실행 버튼과 Blob Worker는 사용자 확인 대기다. HTTP classic bundle 실행 및 자동 검사까지 확인했으며 파일 프로토콜의 실제 표시와 실행은 아직 확인하지 않았다.
 
 ## 브라우저와 내보내기
 
-- 실제 scenario/field/eval/sweep Worker와 Node: 짧은 3 snapshot / 100² 세 조건과 60 snapshot / 150² 네 조건, 총 7조건의 D̄/β̂ 바이트 및 Q/개수는 정확히 같다. Float64 평가 summary는 10⁻¹²×max(1, |참조값|) 허용오차로 비교했고 Theorem 평균 두 조건에서 최대 1.33e-15 차이를 기록했다. [검사 기록](tests/drf/browser-parity-result.json).
+- 이전 실제 scenario/field/eval/sweep Worker와 Node 대조: 짧은 3 snapshot / 100² 세 조건과 60 snapshot / 150² 네 조건, 총 7조건의 D̄/β̂ 바이트 및 Q/개수는 정확히 같다. Float64 평가 summary는 10⁻¹²×max(1, |참조값|) 허용오차로 비교했고 Theorem 평균 두 조건에서 최대 1.33e-15 차이를 기록했다. [검사 기록](tests/drf/browser-parity-result.json).
+- 이번 model8 HTTP module의 실제 기본 60 snapshot 실행은 Q=2904, D̄/β̂ Float32 SHA=991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926이며 브라우저 경고/오류 0이었다. 실제 JSON 다운로드의 첫 configuration에 `diffuseSampling.beforeThinning=[62,58]`, `afterThinning=[62,58]`을 확인했다. 앱뿐 아니라 Worker와 변경 module의 import URL에도 같은 버전을 사용해 이전 캐시의 진단 없는 truth가 재사용되는 문제를 수정했다.
+- 같은 코드/설정과 JS engine/libm에서의 truth/wire bit 재실행과 서로 다른 engine의 비교를 구분한다. 실제 같은 브라우저의 기본 60 snapshot 재실행 두 JSON의 measurement/truth는 정확히 같았다. HTTP export와 Node 대조에서는 수치 요소 256개에 차이가 있었으며 최대 절대 차이 7.105427357601002e-15, 최대 상대 차이 4.756225964505287e-16이었다. Shape와 비수치 값은 모두 같았다. 기본 D̄/β̂ Float32 hash는 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 같았다. Cross-engine truth/wire 전체를 bit 동일하다고 보고하지 않는다.
 - 단일 실행, 한 step, 계속 실행, 완료 snapshot slider, 과거 prefix 조회, 표시값/색 범위/레이어/확대/전체 보기, 진단 선택, 취소 및 재설정 확인.
 - 1440 × 900와 390 × 844 화면 확인. 모바일 document 폭 초과 0, 보이는 DOM 글자 최소16 px. DPR1/2에서 Canvas 실제 픽셀 크기 배수 일치. light/dark 화면 기록 보관.
 - 이전 구현의 실제 JSON 다운로드는 완료된 6 snapshots만 포함하고 wire에 oracle 필드가 없었다. CSV는 header+6행이었다. 2026-10-01 표시 버전의 실제 D̄ PNG 다운로드는 1138 × 1060 px, pHYs 11811 px/m = 299.9994 dpi였다. 저장된 이미지를 열어 D̄와 1/m² 단위, snapshot 60, linear 색 매핑, 평가용 점선 설명 및 `Axes: independent x/y scale` 문구를 확인했다. 이 크기는 현재 clay/등척 RAW 화면의 새 다운로드 크기로 판정하지 않는다. 현재 PNG 렌더도 선택한 필드의 표시 영역을 저장하며 필드별 파일명을 사용한다. 필드 등척 선택 시에는 `Axes: equal metres`로 표시한다.
 - 외부 다운로드 이벤트 도구는 타임아웃했으나 실제 파일이 Downloads에 저장된 것을 파싱해 검증했다. PNG 그림은 선택 snapshot이며 JSON/CSV는 완료된 전체 기록이다.
 
-현재 자동 검사 105/105 통과(16.469305 s), 실패 0. offline 생성물의 22개 원본 SHA, 실제 HTML의 file/HTTP script 선택, 검증 JSON 포함, Blob URL 재사용과 해제, 4종 Worker의 classic script 파싱, 원본 field와 Float32 배열 일치를 포함한다. RAW의 등척과 패널 크기, 모든 그래프의 내부 격자, PNG 표시축 및 수동 camera 보존도 검사했다. 기존 44개 보호 파일과 160회 검증의 수치 소스 SHA도 유지했다.
+최종 자동 검사는 113/113 통과(16.108287 s), 실패 0이다. 기존 105개 검사에 near-caustic Newton 1개와 truth model 7개를 추가했다. 실제 flat/curved profile 각각 1,200 seed의 thinning 전 Poisson 평균/분산, flat categorical CDF, 벽 곡선 위 표본과 두 leg, 차폐 전 생성 수 보존, 재실행/prefix/call-order/추정기 설정 불변성, 0 roughness/intensity의 난수 미소비를 확인했다. Offline 생성물의 22개 원본 SHA, HTML의 file/HTTP script 선택, Blob URL 재사용과 해제, 4종 Worker의 classic 파싱을 검사했고 실제 classic scenario Worker 2 snapshot truth/wire도 module 실행과 정확히 같았다. Field의 Float32 일치, RAW 등척과 크기, 그래프 격자, PNG 표시축 및 수동 camera, 44개 보호 파일과 최종 160회 수치 소스 SHA 검사도 통과했다. 이 자동 검사와 Node VM의 classic 실행을 실제 file 화면 실행으로 판정하지 않는다.
 
 이전 검사에서는 legacy DOM smoke 8개가 통과했다(uiErrors=[]). jsdom 파일 읽기 문제는 기존 버전을 임시 폴더에서 로드해 검사했으며 저장소 의존성은 변경하지 않았다. UI의 별도 네 seed run summary는 중앙 오차/P95/off-wall 및 나머지 값이 Node와 같고 Theorem 평균만 최대1.33e-15 차이였다. Sweep 즉시 취소는0/4, 단일 취소는 완료1 snapshot만 보존, 두 noise=0 입력은 실행을 차단했다.
 
@@ -112,9 +119,9 @@ RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도�
 
 확대 버튼 옆의 `처음으로`는 첫 snapshot과 기본 camera로 돌아가며 완료된 기록을 유지한다. 재생 중에는 재생을 멈추고 계산 중에는 일시정지한다. 실제 클릭 검사에서 1/60, slider max=60, 첫 snapshot Q=258 및 기본 camera 복원을 확인했다.
 
-현재 HTTP module 경로의 기본 60 snapshot 실행은 Q=2904, 정반사 369 / diffuse 2535, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같았다. 브라우저 경고/오류 기록은 비어 있었다. `처음으로` 실제 클릭 후 1/60, 전체 기록 보존과 자동 camera 복원을 확인했다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다.
+직전 clay/RAW 표시 버전의 HTTP module 기본 60 snapshot 실행은 Q=2904, 정반사 369 / diffuse 2535, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같았다. 당시 브라우저 경고/오류 기록은 비어 있었으며 `처음으로` 실제 클릭 후 1/60, 전체 기록 보존과 자동 camera 복원을 확인했다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다. 새 truth-side 변경 후 브라우저 확인과는 구분한다.
 
-2026-10-01의 이전 classic bundle HTTP harness도 같은 기본 필드 SHA와 Q를 확인했고, classic Sweep은 60 snapshots / 150² 격자, σ_d=0.1 m, 거칠기 2°, seed=1의 단일 조건이 1/1 완료되었다. 표시값은 중앙 오차 0.140 m, P95 0.829 m, off-wall 11.2%였다. 현재 생성물은 새 source 22개로 다시 빌드하고 VM 검사로 확인했다. 이전 classic 브라우저 실행 증거는 [density-validation.json](tests/drf/density-validation.json)의 `previousClassicRuntimeEvidence`로 분리했으며 현재 `file://` 화면 검증은 남아 있다.
+2026-10-01의 이전 classic bundle HTTP harness도 같은 기본 필드 SHA와 Q를 확인했고, classic Sweep은 60 snapshots / 150² 격자, σ_d=0.1 m, 거칠기 2°, seed=1의 단일 조건이 1/1 완료되었다. 표시값은 중앙 오차 0.140 m, P95 0.829 m, off-wall 11.2%였다. 직전 clay 버전 생성물은 source 22개로 빌드하고 VM 검사로 확인했다. 이전 classic 브라우저 실행 증거는 [density-validation.json](tests/drf/density-validation.json)의 `previousClassicRuntimeEvidence`로 분리했으며 `file://` 화면 검증은 남아 있다.
 
 실제 1920 × 930과 1920 × 1080에서 사이드바 폭은 456 px이며 측정한 입력/선택/실행 버튼 28개가 모두 첫 화면에 보였다. clientHeight와 scrollHeight는 각각 876/876 px와 1026/1026 px로 추가 사이드바 스크롤이 없었다. 사후 평가 라벨 6개는 14 px, 높이 16.797 px, line-height 16.8 px로 한 줄이며 clientWidth와 scrollWidth가 같아 잘림이 없었다. 네 canvas도 모두 첫 화면에 보였다. 1440 × 900과 1366 × 768에서는 네 canvas가 모두 보이고 펼친 전체 설정은 사이드바 스크롤로 접근한다.
 
@@ -126,4 +133,4 @@ RAW canvas CSS 크기와 실제 plot 영역은 다음과 같다. panel은 제목
 - 1366 × 768: canvas 668.109 × 259.797 px, plot 608 × 198 px, x/y 9.743590 px/m.
 - 390 × 844: canvas 364 × 160.875 px, plot 304 × 99 px, x/y 4.871795 px/m. 모바일 document 가로 넘침 0, DOM 글자 16 px 이상과 일반 컨트롤 44 px 이상 유지.
 
-1920 × 930에서 새로 열었을 때와 모바일로 줄였다가 돌아왔을 때의 RAW panel 폭은 모두 951.656 px로 같았다. 크기별 범위, 설정 가시성, 라벨 잘림 및 재크기 조정 결과는 [density-validation.json](tests/drf/density-validation.json)의 schema 4에 기록했다. 숨겨진 GT가 camera에 영향을 주지 않는지, 0값 투명도, 선택 지표의 큰 그래프, 두 표시축의 좌표 왕복, RAW 등척과 panel 크기, 내부 격자, PNG의 필드/단위/표시축 문구를 자동 검사했다. 수치/평가 모듈과 44개 보호 파일은 수정하지 않았다. CSS/모듈 URL의 버전을 바꾸어 이전 렌더의 캐시 재사용을 막는다.
+1920 × 930에서 새로 열었을 때와 모바일로 줄였다가 돌아왔을 때의 RAW panel 폭은 모두 951.656 px로 같았다. 크기별 범위, 설정 가시성, 라벨 잘림 및 재크기 조정 결과는 [density-validation.json](tests/drf/density-validation.json)의 schema 4에 기록했다. 숨겨진 GT가 camera에 영향을 주지 않는지, 0값 투명도, 선택 지표의 큰 그래프, 두 표시축의 좌표 왕복, RAW 등척과 panel 크기, 내부 격자, PNG의 필드/단위/표시축 문구를 자동 검사했다. 이 UI 변경에서는 수치/평가 모듈과 44개 보호 파일을 수정하지 않았다. 이번 truth-side 생성기 변경과 별도의 표시 증거이며 clay UI는 유지한다. CSS/모듈 URL의 버전을 바꾸어 이전 렌더의 캐시 재사용을 막는다.

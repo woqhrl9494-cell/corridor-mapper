@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import { createGrid, createField } from '../../drf/field.mjs';
+import { generateScenario } from '../../drf/scenario.mjs';
 
 const root = new URL('../../', import.meta.url), read = path => readFileSync(new URL(path, root));
 const artifact = read('drf/offline.bundle.js').toString(), marker = '// Bundled app follows.\n';
@@ -67,5 +68,16 @@ test('offline bundle is current and its classic Blob workers preserve the field'
   assert.equal(actual.type, 'frame'); assert.equal(actual.Q, expected.Q);
   assert.deepEqual(Array.from(actual.Dbar), Array.from(expected.Dbar));
   assert.deepEqual(Array.from(actual.betaHat), Array.from(expected.betaHat));
+  const scenarioMessages = [], scenarioContext = vm.createContext({ performance, setTimeout,
+    postMessage: data => scenarioMessages.push(data) });
+  scenarioContext.self = scenarioContext;
+  vm.runInContext(await blobs.get(runtime.worker('scenario').url).text(), scenarioContext);
+  const input = { snapshots: 2, roughness: 20, seed: 42 };
+  await scenarioContext.onmessage({ data: { type: 'generate', requestId: 3, input } });
+  const offline = scenarioMessages.at(-1), module = await generateScenario(input);
+  assert.equal(offline.type, 'scenario');
+  // Timings are transport-dependent; numerical truth and whitelist wire must match.
+  assert.equal(JSON.stringify(offline.scenario.truth), JSON.stringify(module.truth));
+  assert.equal(JSON.stringify(offline.scenario.wire), JSON.stringify(module.wire));
   events.get('beforeunload')(); assert.deepEqual(revoked.sort(), [...blobs.keys()].sort());
 });

@@ -76,6 +76,31 @@ test('t=30 specular fixtures: four visible roots, geometry and signed curvature'
   close(profile.lambdaTotal[0], 31.416105407464, 1e-12); close(profile.lambdaTotal[1], 53.153918989339, 1e-12);
 });
 
+test('near-caustic Newton does not wander and reports an uncertified root count', () => {
+  const pT = [-1, 1], pR = [1, 1];
+  for (const perturbation of [1e-12, 1e-14, 1e-15]) {
+    const k = .25 + perturbation;
+    const span = makeSpan([[-.5, k / 4], [1, -k], [0, k], [0, 0]], 1, 0, true);
+    // For y=k*x^2, P=2*x*((4*k-1)-k*x^2-2*k^3*x^4).
+    // Three stationary points exist; Float64 subdivision may merge their cluster.
+    const z = 2 * (4 * k - 1) / (k + Math.sqrt(k * k + 8 * k ** 3 * (4 * k - 1)));
+    const exactRoots = [.5 - Math.sqrt(z), .5, .5 + Math.sqrt(z)];
+    assert.ok(z > 0 && exactRoots.every(u => u > 0 && u < 1));
+    for (const u of exactRoots) {
+      const { s } = evaluate(span, u);
+      assert.ok(visible([span], pT, s) && visible([span], pR, s));
+    }
+    const points = specularPoints([span], pT, pR);
+    assert.ok(points.diagnostics.nearMultiple > 0);
+    assert.ok(points.diagnostics.unresolved > 0, 'merged roots cannot certify a complete count');
+    for (const point of points) {
+      const { t } = evaluate(span, point.u);
+      assert.ok(Math.abs(point.u - .5) < 1e-4, 'Newton must remain in the near-caustic cluster');
+      assert.ok(Math.abs(facetSinDelta(t, point.s, pT, pR)) <= 64 * Number.EPSILON);
+    }
+  }
+});
+
 function facetDelta(x, pT, pR) {
   const a = [pT[0] - x, pT[1]], b = [pR[0] - x, pR[1]], ra = Math.hypot(...a), rb = Math.hypot(...b);
   const difference = [b[0] / rb - a[0] / ra, b[1] / rb - a[1] / ra];

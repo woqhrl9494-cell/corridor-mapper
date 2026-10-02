@@ -1,5 +1,5 @@
 import { wallCells, evaluate } from './wall.mjs';
-import { facetSinDelta, sameSide, visible } from './specular.mjs';
+import { facetSinDelta, sameSide, visible } from './specular.mjs?v=20261002-model8';
 
 export function diffuseProfile(spans, pT, pR, sigmaRad, lambda0, cellStep, { partition = 'arc' } = {}) {
   if (!(Number.isFinite(sigmaRad) && sigmaRad >= 0 && Number.isFinite(lambda0) && lambda0 >= 0)) throw new RangeError('Roughness and intensity must be finite and nonnegative');
@@ -16,13 +16,16 @@ export function diffuseProfile(spans, pT, pR, sigmaRad, lambda0, cellStep, { par
   return { cells, lambdaTotal };
 }
 /** Global Poisson + categorical sampling is exactly independent cell counts
- * N_n~Poisson(lambda_n), followed by same-side/visibility thinning. */
-export function sampleDiffuse(spans, pT, pR, profile, rng) {
+ * N_n~Poisson(lambda_n), followed by same-side/visibility thinning.
+ * Optional diagnostics.generated records the Poisson draw before thinning. */
+export function sampleDiffuse(spans, pT, pR, profile, rng, diagnostics) {
   const cumulative = new Float64Array(profile.cells.length);
   let total = 0;
   for (let i = 0; i < cumulative.length; i++) cumulative[i] = total += profile.cells[i].lambda;
+  if (diagnostics) diagnostics.generated = 0;
   if (!total) return [];
   const count = rng.poisson(total), bySpan = new Map(spans.map(span => [span.span, span])), points = [];
+  if (diagnostics) diagnostics.generated = count;
   for (let i = 0; i < count; i++) {
     const target = rng.uniform() * total;
     let lo = 0, hi = cumulative.length - 1;

@@ -3,8 +3,8 @@
  * Work per snapshot: O(C * (wall cells + emitted paths * visibility cost)).
  */
 import { createWalls, sampleWalls } from './wall.mjs';
-import { specularPoints } from './specular.mjs';
-import { diffuseProfile, sampleDiffuse } from './diffuse.mjs';
+import { specularPoints } from './specular.mjs?v=20261002-model8';
+import { diffuseProfile, sampleDiffuse } from './diffuse.mjs?v=20261002-model8';
 import { createRng } from './rng.mjs';
 import { makeWire } from './wire.mjs';
 
@@ -44,6 +44,7 @@ export function truePoses(t, vehicles = 3) {
 export function generateSnapshot(input, spans, t) {
   const p = truePoses(t, input.vehicles), sigma2 = input.sigmaP ** 2;
   const poseNoise = p.map((_, v) => {
+    // Stream addresses use the same 1-based vehicle IDs as the wire.
     const r = createRng(input.seed, 'pose', t, v + 1);
     return [r.normal(), r.normal()];
   });
@@ -54,11 +55,14 @@ export function generateSnapshot(input, spans, t) {
     const specRng = createRng(input.seed, 'specNoise', t, i + 1, j + 1);
     const diffRng = createRng(input.seed, 'diffNoise', t, i + 1, j + 1);
     const profile = diffuseProfile(spans, p[i], p[j], input.roughness * Math.PI / 180, input.lambda0, input.cellStep);
-    const diffuse = [];
+    const diffuse = [], diffuseSampling = { beforeThinning: [], afterThinning: [] };
     for (let wall = 0; wall < 2; wall++) {
       const cells = profile.cells.filter(c => c.wall === wall);
       const wallProfile = { cells, lambdaTotal: profile.lambdaTotal };
-      diffuse.push(...sampleDiffuse(spans, p[i], p[j], wallProfile, createRng(input.seed, 'diffuse', t, i + 1, j + 1, wall)));
+      const diagnostics = {}, points = sampleDiffuse(spans, p[i], p[j], wallProfile, createRng(input.seed, 'diffuse', t, i + 1, j + 1, wall), diagnostics);
+      diffuseSampling.beforeThinning.push(diagnostics.generated);
+      diffuseSampling.afterThinning.push(points.length);
+      diffuse.push(...points);
     }
     const tagged = [
       ...spec.map(point => ({ ...point, kind: 'specular', z: specRng.normal() })),
@@ -79,6 +83,8 @@ export function generateSnapshot(input, spans, t) {
       specular: emitted.filter(q => q.kind === 'specular').map(({ kind, ...q }) => q),
       diffuse: emitted.filter(q => q.kind === 'diffuse').map(({ kind, ...q }) => q),
       lambdaTotal: profile.lambdaTotal,
+      diffuseSampling,
+      // Existing generated counts are visible paths before resolution merging.
       generated: { specular: spec.length, diffuse: diffuse.length },
       numericalDiagnostics: spec.diagnostics ?? { degenerateSpans: [], unresolved: 0 },
     });
