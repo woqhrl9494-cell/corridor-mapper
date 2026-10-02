@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261001-local5';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-grid6';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -300,7 +300,9 @@ $('exportJson').onclick = () => {
 };
 $('exportCsv').onclick = () => download(new Blob([snapshotCsv(state.frames, state.evaluations)], { type: 'text/csv;charset=utf-8' }), 'echomap-drf-snapshots.csv');
 $('exportPng').onclick = async () => { try { const field=$('heatField').value;download(await png300dpi(await (field==='betaHat' ? contrastMap : densityMap).png()), `echomap-drf-${field}-300dpi.png`); } catch (error) { notice(`PNG 저장 중단: ${error.message}`); } };
-new ResizeObserver(() => { renderSelected(); renderSweep(); }).observe($('analysis-panel') ?? $('sweepPanel'));
+const chartResize = new ResizeObserver(() => { renderSelected(); renderSweep(); });
+chartResize.observe($('analysis-panel') ?? $('sweepPanel'));
+chartResize.observe($('metricChart'));
 window.addEventListener('resize', () => { renderSelected(); renderSweep(); });
 window.addEventListener('beforeunload', () => { for (const worker of state.workers) worker.stop(); state.sweep?.cancel(); });
 try {

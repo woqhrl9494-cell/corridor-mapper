@@ -8,6 +8,20 @@ export function zoomMap(c,factor,anchor,box) {
   return {cx:p[0]-(anchor[0]-box.x-box.w/2)/scaleX,cy:p[1]+(anchor[1]-box.y-box.h/2)/scaleY,scaleX,scaleY};
 }
 
+// Plot width/height = world span x/y; 60/62 CSS pixels are axis margins.
+export function rawPanelSize(width,maxCanvasHeight,bounds) {
+  const aspect=Math.max(1,bounds.xmax-bounds.xmin)/Math.max(1,bounds.ymax-bounds.ymin);
+  const plotWidth=Math.min(Math.max(1,width-60),Math.max(1,maxCanvasHeight-62)*aspect);
+  return {width:plotWidth+60,height:plotWidth/aspect+62};
+}
+
+function drawGrid(ctx,box,xs,ys,color) {
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.beginPath();
+  for (const x of xs) if (x>box.x+1 && x<box.x+box.w-1) {ctx.moveTo(x,box.y);ctx.lineTo(x,box.y+box.h);}
+  for (const y of ys) if (y>box.y+1 && y<box.y+box.h-1) {ctx.moveTo(box.x,y);ctx.lineTo(box.x+box.w,y);}
+  ctx.stroke();ctx.restore();
+}
+
 // White-based sequential colors affect drawing only; zero stays transparent.
 const palettes = {
   Dbar: [[255,255,255],[255,225,143],[255,172,66],[239,100,29],[184,41,20]],
@@ -35,7 +49,10 @@ export class DrfMap {
     this.pointer = null;
     this.heat = document.createElement("canvas");
     this.maxValue = 0;
-    new ResizeObserver(() => { if (this.auto) this.camera = null; this.draw(); }).observe(canvas);
+    const resize=new ResizeObserver(() => { if (this.auto) this.camera = null; this.draw(); });
+    resize.observe(canvas);
+    const dashboard=canvas.closest?.('.map-panel')?.parentElement;
+    if (dashboard) resize.observe(dashboard);
     new MutationObserver(() => this.draw()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => this.draw());
     canvas.addEventListener("wheel", (e) => { e.preventDefault(); this.zoom(Math.exp(-e.deltaY*.001),[e.offsetX,e.offsetY]); }, { passive:false });
@@ -56,6 +73,7 @@ export class DrfMap {
     for (const name of ["pointerup","pointercancel","lostpointercapture"]) canvas.addEventListener(name,() => { this.pointer=null; });
   }
   set(state) {
+    if (state.mode==='geometry') state={...state,aspectMode:'equal'};
     const previous=this.state;
     this.state=state;
     if (state.aspectMode !== previous.aspectMode) {this.auto=true;this.camera=null;}
@@ -108,12 +126,25 @@ export class DrfMap {
         const cy=Math.max(domain[2]+12,Math.min(domain[3]-12,n ? poses.reduce((s,p)=>s+p[1],0)/n : (domain[2]+domain[3])/2));
         bounds={xmin:cx-12,xmax:cx+12,ymin:cy-12,ymax:cy+12};
     } else if (geometry && !this.fullDomain && this.state.layers?.showTruth && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
+    const panel=this.canvas.closest?.('.map-panel'),dashboard=panel?.parentElement,body=this.canvas.parentElement;
+    if (geometry && target===this.canvas && dashboard && body && dashboard.clientWidth>0) {
+      const rowHeight=matchMedia('(min-width: 1000px)').matches ? parseFloat(getComputedStyle(dashboard).gridTemplateRows) : Infinity;
+      const size=rawPanelSize(dashboard.clientWidth-2,Math.max(64,rowHeight-panel.firstElementChild.offsetHeight-2),bounds);
+      if (Math.abs((parseFloat(panel.style.width)||0)-size.width-2)>.1 || Math.abs((parseFloat(body.style.height)||0)-size.height)>.1) {
+        panel.style.width=`${Math.round((size.width+2)*100)/100}px`;body.style.height=`${Math.round(size.height*100)/100}px`;
+        if (this.auto) this.camera=null;
+        this.draw();return;
+      }
+    }
     if (!this.camera) {
       let scaleX=box.w/(Math.max(1,bounds.xmax-bounds.xmin)*1.04),scaleY=box.h/(Math.max(1,bounds.ymax-bounds.ymin)*1.04);
       if (this.state.aspectMode==='equal') scaleX=scaleY=Math.min(scaleX,scaleY);
       this.camera={cx:(bounds.xmin+bounds.xmax)/2,cy:(bounds.ymin+bounds.ymax)/2,scaleX,scaleY};
     }
     const c=this.camera,screen=(p) => mapToScreen(p,c,box),lo=mapToWorld([box.x,box.y+box.h],c,box),hi=mapToWorld([box.x+box.w,box.y],c,box);
+    const stepX=tickStep(c.scaleX*2/3),stepY=tickStep(c.scaleY*2/3),xs=[],ys=[];
+    for (let x=Math.ceil(lo[0]/stepX)*stepX;x<=hi[0];x+=stepX) xs.push(x);
+    for (let y=Math.ceil(lo[1]/stepY)*stepY;y<=hi[1];y+=stepY) ys.push(y);
     if (target===this.canvas) {
       this.box=box;
       this.canvas.dataset.view=JSON.stringify({xmin:lo[0],xmax:hi[0],ymin:lo[1],ymax:hi[1],pixelsPerMetreX:c.scaleX,pixelsPerMetreY:c.scaleY,aspectMode:this.state.aspectMode ?? 'fill',plotWidth:box.w,plotHeight:box.h,auto:this.auto});
@@ -123,6 +154,7 @@ export class DrfMap {
       const p=screen([domain[0],domain[3]]),q=screen([domain[1],domain[2]]);
       ctx.imageSmoothingEnabled=false; ctx.drawImage(this.heat,p[0],p[1],q[0]-p[0],q[1]-p[1]);
     }
+    drawGrid(ctx,box,xs.map(x=>screen([x,0])[0]),ys.map(y=>screen([0,y])[1]),token('grid'));
     const path=(points,color,width=2,dash=[]) => {
       if (!points?.length) return;
       ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);
@@ -170,11 +202,11 @@ export class DrfMap {
       }
     }
     ctx.restore();
-    const stepX=tickStep(c.scaleX*2/3),stepY=tickStep(c.scaleY*2/3),label=(n,step) => Math.abs(n)<step/100 ? "0" : n.toFixed(Math.max(0,-Math.floor(Math.log10(step))));
+    const label=(n,step) => Math.abs(n)<step/100 ? "0" : n.toFixed(Math.max(0,-Math.floor(Math.log10(step))));
     ctx.font="14px -apple-system, Arial, sans-serif";ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1.5;
     ctx.strokeRect(box.x,box.y,box.w,box.h);
-    for (let x=Math.ceil(lo[0]/stepX)*stepX;x<=hi[0];x+=stepX) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(label(x,stepX),sx,box.y+box.h+19); }
-    for (let y=Math.ceil(lo[1]/stepY)*stepY;y<=hi[1];y+=stepY) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(label(y,stepY),box.x-10,sy+6); }
+    for (const x of xs) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(label(x,stepX),sx,box.y+box.h+19); }
+    for (const y of ys) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(label(y,stepY),box.x-10,sy+6); }
     ctx.textAlign="center";ctx.fillText("x [m]",box.x+box.w/2,height-8);ctx.save();ctx.translate(14,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText("y [m]",0,0);ctx.restore();
     if (geometry) {
       if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "참 장면 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
@@ -216,6 +248,7 @@ function chartAxes(surface,{title,xLabel,yLabel,xmin,xmax,ymin,ymax,top=0,height
   if (!(xmax>xmin)) xmax=xmin+1;
   if (!(ymax>ymin)) ymax=ymin+1;
   const x=(v) => box.x+(v-xmin)/(xmax-xmin)*box.w,y=(v) => box.y+box.h-(v-ymin)/(ymax-ymin)*box.h;
+  drawGrid(ctx,box,Array.from({length:5},(_,i)=>box.x+box.w*i/4),Array.from({length:5},(_,i)=>box.y+box.h*i/4),color('grid'));
   ctx.fillStyle=color("ink");ctx.font=`600 ${compact ? 16 : 18}px -apple-system, Arial`;ctx.textAlign="left";ctx.fillText(title,8,top+(compact ? 18 : 23));
   ctx.strokeStyle=color("line");ctx.lineWidth=1.5;ctx.strokeRect(box.x,box.y,box.w,box.h);
   ctx.font=`${compact ? 14 : 16}px -apple-system, Arial`;ctx.fillStyle=color("ink-muted");
