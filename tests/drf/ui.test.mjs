@@ -79,7 +79,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     map.paint(canvas,1);const cssView=JSON.parse(canvas.dataset.view);
     assertGrid(map.box,'density');
     assertMetreGrid(map,'density');
-    assert.equal(cssView.plotWidth,592,'heatmap must use the full width after axes and colorbar');
+    assert.equal(cssView.plotWidth,584,'heatmap must use the full width after axes and colorbar');
     assert.equal(cssView.plotHeight,478,'heatmap must use the full height after axes');
     map.paint(canvas,2);assert.equal(canvas.width,1400);assert.equal(canvas.height,1080);
     assert.deepEqual(JSON.parse(canvas.dataset.view),cssView,'DPR must not change the metre viewport');
@@ -116,7 +116,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     map.set({...display,focus:false,mode:'geometry',aspectMode:'fill',layers:{showTruth:true},walls:[[[0,6],[60,24]]]});map.paint(canvas,2);
     assert.deepEqual([card.style,body.style],[{},{}],'RAW fitting must leave CSS frame and plot-body dimensions unchanged');
     const wideView=JSON.parse(canvas.dataset.view);
-    assert.equal(wideView.plotWidth,1640,'the graph must use the full available panel width');
+    assert.equal(wideView.plotWidth,1632,'the graph must use the full available panel width');
     assert.equal(wideView.plotHeight,288,'the graph must use the full available panel height');
     assert.equal(wideView.pixelsPerMetreX,wideView.pixelsPerMetreY,'RAW must remain isometric even when fill is requested');
     const origin=mapToScreen([30,15],map.camera,map.box),unitX=mapToScreen([31,15],map.camera,map.box),unitY=mapToScreen([30,16],map.camera,map.box);

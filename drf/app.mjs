@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-walllabels22';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-design24';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -50,6 +50,7 @@ function controls() {
   $('sweepButton').disabled = active || sweeping; $('sweepCancel').disabled = !sweeping;
   $('timeSlider').max = state.frames.length; $('timeSlider').value = state.selected; $('timeSlider').disabled = !state.frames.length;
   $('replayButton').disabled = !state.frames.length;
+  $('runProgress').max = state.scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value || 80); $('runProgress').value = state.frames.length;
   $('firstSnapshot').disabled = false;
   $('exportJson').disabled = (!state.valid || !state.frames.length) && !state.sweepRuns.length;
   for (const id of ['exportCsv', 'exportPng']) $(id).disabled = !state.valid || !state.frames.length;
@@ -133,7 +134,7 @@ async function hashField(frame) {
 const inspect = point => {
   clearTimeout(hoverTimer); const generation = ++hoverGeneration;
   const frame = state.frames[state.selected - 1];
-  if (!frame || point.index < 0 || !hoverWorker) { $('inspector').textContent = '지도 위로 포인터를 이동하면 격자 값을 표시합니다.'; return; }
+  if (!frame || point.index < 0 || !hoverWorker) { $('inspector').textContent = '지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동'; return; }
   const grid = state.grid, ix = point.index % grid.nx, iy = Math.floor(point.index / grid.nx), x = grid.x[ix], y = grid.y[iy];
   hoverTimer = setTimeout(async () => {
     if (generation !== hoverGeneration || !hoverWorker) return;
@@ -162,7 +163,7 @@ function previewWalls() {
 }
 function renderSelected() {
   hoverGeneration++;
-  $('inspector').textContent = '지도 위로 포인터를 이동하면 격자 값을 표시합니다.';
+  $('inspector').textContent = '지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동';
   const frame = state.frames[state.selected - 1], evaluation = state.evaluations[state.selected - 1], scenario = state.scenario;
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
   const display={ grid: state.grid, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),
@@ -180,7 +181,7 @@ function renderSelected() {
   const diag = evaluation?.diagnostics;
   $('pathValue').textContent = diag ? `정반사 ${diag.specularCount} / diffuse ${diag.diffuseCount}` : '—';
   const times = state.frames.slice(0, state.selected).map(f => f.ms);
-  $('timingValue').textContent = `snapshot p50 ${fmt(percentile(times, .5), 1)} / p95 ${fmt(percentile(times, .95), 1)} ms`;
+  $('timingValue').textContent = times.length ? `p50 ${fmt(percentile(times, .5), 1)} ms · p95 ${fmt(percentile(times, .95), 1)} ms` : '—';
   drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected),$('historyMetric').value);
   if (diag) {
     $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · 거리 중복 ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: 평균 ${fmt(diag.theoremMean)}, 중앙 ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, 음수=${diag.theoremNegative} · field offset ${fmt(evaluation.offset)} m / fold 예측 ${fmt(diag.foldPrediction)} m`;

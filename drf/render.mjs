@@ -8,8 +8,58 @@ export function zoomMap(c,factor,anchor,box) {
   return {cx:p[0]-(anchor[0]-box.x-box.w/2)/scaleX,cy:p[1]+(anchor[1]-box.y-box.h/2)/scaleY,scaleX,scaleY};
 }
 
+const UI_FONT='-apple-system, BlinkMacSystemFont, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif';
+const MATH_FONT='"STIX Two Math", "STIX Two Text", "Latin Modern Math", "Cambria Math", "Times New Roman", serif';
+const uiFont=(size,weight=400) => `${weight} ${size}px ${UI_FONT}`;
+const mathFont=(size,italic) => `${italic ? 'italic ' : ''}${size}px ${MATH_FONT}`;
+
+// Paper notation inside $…$: Latin and lowercase Greek letters italic; digits, operators and
+// uppercase Greek upright; _x, _{xy} subscripts and ^x superscripts. Scripts keep the 14 px floor.
+function richRuns(text,size,weight) {
+  const runs=[],mathSize=Math.round(size*1.12),scriptSize=Math.max(14,Math.round(mathSize*.72));
+  const push=(value,font,dy=0,script=0) => {
+    const last=runs.at(-1);
+    if (last && !script && !last.script && last.font===font) last.text+=value;
+    else runs.push({text:value,font,dy,script});
+  };
+  text.split('$').forEach((part,k) => {
+    if (!part) return;
+    if (k%2===0) { push(part,uiFont(size,weight)); return; }
+    for (let i=0;i<part.length;) {
+      const c=part[i];
+      if ((c==='_' || c==='^') && i+1<part.length) {
+        let body;
+        if (part[i+1]==='{') { const end=part.indexOf('}',i+2),stop=end<0 ? part.length : end;body=part.slice(i+2,stop);i=stop+1; }
+        else { body=part[i+1];i+=2; }
+        const italic=/^\p{L}$/u.test(body) && !/[Α-Ω]/.test(body);
+        push(body,mathFont(scriptSize,italic),c==='_' ? mathSize*.26 : -mathSize*.42,c==='_' ? 1 : 2);
+        continue;
+      }
+      const letter=part.slice(i).match(/^\p{L}\p{M}*/u)?.[0];
+      if (letter) { push(letter,mathFont(mathSize,!/^[Α-Ω]/.test(letter)));i+=letter.length; }
+      else { push(c,mathFont(mathSize,false));i++; }
+    }
+  });
+  return runs;
+}
+function drawRich(ctx,text,x,y,{size=14,weight=400,align='left',color}={}) {
+  const runs=richRuns(text,size,weight),starts=[];let cursor=0;
+  runs.forEach((run,i) => {
+    ctx.font=run.font;run.width=ctx.measureText(run.text).width;
+    // A subscript directly after a superscript (or vice versa) stacks, as in χ²₁.
+    const stacked=run.script && runs[i-1]?.script && runs[i-1].script!==run.script;
+    starts.push(stacked ? starts[i-1] : cursor);
+    cursor=Math.max(cursor,starts[i]+run.width);
+  });
+  const origin=align==='center' ? x-cursor/2 : align==='right' ? x-cursor : x;
+  ctx.save();ctx.textAlign='left';if (color) ctx.fillStyle=color;
+  runs.forEach((run,i) => { ctx.font=run.font;ctx.fillText(run.text,origin+starts[i],y+run.dy); });
+  ctx.restore();
+  return cursor;
+}
+
 function drawGrid(ctx,box,xs,ys,color) {
-  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.beginPath();
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.setLineDash([]);ctx.beginPath();
   for (const x of xs) if (x>box.x+1 && x<box.x+box.w-1) {ctx.moveTo(x,box.y);ctx.lineTo(x,box.y+box.h);}
   for (const y of ys) if (y>box.y+1 && y<box.y+box.h-1) {ctx.moveTo(box.x,y);ctx.lineTo(box.x+box.w,y);}
   ctx.stroke();ctx.restore();
@@ -120,11 +170,13 @@ export class DrfMap {
     const width=this.canvas.clientWidth,height=this.canvas.clientHeight;
     if (width<1 || height<1) return;
     target.width=Math.round(width*ratio); target.height=Math.round(height*ratio);
-    const ctx=target.getContext("2d"), css=getComputedStyle(document.documentElement), token=(name) => css.getPropertyValue(`--color-${name}`).trim();
-    const ink=token("ink"),muted=token("ink-muted"),line=token("line"),accent=token("accent"),evalColor=token("eval"),background=token("plot-bg");
+    const ctx=target.getContext("2d"), css=getComputedStyle(document.documentElement), token=(name,fallback) => css.getPropertyValue(`--color-${name}`).trim() || fallback;
+    const ink=token("ink"),muted=token("ink-muted"),line=token("line"),evalColor=token("eval"),background=token("plot-bg");
+    const trackColor=token("track","#1c5cab"),ellipseColor=token("ellipse","#1d9b79"),proxyColor=token("proxy","#b8237a"),truthColor=token("truth",ink);
     ctx.scale(ratio,ratio); ctx.fillStyle=background; ctx.fillRect(0,0,width,height);
-    ctx.font="14px -apple-system, Arial, sans-serif";
-    const geometry=this.state.mode === "geometry",box={ x:44,y:16,w:Math.max(1,width-(geometry ? 60 : 108)),h:Math.max(1,height-62) }, g=this.state.grid;
+    ctx.font=uiFont(14);
+    // 52 px left margin keeps y tick labels clear of the rotated axis title.
+    const geometry=this.state.mode === "geometry",box={ x:52,y:16,w:Math.max(1,width-(geometry ? 68 : 116)),h:Math.max(1,height-62) }, g=this.state.grid;
     const domain=g?.domain ?? (g ? [g.xmin,g.xmax,g.ymin,g.ymax] : [0,60,0,30]);
     let bounds={xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]};
     if (this.state.focus && !this.fullDomain) {
@@ -142,6 +194,10 @@ export class DrfMap {
         if (snapshot.t>(this.state.frame?.t ?? 0) || p?.length!==2 || !p.every(Number.isFinite)) continue;
         bounds={xmin:Math.min(bounds.xmin,p[0]),xmax:Math.max(bounds.xmax,p[0]),ymin:Math.min(bounds.ymin,p[1]),ymax:Math.max(bounds.ymax,p[1])};
       }
+      // Wall candidates are field output for this snapshot; keep every drawn one inside the frame,
+      // whether or not the layer is shown, so toggles never move the camera.
+      for (const p of this.state.proxy ?? []) if (p?.length===2 && p.every(Number.isFinite))
+        bounds={xmin:Math.min(bounds.xmin,p[0]),xmax:Math.max(bounds.xmax,p[0]),ymin:Math.min(bounds.ymin,p[1]),ymax:Math.max(bounds.ymax,p[1])};
     }
     const panel=this.canvas.closest?.('.map-panel');
     // CSS owns the full card size; fit metres inside it without shrinking the frame.
@@ -168,27 +224,33 @@ export class DrfMap {
       ctx.imageSmoothingEnabled=false; ctx.drawImage(this.heat,p[0],p[1],q[0]-p[0],q[1]-p[1]);
     }
     drawGrid(ctx,box,xs.map(x=>screen([x,0])[0]),ys.map(y=>screen([0,y])[1]),token('grid'));
-    const path=(points,color,width=2,dash=[]) => {
+    const path=(points,color,width=2,dash=[],alpha=1) => {
       if (!points?.length) return;
-      ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);
-      points.forEach((p,i) => { const [x,y]=screen(p); i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });ctx.stroke();ctx.setLineDash([]);
+      ctx.beginPath();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.lineJoin='round';ctx.lineCap=dash.length ? 'butt' : 'round';
+      points.forEach((p,i) => { const [x,y]=screen(p); i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
     };
-    const dot=(p,color,r=4,open=false) => { if (!p) return; const point=screen(p),[x,y]=point;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=2;open ? ctx.stroke() : ctx.fill();return point; };
+    // One arc per marker; a surface-coloured ring keeps overlapping markers legible.
+    const marker=(p,{r=4,fill,stroke,ring=0,ringColor=background,lineWidth=2}) => {
+      if (!p) return;
+      const point=screen(p),[x,y]=point;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+      if (fill) { if (ring) { ctx.lineWidth=ring*2;ctx.strokeStyle=ringColor;ctx.stroke(); } ctx.fillStyle=fill;ctx.fill(); }
+      if (stroke) { ctx.lineWidth=lineWidth;ctx.strokeStyle=stroke;ctx.stroke(); }
+      return point;
+    };
+    const square=(p,size,color,lineWidth=1.5) => { if (!p) return; const [x,y]=screen(p);ctx.beginPath();ctx.rect(x-size/2,y-size/2,size,size);ctx.fillStyle=background;ctx.fill();ctx.lineWidth=lineWidth;ctx.strokeStyle=color;ctx.stroke(); };
     const {layers={},wire,truth,walls=[],proxy=[],observed=[],history=[]}=this.state;
-    if (layers.showObserved) for (const p of observed) dot(p,evalColor,5,true);
-    if (layers.showTruth) for (const wall of walls) path(wall,ink,2.5,[8,6]);
-    if (layers.showProxy) for (const p of proxy) dot(p,accent,4,true);
+    // Layer order, back to front: measurement ellipses (thin, translucent) → evaluation mask →
+    // wall candidates (filled dots) → true wall (dashed) → scattering points → tracks → vehicles.
     // Drawing budget only: the estimator still receives every measured path.
     const ellipseTotal=(wire?.configs ?? []).reduce((sum,config)=>sum+(config.paths?.length ?? 0),0),ellipseStride=Math.max(1,Math.ceil(ellipseTotal/600));
     let ellipseIndex=0,ellipseShown=0;
-    ctx.globalAlpha=.16;
     if (layers.showEllipses) for (const config of wire?.configs ?? []) {
       const a=config.pHat_i,b=config.pHat_j,dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),cos=Math.cos(angle),sin=Math.sin(angle);
       for (const q of config.paths) {
         if (ellipseIndex++%ellipseStride!==0 || !(q.dHat>distance)) continue;
         const major=q.dHat/2,minor=Math.sqrt(major*major-distance*distance/4),points=[];
         for (let k=0;k<=96;k++) { const t=k*2*Math.PI/96,x=major*Math.cos(t),y=minor*Math.sin(t);points.push([(a[0]+b[0])/2+x*cos-y*sin,(a[1]+b[1])/2+x*sin+y*cos]); }
-        path(points,accent,1.5);ellipseShown++;
+        path(points,ellipseColor,1.1,[],.5);ellipseShown++;
       }
     }
     if (target===this.canvas && geometry) {
@@ -196,10 +258,12 @@ export class DrfMap {
       const stats=panel?.querySelector?.('#ellipseStats');
       if (stats) stats.textContent=layers.showEllipses ? `타원 표시 ${ellipseShown}개 · 측정 ${ellipseTotal}개` : '타원 숨김';
     }
-    ctx.globalAlpha=1;
+    if (layers.showObserved) for (const p of observed) square(p,9,evalColor);
+    if (layers.showProxy) for (const p of proxy) marker(p,{r:2.75,fill:proxyColor,ring:1.25});
+    if (layers.showTruth) for (const wall of walls) path(wall,truthColor,geometry ? 1.75 : 2,[7,5]);
     if (layers.showSpecular || layers.showDiffuse) for (const config of truth?.configs ?? []) {
-      if (layers.showSpecular) for (const q of config.specular ?? []) dot(q.s,evalColor,5,true);
-      if (layers.showDiffuse) for (const q of config.diffuse ?? []) dot(q.s,evalColor,2.5);
+      if (layers.showSpecular) for (const q of config.specular ?? []) marker(q.s,{r:4.5,stroke:evalColor,lineWidth:1.75});
+      if (layers.showDiffuse) for (const q of config.diffuse ?? []) marker(q.s,{r:2.25,fill:evalColor});
     }
     if (layers.showVehicles) {
       const tracks=new Map();
@@ -209,43 +273,54 @@ export class DrfMap {
       }
       const current=new Map();
       for (const config of wire?.configs ?? []) { current.set(config.i,config.pHat_i);current.set(config.j,config.pHat_j); }
-      for (const track of tracks.values()) path(track.map((q) => q.p),accent,2);
-      const labels=[],positions=[...current].map(([id,p])=>[id,dot(p,accent,5)]);
+      // Tracks are the boldest line; a casing separates them from ellipses and heat cells.
+      const color=geometry ? trackColor : token("field-track",ink),casing=geometry ? background : token("field-casing",background);
+      for (const track of tracks.values()) {
+        const points=track.map((q) => q.p);
+        path(points,casing,geometry ? 5.5 : 4.5,[],geometry ? .9 : .7);path(points,color,geometry ? 2.5 : 1.75);
+        if (points.length>1) square(points[0],geometry ? 7 : 6,color);
+      }
+      const labels=[],positions=[...current].map(([id,p])=>[id,marker(p,{r:geometry ? 5.5 : 4.5,fill:color,ring:2,ringColor:casing})]);
+      ctx.font=uiFont(14,600);
       for (const [id,[x,y]] of positions) {
         const text=`V${id}`,tw=ctx.measureText(text).width;
-        const candidates=[[x,y-13],[x,y+25],[x-tw/2-14,y+6],[x+tw/2+14,y+6]];
-        for (let offset=37;offset<=box.h;offset+=24) candidates.push([x,y-offset],[x,y+offset+12]);
+        const side=tw/2+16,candidates=[[x,y-15],[x,y+27],[x-side,y+6],[x+side,y+6],[x-side,y-18],[x-side,y+30],[x+side,y-18],[x+side,y+30]];
+        for (let offset=39;offset<=box.h;offset+=24) candidates.push([x,y-offset],[x,y+offset+12],[x-side,y-offset],[x-side,y+offset+12]);
         const position=candidates.find(([lx,ly])=> {
-          const left=lx-tw/2-4,right=lx+tw/2+4,top=ly-18,bottom=ly+6;
+          const left=lx-tw/2-6,right=lx+tw/2+6,top=ly-18,bottom=ly+6;
           return left>=box.x+2 && right<=box.x+box.w-2 && top>=box.y+2 && bottom<=box.y+box.h-2
             && !labels.some(a=>left<a.right && right>a.left && top<a.bottom && bottom>a.top)
             && !positions.some(([, [vx,vy]])=>left<vx+7 && right>vx-7 && top<vy+7 && bottom>vy-7);
         });
         // Keep every vehicle dot/track; omit only a number that has no room in the plot.
         if (!position) continue;
-        const [lx,ly]=position;
-        labels.push({left:lx-tw/2-4,right:lx+tw/2+4,top:ly-18,bottom:ly+6});
-        if (lx!==x || ly!==y-13) { ctx.beginPath();ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.moveTo(x,y);ctx.lineTo(lx,ly-6);ctx.stroke(); }
-        ctx.fillStyle=background;ctx.fillRect(lx-tw/2-4,ly-18,tw+8,24);
+        const [lx,ly]=position,left=lx-tw/2-6;
+        labels.push({left,right:lx+tw/2+6,top:ly-18,bottom:ly+6});
+        if (lx!==x || ly!==y-15) { ctx.beginPath();ctx.strokeStyle=muted;ctx.lineWidth=1;ctx.moveTo(x,y);ctx.lineTo(Math.max(left,Math.min(lx+tw/2+6,x)),ly-6);ctx.stroke(); }
+        ctx.beginPath();ctx.roundRect?.(left,ly-18,tw+12,24,7);ctx.globalAlpha=.92;ctx.fillStyle=background;ctx.fill();ctx.globalAlpha=1;
+        ctx.lineWidth=1;ctx.strokeStyle=line;ctx.stroke();
         ctx.textAlign="center";ctx.fillStyle=ink;ctx.fillText(text,lx,ly);
       }
     }
     ctx.restore();
-    ctx.font="14px -apple-system, Arial, sans-serif";ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1.5;
+    ctx.font=uiFont(14);ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1;
     ctx.strokeRect(box.x,box.y,box.w,box.h);
     // Sparse labels at extreme zoom-out avoid overlaps; grid lines stay at 10 m.
     const labelStepX=Math.max(1,Math.ceil(48/(c.scaleX*10))),labelStepY=Math.max(1,Math.ceil(24/(c.scaleY*10)));
-    for (const x of xs) if ((x/10)%labelStepX===0) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(String(x),sx,box.y+box.h+19); }
-    for (const y of ys) if ((y/10)%labelStepY===0) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(String(y),box.x-10,sy+6); }
-    ctx.textAlign="center";ctx.fillText("x [m]",box.x+box.w/2,height-8);ctx.save();ctx.translate(14,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText("y [m]",0,0);ctx.restore();
+    for (const x of xs) if ((x/10)%labelStepX===0) { const sx=screen([x,0])[0];ctx.textAlign="center";ctx.fillText(String(x),sx,box.y+box.h+20); }
+    for (const y of ys) if ((y/10)%labelStepY===0) { const sy=screen([0,y])[1];ctx.textAlign="right";ctx.fillText(String(y),box.x-9,sy+5); }
+    drawRich(ctx,"$x$ [m]",box.x+box.w/2,height-8,{align:"center",color:muted});
+    ctx.save();ctx.translate(17,box.y+box.h/2);ctx.rotate(-Math.PI/2);drawRich(ctx,"$y$ [m]",0,0,{align:"center",color:muted});ctx.restore();
+    ctx.font=uiFont(14);ctx.fillStyle=muted;
     if (geometry) {
       if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "벽 모델 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
       return;
     }
-    const palette=palettes[this.state.heatField ?? "Dbar"],barX=width-43,barY=box.y+27,barH=Math.max(1,box.h-54),gradient=ctx.createLinearGradient(0,barY+barH,0,barY);
+    // Colour bar spans the plot height minus its two end labels.
+    const palette=palettes[this.state.heatField ?? "Dbar"],barX=width-42,barY=box.y+22,barH=Math.max(1,box.h-44),gradient=ctx.createLinearGradient(0,barY+barH,0,barY);
     palette.forEach((value,i) => gradient.addColorStop(i/(palette.length-1),rgb(value)));
-    ctx.fillStyle=gradient;ctx.fillRect(barX,barY,14,barH);ctx.strokeStyle=line;ctx.strokeRect(barX,barY,14,barH);ctx.fillStyle=muted;ctx.textAlign="center";
-    ctx.fillText(numberLabel(this.maxValue),barX+7,barY-8);ctx.fillText("0",barX+7,barY+barH+19);
+    ctx.fillStyle=gradient;ctx.fillRect(barX,barY,12,barH);ctx.strokeStyle=line;ctx.strokeRect(barX,barY,12,barH);ctx.fillStyle=muted;ctx.textAlign="center";
+    ctx.fillText(numberLabel(this.maxValue),barX+6,barY-7);ctx.fillText("0",barX+6,barY+barH+17);
     if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText("아직 누적 필드가 없습니다.",box.x+box.w/2,box.y+box.h/2); }
   }
   async png() {
@@ -272,32 +347,35 @@ function chartSurface(canvas) {
   ctx.scale(ratio,ratio);ctx.fillStyle=color("plot-bg");ctx.fillRect(0,0,width,height);
   return {ctx,width,height,color};
 }
-function chartAxes(surface,{title,xLabel,yLabel,xmin,xmax,ymin,ymax,top=0,height=surface.height,compact=false,metreX=false}) {
+// Title is optional: when the card header already names the metric, the plot takes its space.
+function chartAxes(surface,{title='',xLabel,yLabel,xmin,xmax,ymin,ymax,top=0,height=surface.height,compact=false,metreX=false}) {
   compact ||= height<420;
-  const {ctx,width,color}=surface,box={x:compact ? 44 : 52,y:top+(compact ? 24 : 32),w:Math.max(1,width-(compact ? 58 : 68)),h:Math.max(1,height-(compact ? 58 : 76))};
+  // Margins keep tick labels, axis titles and the chart title on separate lines.
+  const {ctx,width,color}=surface,padTop=compact ? (title ? 27 : 14) : (title ? 36 : 18),padBottom=compact ? 36 : 46,left=compact ? 58 : 72;
+  const box={x:left,y:top+padTop,w:Math.max(1,width-left-14),h:Math.max(1,height-padTop-padBottom)};
   if (!(xmax>xmin)) xmax=xmin+1;
   if (!(ymax>ymin)) ymax=ymin+1;
   const x=(v) => box.x+(v-xmin)/(xmax-xmin)*box.w,y=(v) => box.y+box.h-(v-ymin)/(ymax-ymin)*box.h;
   const xs=metreX ? metreTicks(xmin,xmax) : Array.from({length:5},(_,i)=>xmin+(xmax-xmin)*i/4);
   drawGrid(ctx,box,xs.map(x),Array.from({length:5},(_,i)=>box.y+box.h*i/4),color('grid'));
-  ctx.fillStyle=color("ink");ctx.font=`600 ${compact ? 16 : 18}px -apple-system, Arial`;ctx.textAlign="left";ctx.fillText(title,8,top+(compact ? 18 : 23));
-  ctx.strokeStyle=color("line");ctx.lineWidth=1.5;ctx.strokeRect(box.x,box.y,box.w,box.h);
-  ctx.font=`${compact ? 14 : 16}px -apple-system, Arial`;ctx.fillStyle=color("ink-muted");
+  if (title) drawRich(ctx,title,12,top+(compact ? 17 : 24),{size:compact ? 15 : 16,weight:600,color:color("ink")});
+  ctx.strokeStyle=color("line");ctx.lineWidth=1;ctx.strokeRect(box.x,box.y,box.w,box.h);
+  const tickSize=compact ? 14 : 15;ctx.font=uiFont(tickSize);ctx.fillStyle=color("ink-muted");
   for (const xx of metreX ? xs : [xmin,(xmin+xmax)/2,xmax]) {
-    ctx.textAlign="center";ctx.fillText(numberLabel(xx),x(xx),box.y+box.h+(compact ? 17 : 23));
+    ctx.textAlign="center";ctx.fillText(numberLabel(xx),x(xx),box.y+box.h+(compact ? 16 : 20));
   }
   for (let i=0;i<=2;i++) {
     const yy=ymin+(ymax-ymin)*i/2;
     ctx.textAlign="right";ctx.fillText(numberLabel(yy),box.x-9,y(yy)+5);
   }
-  ctx.textAlign="center";ctx.fillText(xLabel,box.x+box.w/2,top+height-(compact ? 3 : 10));
-  if (!compact) { ctx.save();ctx.translate(18,box.y+box.h/2);ctx.rotate(-Math.PI/2);ctx.fillText(yLabel,0,0);ctx.restore(); }
+  drawRich(ctx,xLabel,box.x+box.w/2,top+height-(compact ? 3 : 6),{size:tickSize,align:"center",color:color("ink-muted")});
+  if (!compact) { ctx.save();ctx.translate(20,box.y+box.h/2);ctx.rotate(-Math.PI/2);drawRich(ctx,yLabel,0,0,{size:tickSize,align:"center",color:color("ink-muted")});ctx.restore(); }
   return {box,x,y};
 }
-function chartLine(surface,axes,points,color,dash=[],errorBars=false,dots=false) {
+function chartLine(surface,axes,points,color,dash=[],errorBars=false,dots=false,endDot=false) {
   const {ctx}=surface,{x,y,box}=axes;
   ctx.save();ctx.beginPath();ctx.rect(box.x,box.y,box.w,box.h);ctx.clip();
-  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash);
+  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap=dash.length ? "butt" : "round";ctx.setLineDash(dash);
   ctx.beginPath();let first=true;
   for (const p of points) {
     if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) { first=true;continue; }
@@ -308,9 +386,12 @@ function chartLine(surface,axes,points,color,dash=[],errorBars=false,dots=false)
     if (errorBars && Number.isFinite(p.sd)) {
       const xx=x(p.x),lo=y(p.y-p.sd),hi=y(p.y+p.sd);ctx.beginPath();ctx.moveTo(xx,lo);ctx.lineTo(xx,hi);ctx.moveTo(xx-5,lo);ctx.lineTo(xx+5,lo);ctx.moveTo(xx-5,hi);ctx.lineTo(xx+5,hi);ctx.stroke();
     }
-    if (dots || errorBars) { ctx.beginPath();ctx.arc(x(p.x),y(p.y),3.5,0,Math.PI*2);ctx.fill(); }
+    if (dots || errorBars) { ctx.beginPath();ctx.arc(x(p.x),y(p.y),4,0,Math.PI*2);ctx.fill(); }
   }
   ctx.restore();
+  // Latest value: a filled end-dot with a surface ring, drawn unclipped at the frame edge.
+  const last=endDot && points.findLast(p=>Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (last) { ctx.save();ctx.beginPath();ctx.arc(x(last.x),y(last.y),4.5,0,Math.PI*2);ctx.lineWidth=4;ctx.strokeStyle=surface.color("plot-bg");ctx.stroke();ctx.fillStyle=color;ctx.fill();ctx.restore(); }
 }
 function extent(points,includeZero=true) {
   const values=points.flatMap(p => Number.isFinite(p.y) ? [p.y-(p.sd ?? 0),p.y+(p.sd ?? 0)] : []);
@@ -324,8 +405,9 @@ export function drawMetricHistory(canvas,evaluations,selection='all') {
   const metrics=[["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
   metrics.forEach(([key,title,unit],k) => {
     const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(key==="offwall" ? 100 : 1)})),[ymin,ymax]=extent(points);
-    const axes=chartAxes(surface,{title,xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/metrics.length,height:surface.height/metrics.length,compact:surface.height<420});
-    chartLine(surface,axes,points,surface.color("eval"));
+    // A single selected metric is already named by the card's selector.
+    const axes=chartAxes(surface,{title:metrics.length>1 ? title : '',xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,evaluations.at(-1)?.t ?? 60),ymin,ymax,top:k*surface.height/metrics.length,height:surface.height/metrics.length,compact:surface.height<420});
+    chartLine(surface,axes,points,surface.color("eval"),[],false,false,true);
   });
 }
 export function drawSweep(canvas,aggregates,reference=[]) {
@@ -333,12 +415,15 @@ export function drawSweep(canvas,aggregates,reference=[]) {
   const colors=["#0072b2","#d55e00","#009e73","#cc79a7"],roughness=[...new Set(aggregates.map(a => a.roughness))].sort((a,b) => a-b);
   const all=aggregates.map(a => ({x:a.sigmaD,y:a.medianError.mean,sd:a.medianError.sd})),[ymin,ymax]=extent([...all,...reference.map(a=>({y:a.medianError}))]);
   const xmin=Math.min(.05,...aggregates.map(a=>a.sigmaD)),xmax=Math.max(.3,...aggregates.map(a=>a.sigmaD));
-  const axes=chartAxes(surface,{title:aggregates.some(a => a.medianError.failed) ? `실패 ${aggregates.filter(a => a.medianError.failed).length}조건 · 표 참조` : "중앙 |오차| · 평균 ± 1 sd",xLabel:"σ_d [m]",yLabel:"m",xmin,xmax,ymin,ymax,top:36,height:surface.height-36});
+  const axes=chartAxes(surface,{title:aggregates.some(a => a.medianError.failed) ? `실패 ${aggregates.filter(a => a.medianError.failed).length}조건 · 표 참조` : "중앙 |오차| · 평균 ± 1 sd",xLabel:"$σ_d$ [m]",yLabel:"m",xmin,xmax,ymin,ymax,top:36,height:surface.height-36});
+  const {ctx}=surface;let legendX=14;
   roughness.forEach((r,k) => {
     const color=colors[k%colors.length],points=aggregates.filter(a=>a.roughness===r).sort((a,b)=>a.sigmaD-b.sigmaD).map(a=>({x:a.sigmaD,y:a.medianError.mean,sd:a.medianError.sd}));
     chartLine(surface,axes,points,color,[],true);
     chartLine(surface,axes,reference.filter(a=>a.roughness===r).map(a=>({x:a.sigmaD,y:a.medianError})),color,[5,5]);
-    const {ctx}=surface;ctx.font="16px -apple-system, Arial";ctx.textAlign="left";ctx.fillStyle=color;ctx.fillText(`σ ${r}°`,12+k*Math.min(100,(surface.width-24)/Math.max(1,roughness.length)),23);
+    // Legend: coloured line key, text in ink (identity never rides on text colour alone).
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(legendX,19);ctx.lineTo(legendX+18,19);ctx.stroke();ctx.restore();
+    legendX+=26+drawRich(ctx,`$σ$ = ${r}°`,legendX+26,24,{size:15,color:surface.color("ink")})+22;
   });
 }
 export function drawHistogram(canvas,ratios) {
@@ -348,23 +433,23 @@ export function drawHistogram(canvas,ratios) {
   const density=counts.map((n,k) => ({x:xmin+(k+.5)*step,y:finite.length ? n/(finite.length*step) : 0}));
   const theoretical=Array.from({length:160},(_,k) => {const x=Math.max(.02,xmin+(xmax-xmin)*(k+.5)/160);return{x,y:Math.exp(-x/2)/Math.sqrt(2*Math.PI*x)};});
   const [,ymax]=extent([...density,...theoretical]);
-  const axes=chartAxes(surface,{title:"비율 밀도 · 점선 χ²₁",xLabel:"(ρ − ρ*) / ϛ",yLabel:"density",xmin,xmax,ymin:0,ymax});
+  const axes=chartAxes(surface,{title:"비율 밀도 · 점선 $χ^2_1$",xLabel:"$z = (ρ − ρ^*) / ς$",yLabel:"density",xmin,xmax,ymin:0,ymax});
   const {ctx}=surface;ctx.save();ctx.beginPath();ctx.rect(axes.box.x,axes.box.y,axes.box.w,axes.box.h);ctx.clip();ctx.fillStyle=surface.color("eval");
   for (const p of density) ctx.fillRect(axes.x(p.x-step*.45),axes.y(p.y),(axes.x(xmin+step)-axes.x(xmin))*.9,axes.y(0)-axes.y(p.y));
   ctx.restore();chartLine(surface,axes,theoretical,surface.color("ink"),[6,5]);
 }
 export function drawProfile(canvas,cells) {
   const surface=chartSurface(canvas);if (!surface) return;
-  const fields=[["delta","δ [deg]","deg",180/Math.PI],["w","w(s) · 무차원","w",1],["lambda","Λ(s) · 셀 기대 개수","count",1]];
+  const fields=[["delta","$δ$ [deg]","deg",180/Math.PI],["w","$w(s)$ · 무차원","w",1],["lambda","$Λ(s)$ · 셀 기대 개수","count",1]];
   fields.forEach(([key,title,unit,multiplier],k) => {
-    const all=cells.map(c=>({x:c.s[0],y:c[key]*multiplier})),[ymin,ymax]=extent(all),axes=chartAxes(surface,{title,xLabel:"x [m] · 아래 실선 / 위 점선",yLabel:unit,xmin:0,xmax:60,ymin,ymax,top:k*surface.height/3,height:surface.height/3,metreX:true});
+    const all=cells.map(c=>({x:c.s[0],y:c[key]*multiplier})),[ymin,ymax]=extent(all),axes=chartAxes(surface,{title,xLabel:"$x$ [m] · 아래 실선 / 위 점선",yLabel:unit,xmin:0,xmax:60,ymin,ymax,top:k*surface.height/3,height:surface.height/3,metreX:true});
     for (const wall of [0,1]) chartLine(surface,axes,cells.filter(c=>c.wall===wall).map(c=>({x:c.s[0],y:c[key]*multiplier})),surface.color("eval"),wall ? [6,4] : []);
   });
 }
 export function drawCounts(canvas,counts,predicted) {
   const surface=chartSurface(canvas);if (!surface) return;
   const points=counts.map((n,k)=>({x:predicted[k],y:n})).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)),maximum=Math.max(1,...points.flatMap(p=>[p.x,p.y]))*1.1;
-  const axes=chartAxes(surface,{title:"diffuse 개수 · 점선 y = x",xLabel:"국소 근사 예측 개수",yLabel:"실제 개수",xmin:0,xmax:maximum,ymin:0,ymax:maximum});
+  const axes=chartAxes(surface,{title:"diffuse 개수 · 점선 $y = x$",xLabel:"국소 근사 예측 개수",yLabel:"실제 개수",xmin:0,xmax:maximum,ymin:0,ymax:maximum});
   chartLine(surface,axes,[{x:0,y:0},{x:maximum,y:maximum}],surface.color("ink"),[5,5]);
   chartLine(surface,axes,points,surface.color("eval"),[],false,true);
 }
