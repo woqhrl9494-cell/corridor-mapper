@@ -11,7 +11,8 @@ const state = { mode: 'idle', scenario: null, grid: null, frames: [], evaluation
   busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false, followLive: true };
 let fieldWorker, evalWorker, hoverWorker, hoverTimer, hoverGeneration = 0, replayFrame = 0, reference = [], provenance = {};
 const fmt = (v, places = 3) => typeof v !== 'number' ? '—' : Number.isFinite(v) ? v.toFixed(places) : v === Infinity ? '실패 (∞)' : v === -Infinity ? '실패 (−∞)' : '실패 (NaN)';
-const notice = text => { $('status').textContent = text; };
+// The title keeps the full message when a short screen clamps the status to one line.
+const notice = text => { $('status').textContent = text; $('status').title = text; };
 function fillSettings(input) {
   for (const [key, value] of Object.entries(input)) {
     const field = form.elements.namedItem(key);
