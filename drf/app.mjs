@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-model8'
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-model8';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-grid6';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-view10';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -50,7 +50,7 @@ function controls() {
   $('sweepButton').disabled = active || sweeping; $('sweepCancel').disabled = !sweeping;
   $('timeSlider').max = state.frames.length; $('timeSlider').value = state.selected; $('timeSlider').disabled = !state.frames.length;
   $('replayButton').disabled = !state.frames.length;
-  $('firstSnapshot').disabled = !state.frames.length;
+  $('firstSnapshot').disabled = false;
   $('exportJson').disabled = (!state.valid || !state.frames.length) && !state.sweepRuns.length;
   for (const id of ['exportCsv', 'exportPng']) $(id).disabled = !state.valid || !state.frames.length;
   document.body.dataset.state = state.mode;
@@ -165,8 +165,8 @@ function renderSelected() {
     history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
   map.set({...display,mode:'geometry'});
   const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
-  densityMap.set({...display,layers:fieldLayers,heatField:'Dbar',focus:true});
-  contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat',focus:true});
+  densityMap.set({...display,layers:fieldLayers,heatField:'Dbar',focus:false});
+  contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat',focus:false});
   $('snapshotLabel').textContent = `${frame?.t ?? 0} / ${scenario?.input.snapshots ?? form.elements.namedItem('snapshots').value}`;
   $('qValue').textContent = frame?.Q ?? 0; $('acceptedValue').textContent = frame?.admitted ?? 0; $('rejectedValue').textContent = frame?.rejected ?? 0;
   const metricIds = { medianValue: 'medianError', p95Value: 'p95', f1Value: 'f1', msdValue: 'caMsd', hd95Value: 'caHd95' };
@@ -216,11 +216,13 @@ function toggleReplay() {
   if (state.replay) stopReplay(); else { state.followLive = false; state.replay = true; state.replayAt = 0; $('replayButton').textContent = '재생 정지'; replayFrame = requestAnimationFrame(replayTick); }
 }
 function firstSnapshot() {
-  if (!state.frames.length) return;
-  stopReplay(); if (state.mode === 'running') state.mode = 'paused';
-  state.followLive = false; state.selected = 1; $('timeSlider').value = 1;
+  stopReplay();
+  if (state.frames.length) {
+    if (state.mode === 'running') state.mode = 'paused';
+    state.followLive = false; state.selected = 1; $('timeSlider').value = 1;
+  }
   for (const view of [map,densityMap,contrastMap]) view.fit();
-  controls(); renderSelected(); notice('첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.');
+  controls(); renderSelected(); notice(state.frames.length ? '첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.' : '실행 전 기본 보기로 돌아왔습니다. 설정은 유지합니다.');
 }
 $('runButton').onclick = () => prepare();
 $('pauseButton').onclick = () => { state.mode = state.mode === 'paused' ? 'running' : 'paused'; controls(); if (state.mode === 'running') { state.followLive = true; advance(); } else notice('현재 snapshot에서 일시정지했습니다.'); };

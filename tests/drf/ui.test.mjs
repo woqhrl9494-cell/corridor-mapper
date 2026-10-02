@@ -11,7 +11,10 @@ test('DRF DOM contract and readable stylesheet', () => {
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   for (const path of ['../../drf/style.css','../../surf/style.css']) {
     const css=readFileSync(new URL(path,import.meta.url),'utf8');
-    for (const match of css.matchAll(/font-size:\s*(\d+)px/g)) assert.ok(Number(match[1])>=(path.includes('/drf/') ? 14 : 16),`${path}: ${match[0]}`);
+    for (const match of css.matchAll(/font-size:\s*(\d+)px/g)) {
+      if (path.includes('/drf/') && Number(match[1])===13) assert.match(css.slice(0,match.index),/\.sidebar \.metrics dt\s*\{[^{}]*$/,'only compact metric labels may use 13 px');
+      else assert.ok(Number(match[1])>=(path.includes('/drf/') ? 14 : 16),`${path}: ${match[0]}`);
+    }
   }
   assert.match(html,/name="sigmaP"[^>]*value="0.1"/);
   assert.match(html,/name="roughness"[\s\S]*?value="2" selected/);
@@ -58,6 +61,18 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.ok(gridSegments.some(([a,b])=>near(a[0],b[0]) && inside(a[0],box.x,box.x+box.w) && near(Math.min(a[1],b[1]),box.y) && near(Math.max(a[1],b[1]),box.y+box.h)),`${message}: vertical grid inside plot`);
     assert.ok(gridSegments.some(([a,b])=>near(a[1],b[1]) && inside(a[1],box.y,box.y+box.h) && near(Math.min(a[0],b[0]),box.x) && near(Math.max(a[0],b[0]),box.x+box.w)),`${message}: horizontal grid inside plot`);
   };
+  const assertMetreGrid=(map,message) => {
+    const coordinates=[[],[]];
+    for (const [a,b] of gridSegments) {
+      const axis=Math.abs(a[0]-b[0])<1e-8 ? 0 : 1,value=mapToWorld(a,map.camera,map.box)[axis];
+      assert.ok(Math.abs(value/10-Math.round(value/10))<1e-10,`${message}: grid at ${value} m must be a multiple of 10 m`);
+      coordinates[axis].push(value);
+    }
+    for (const values of coordinates) {
+      values.sort((a,b)=>a-b);
+      for (let i=1;i<values.length;i++) assert.ok(Math.abs(values[i]-values[i-1]-10)<1e-8,`${message}: adjacent grid lines must be 10 m apart`);
+    }
+  };
   const assertChartGrids=message=>rectangles.forEach(([x,y,w,h],k)=>assertGrid({x,y,w,h},`${message} subplot ${k}`));
   const saved={};
   const stubs={document:{createElement:()=>{const c=makeCanvas();created.push(c);return c;},documentElement:{}},window:{devicePixelRatio:2},getComputedStyle:()=>({getPropertyValue:name=>name==='--color-grid' ? gridColor : '#111111'}),ResizeObserver:class{observe(){}},MutationObserver:class{observe(){}},matchMedia:()=>({addEventListener(){}}),requestAnimationFrame:()=>1};
@@ -71,6 +86,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.deepEqual([...frame.Dbar],[0,1,2,3],'presentation must not mutate field values');
     map.paint(canvas,1);const cssView=JSON.parse(canvas.dataset.view);
     assertGrid(map.box,'density');
+    assertMetreGrid(map,'density');
     assert.equal(cssView.plotWidth,592,'heatmap must use the full width after axes and colorbar');
     assert.equal(cssView.plotHeight,478,'heatmap must use the full height after axes');
     map.paint(canvas,2);assert.equal(canvas.width,1400);assert.equal(canvas.height,1080);
@@ -81,6 +97,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.ok(labels.includes('Axes: independent x/y scale'),'export must disclose the selected axis scale');
     gridSegments.length=0;map.set({...map.state,heatField:'betaHat'});map.paint(canvas,1);
     assertGrid(map.box,'contrast');
+    assertMetreGrid(map,'contrast');
     rectangles.length=0;gridSegments.length=0;
     drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
     assert.equal(rectangles.length,3);assert.ok(rectangles.every(([, , ,height])=>height>=117),'history compactness follows each subplot height');
@@ -110,6 +127,21 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     const origin=mapToScreen([30,15],map.camera,map.box),unitX=mapToScreen([31,15],map.camera,map.box),unitY=mapToScreen([30,16],map.camera,map.box);
     assert.ok(Math.abs(Math.hypot(unitX[0]-origin[0],unitX[1]-origin[1])-Math.hypot(unitY[0]-origin[0],unitY[1]-origin[1]))<1e-10,'one metre must have the same screen length in each RAW direction');
     assertGrid(map.box,'RAW');
+    assertMetreGrid(map,'RAW');
+    for (const heatField of ['Dbar','betaHat']) {
+      const bottomCanvas=makeCanvas();bottomCanvas.clientWidth=560;bottomCanvas.clientHeight=216;
+      const bottom=new DrfMap(bottomCanvas);
+      bottom.set({...map.state,mode:undefined,aspectMode:'equal',heatField});bottom.paint(bottomCanvas,2);
+      const bottomView=JSON.parse(bottomCanvas.dataset.view);
+      assert.deepEqual([bottom.camera.cx,bottom.camera.cy],[map.camera.cx,map.camera.cy],`${heatField}: full map uses the same visible wall center as RAW`);
+      assert.equal(bottom.camera.scaleX,bottom.camera.scaleY,`${heatField}: metres must remain isometric`);
+      assert.equal(bottom.camera.scaleX,Math.min(bottom.box.w/(60*1.04),bottom.box.h/(18*1.04)),`${heatField}: automatic fit uses the visible wall range`);
+      assert.ok(bottomView.xmin<=0 && bottomView.xmax>=60 && bottomView.ymin<=6 && bottomView.ymax>=24,`${heatField}: both wall endpoints must fit the smaller panel`);
+      bottom.set({...bottom.state,layers:{showTruth:false}});bottom.paint(bottomCanvas,2);
+      const hiddenView=bottomCanvas.dataset.view;
+      bottom.set({...bottom.state,walls:[[[0,-1000],[60,1000]]]});bottom.paint(bottomCanvas,2);
+      assert.equal(bottomCanvas.dataset.view,hiddenView,`${heatField}: hidden truth must not change the public full view`);
+    }
     map.zoom(1.3,[100,80]);map.paint(canvas,2);
     const manualCamera={...map.camera},manualView=canvas.dataset.view,manualBox={...map.box};
     labels.length=0;assert.ok(await map.png() instanceof Blob);
@@ -118,6 +150,10 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.deepEqual(map.camera,manualCamera,'selected-axis PNG export must not reset the manual screen camera');
     assert.equal(canvas.dataset.view,manualView,'PNG export must leave the screen viewport unchanged');
     assert.deepEqual(map.box,manualBox,'PNG export must leave the screen hit-test box unchanged');
+    map.zoom(1000);gridSegments.length=0;labels.length=0;map.paint(canvas,2);
+    assertMetreGrid(map,'magnified RAW');
+    assert.ok(gridSegments.length<=2,'magnification must retain the 10 m grid instead of adding dense fractional-metre ticks');
+    assert.ok(labels.filter(text=>/^-?\d+$/.test(text)).every(text=>Number(text)%10===0),'magnified map labels must retain 10 m world coordinates');
     map.set({...map.state,mode:undefined,aspectMode:'fill'});map.fit();map.paint(canvas,2);
     assert.notEqual(map.camera.scaleX,map.camera.scaleY,'field fill mode retains its selected independent scales');
     labels.length=0;assert.ok(await map.png() instanceof Blob);
@@ -136,11 +172,17 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       assert.ok(rectangles[0][2]>=canvas.clientWidth*.85 && rectangles[0][3]>=canvas.clientHeight*.65,'each analysis chart uses most of its allocated area');
       assertChartGrids('analysis');
     }
-    rectangles.length=0;gridSegments.length=0;canvas.clientHeight=600;
+    rectangles.length=0;gridSegments.length=0;labels.length=0;canvas.clientHeight=600;
     drawProfile(canvas,[{s:[10,6],wall:0,delta:.1,w:.5,lambda:.1},{s:[20,22],wall:1,delta:.2,w:.3,lambda:.06}]);
     assert.equal(rectangles.length,3);
     assert.ok(rectangles.every(([, , ,height])=>height>=130),'every profile subplot must use most of its allotted height');
     assertChartGrids('profile');
+    for (const [x,y,w,h] of rectangles) {
+      const vertical=gridSegments.filter(([a,b])=>Math.abs(a[0]-b[0])<1e-8 && Math.abs(a[1]-y)<1e-8 && Math.abs(b[1]-y-h)<1e-8);
+      assert.equal(vertical.length,5,'profile must use 10 m x grid at 10, 20, 30, 40 and 50 m');
+      vertical.forEach(([a],k)=>assert.ok(Math.abs((a[0]-x)/w*60-(k+1)*10)<1e-8));
+    }
+    for (const tick of ['0','10','20','30','40','50','60']) assert.ok(labels.filter(text=>text===tick).length>=3,`each profile must label ${tick} m`);
     canvas.clientHeight=540;
     const mobile=makeCanvas();mobile.clientWidth=250;mobile.clientHeight=385;
     const surf=new SurfaceMap(mobile,()=>{});

@@ -1,6 +1,6 @@
-# EchoMap DRF Lab 방법과 재현 조건
+# EchoMap DRF 시뮬레이터 방법과 재현 조건
 
-DRF Lab은 simulator, estimator, evaluator를 분리한 브라우저 실험 도구이다. 추정기는 측정 range와 추정 차량 위치만으로 Direct Residual Field를 누적한다. `wall-shape-model-free`는 추정기가 벽 모양을 입력받지 않는다는 뜻이다. Simulator의 cubic spline 벽과 평가용 corridor prior까지 모델이 없다는 뜻으로 확장하지 않는다.
+DRF 시뮬레이터는 simulator, estimator, evaluator를 분리한 브라우저 실험 도구이다. 화면의 소속 표기는 한양대학교 WSL이다. 추정기는 측정 range와 추정 차량 위치만으로 Direct Residual Field를 누적한다. `wall-shape-model-free`는 추정기가 벽 모양을 입력받지 않는다는 뜻이다. Simulator의 cubic spline 벽과 평가용 corridor prior까지 모델이 없다는 뜻으로 확장하지 않는다.
 
 권위 문서로 지정된 `메인 알고리즘`과 `bspline_specular.m`, `smoke_spline_field.m`, `sweep_spline_field.m` 원본은 제공되지 않았다. 현재 구현 근거는 사용자 첨부의 식, 숫자 fixture와 truth-side 생성기 명세이다. MATLAB R2025b의 `spline` 계수는 직접 비교했지만 원본 전체 구현과의 parity는 미검증이다.
 
@@ -173,6 +173,12 @@ Simulator는 configuration마다 M개 quadrature cell과 방출 표본을 처리
 
 Snapshot index와 0.75 m/snapshot은 물리적 Δt를 지정하지 않는다. 레이더 carrier/bandwidth, 동기화, clock drift, 차량 간 상관 위치오차, 검출 누락, latency, 실제 MPC resolution과 hardware calibration은 검증하지 않았다. 이 도구의 simulator 일치를 실제 장비 성능으로 주장하지 않는다.
 
+## 화면과 기본 보기
+
+데스크톱 사이드바는 456 px에서 342 px로 줄이고, 상단 RAW와 하단 그래프의 행 비율은 1.3:1에서 1.9:1로 바꿨다. RAW의 x/y 1 m는 같은 화면 길이이다. 하단 Dbar/β̂도 기본 등척이며 차량 주변 24 m 확대 대신 전체 x=0–60 m를 표시한다. 평가용 참벽 표시를 켜면 그 벽 범위에 자동으로 맞추고, 끄면 공개 계산 영역 [0,60] × [0,30] m를 사용한다. 자동 보기의 참벽은 표시와 평가 전용이며 추정기 입력에 연결되지 않는다. 선택 가능한 `필드 채움`은 하단 필드의 x/y 화면 배율을 독립적으로 사용한다. 거리 지도 x/y 격자와 profile x 격자는 10 m 간격이며 휠 확대에도 물리 간격은 유지한다.
+
+`처음으로`는 실행 전에도 활성화한다. 기록이 없으면 세 지도의 camera만 기본 보기로 복원하고 설정, 생성 중 worker와 실행 상태를 유지한다. 기록이 있으면 snapshot 1을 선택하고 재생과 추가 계산을 일시정지하되 완료된 기록을 유지한다. 처리 중인 한 snapshot이 나중에 완료되어도 선택 시점은 1에 남는다. 이 조작과 보기 선택은 수치 필드, 측정 생성식과 평가식을 변경하지 않는다.
+
 ## 검증과 내보내기
 
 ```bash
@@ -187,10 +193,12 @@ HTTP(S)는 module 앱/Worker를 사용하고 `file://`은 `drf/offline.bundle.js
 
 `numeric.test.mjs`는 spline/span fixture, 평평한 벽 적분과 derivative, t=30 네 가시 정반사점, 중근과 경계근, Poisson/normal/categorical 검사를 포함한다. 이전 닫힌 24-control spline의 자체 seed 내부 300쌍 검사는 독립 physical-residual bracket의 1824/1824근과 일치했다. 최대 u 차이는 6.11×10⁻¹⁵, 최대 `abs(sinδ)`는 4.03×10⁻¹⁶이었다. 제공 Octave의 2040근 검사와 같은 pair 표본이라는 주장은 하지 않는다. Field 검사는 scalar fixture, AGM, factorized A, band bound, causal prefix, oracle getter 격리와 prefix hover를 포함한다.
 
-이번 자동 검사는 113/113 통과, 실패 0, 실행 시간 16.108287 s였다. `truth-model.test.mjs`의 7개 검사는 실제 flat/curved profile의 thinning 전 Poisson 평균/분산, categorical CDF, 곡선 위 점과 same-side/visibility, 차폐 전 생성 수 보존, 재실행/prefix/call-order/추정기 설정 불변성, 0 roughness/intensity의 난수 미소비를 포함한다. Near-caustic Newton 검사 1개를 추가했으며 classic Blob scenario Worker의 2 snapshot truth/wire도 module 경로와 정확히 같았다.
+model8 배포 당시 자동 검사는 113/113 통과, 실패 0, 실행 시간 16.108287 s였다. `truth-model.test.mjs`의 7개 검사는 실제 flat/curved profile의 thinning 전 Poisson 평균/분산, categorical CDF, 곡선 위 점과 same-side/visibility, 차폐 전 생성 수 보존, 재실행/prefix/call-order/추정기 설정 불변성, 0 roughness/intensity의 난수 미소비를 포함한다. Near-caustic Newton 검사 1개를 추가했으며 classic Blob scenario Worker의 2 snapshot truth/wire도 module 경로와 정확히 같았다.
 
-이번 truth-side 진단과 근 보호, module/Worker 캐시 URL 수정 후 160회, 10-seed 실행은 완료 160/160, 오류 0, **96개 수용 조건 중 84개 통과, 12개 실패**였다. 이전 보고서와 160개 run의 input/summary/final 체크섬 및 aggregate/실패 행이 정확히 같았다. 중앙 절대오차, diffuse 수, 중복 비율, observed 비율과 σ2° Theorem 2 기준은 통과했지만 P95 3조건과 off-wall 9조건이 실패했다. 전체 reference acceptance는 실패이다. 최종 기록은 2026-10-02T02:14:22.179Z, 실행 시간 48.057688 s이며 수치 소스 11개의 실행 전후 SHA가 현재 파일과 같았다. 생성기 source가 바뀌면 같은 난수 소비와 기존 수치의 보존 여부를 회귀 검사하고 160회 실행을 다시 수행한다.
+model8의 truth-side 진단과 근 보호, module/Worker 캐시 URL 수정 후 160회, 10-seed 실행은 완료 160/160, 오류 0, **96개 수용 조건 중 84개 통과, 12개 실패**였다. 이전 보고서와 160개 run의 input/summary/final 체크섬 및 aggregate/실패 행이 정확히 같았다. 중앙 절대오차, diffuse 수, 중복 비율, observed 비율과 σ2° Theorem 2 기준은 통과했지만 P95 3조건과 off-wall 9조건이 실패했다. 전체 reference acceptance는 실패이다. 최종 기록은 2026-10-02T02:14:22.179Z, 실행 시간 48.057688 s이며 수치 소스 11개의 실행 전후 SHA가 현재 파일과 같았다. 생성기 source가 바뀌면 같은 난수 소비와 기존 수치의 보존 여부를 회귀 검사하고 160회 실행을 다시 수행한다.
 
 Runner는 browser sweep과 같은 `runExperiment`/`aggregateRuns`를 사용한다. Seed별 통계의 평균과 sample SD를 계산하며, 표준편차를 confidence interval로 부르지 않는다. 원본 참조 3-seed 집계 상세는 미확인이다. Runner 종료 상태는 실행/소스 오류 1, seed≥10에서 참조 수용 실패 2이다. 작은 `--seed-count` 실행은 smoke이며 통계 수용 검증으로 보고하지 않는다.
 
-`drf/provenance.json`은 기준 Git commit, field/wire source hash와 core 묶음 hash를 기록한다. 배포 여부는 별도 증거로 확인한다. JSON은 input, measurement, result, evaluation, truth를 분리한다. CSV는 snapshot별 지표를 기록한다. PNG 버튼은 선택한 필드를 CSS 크기의 300/96 배로 다시 그린 뒤 `surf/exports.mjs`의 `png300dpi`를 적용한다. PNG의 pHYs 목표는 11811 px/m이며 metadata가 선명한 label이나 모든 chart의 내보내기를 자동 보장하지 않는다. 현재 clay UI는 Dbar의 warm 순차색과 β̂의 blue 순차색, 흰 plot 배경과 RAW 등척을 유지한다. 읽을 수 있는 label, 선 굵기, 선택한 표시축과 ±1 SD error bar는 실제 화면과 저장본에서 검사한다.
+`drf/provenance.json`은 기준 Git commit, field/wire source hash와 core 묶음 hash를 기록한다. 배포 여부는 별도 증거로 확인한다. JSON은 input, measurement, result, evaluation, truth를 분리한다. CSV는 snapshot별 지표를 기록한다. PNG 버튼은 선택한 필드를 CSS 크기의 300/96 배로 다시 그린 뒤 `surf/exports.mjs`의 `png300dpi`를 적용한다. PNG의 pHYs 목표는 11811 px/m이며 metadata가 선명한 label이나 모든 chart의 내보내기를 자동 보장하지 않는다. 현재 clay UI는 Dbar의 warm 순차색과 β̂의 blue 순차색, 흰 plot 배경과 RAW/하단 필드의 기본 등척을 유지한다. 읽을 수 있는 label, 선 굵기, 선택한 표시축과 ±1 SD error bar는 실제 화면과 저장본에서 검사한다.
+
+현재 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. 실행 전/측정 준비 중 `처음으로`의 camera 복원과 설정/기록/worker 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지도 VM 회귀 검사에 포함한다. 수치 소스 11개의 SHA가 기존 160회 통계 보고서와 일치하므로 이번에는 160회를 다시 실행하지 않았다. 원본 22개 offline bundle과 44개 보호 파일 검사도 통과했다. 최신 실제 화면 기록은 [density-validation.json](tests/drf/density-validation.json)의 schema 5이며, 이전 schema 4는 `previousLayoutEvidence`에 보존한다.

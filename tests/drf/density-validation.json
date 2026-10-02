@@ -1,9 +1,7 @@
 {
-  "schema": "echomap-drf-layout-validation/4",
-  "date": "2026-10-02T01:53:45.105Z",
-  "url": "http://127.0.0.1:8871/drf.html#v1=%7B%22scene%22%3A%22reference%22%2C%22vehicles%22%3A3%2C%22snapshots%22%3A60%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22roughness%22%3A2%2C%22lambda0%22%3A10%2C%22cellStep%22%3A0.02%2C%22resolution%22%3A0%2C%22specular%22%3Atrue%2C%22grid%22%3A150%2C%22band%22%3A4%2C%22perimeter%22%3A%22exact%22%2C%22seed%22%3A1%7D",
-  "runtime": "ES modules under HTTP; generated classic bundle checked by Node VM tests; file:// UI remains unverified",
-  "layout": "claymorphism; RAW equal metre scales and fitted panel; all graphs with grids; 456 px desktop sidebar with all settings expanded",
+  "schema": "echomap-drf-layout-validation/5",
+  "date": "2026-10-02T02:30:31.024Z",
+  "runtime": "HTTP module UI via Codex IAB; file:// browser control unavailable",
   "desktop": [
     {
       "viewport": [
@@ -12,7 +10,7 @@
       ],
       "overflow": 0,
       "sidebar": {
-        "width": 456,
+        "width": 342,
         "clientHeight": 876,
         "scrollHeight": 876,
         "scrollTop": 0
@@ -21,233 +19,7 @@
         "count": 28,
         "fullyVisible": 28,
         "minFont": 14,
-        "minControlHeight": 28,
-        "controls": [
-          {
-            "id": "runButton",
-            "x": 12,
-            "y": 60,
-            "width": 83,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "stepButton",
-            "x": 99,
-            "y": 60,
-            "width": 83,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "pauseButton",
-            "x": 186,
-            "y": 60,
-            "width": 83,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "resetButton",
-            "x": 273,
-            "y": 60,
-            "width": 83,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "cancelButton",
-            "x": 360,
-            "y": 60,
-            "width": 83,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "scene",
-            "x": 43.765625,
-            "y": 153.984375,
-            "width": 178.734375,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "seed",
-            "x": 269.234375,
-            "y": 153.984375,
-            "width": 173.765625,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "vehicles",
-            "x": 60.5625,
-            "y": 183.984375,
-            "width": 161.9375,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "snapshots",
-            "x": 315.40625,
-            "y": 183.984375,
-            "width": 127.59375,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "sigmaP",
-            "x": 99.078125,
-            "y": 213.984375,
-            "width": 123.421875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "sigmaD",
-            "x": 319.578125,
-            "y": 213.984375,
-            "width": 123.421875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "specular",
-            "x": 12,
-            "y": 272.78125,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "roughness",
-            "x": 106.609375,
-            "y": 294.78125,
-            "width": 115.890625,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "lambda0",
-            "x": 319.453125,
-            "y": 294.78125,
-            "width": 123.546875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "cellStep",
-            "x": 76.90625,
-            "y": 352.96875,
-            "width": 145.59375,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "resolution",
-            "x": 328.921875,
-            "y": 352.96875,
-            "width": 114.078125,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "grid",
-            "x": 73.453125,
-            "y": 382.96875,
-            "width": 149.046875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "band",
-            "x": 292.328125,
-            "y": 382.96875,
-            "width": 150.671875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "perimeter",
-            "x": 73.453125,
-            "y": 412.96875,
-            "width": 369.546875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "heatField",
-            "x": 73.453125,
-            "y": 727.09375,
-            "width": 149.046875,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "scaleMode",
-            "x": 281.0625,
-            "y": 727.09375,
-            "width": 161.9375,
-            "height": 28,
-            "fullyVisible": true
-          },
-          {
-            "id": "showEllipses",
-            "x": 17,
-            "y": 787.328125,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "showVehicles",
-            "x": 107.453125,
-            "y": 787.328125,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "showProxy",
-            "x": 201.828125,
-            "y": 787.328125,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "showTruth",
-            "x": 17,
-            "y": 843.015625,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "showSpecular",
-            "x": 81.6875,
-            "y": 843.015625,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "showDiffuse",
-            "x": 168.21875,
-            "y": 843.015625,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          },
-          {
-            "id": "showObserved",
-            "x": 260.4375,
-            "y": 843.015625,
-            "width": 16,
-            "height": 16,
-            "fullyVisible": true
-          }
-        ]
+        "minControlHeight": 28
       },
       "details": [
         {
@@ -262,49 +34,49 @@
       "metrics": [
         {
           "label": "중앙 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "P95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "off-wall [%]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "F1 · 0.4 m",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "CA-MSD [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "CA-HD95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         }
@@ -312,101 +84,101 @@
       "views": {
         "contrastCanvas": {
           "bitmap": [
-            471,
-            267
+            506,
+            200
           ],
-          "bottom": 817,
+          "bottom": 816.984375,
           "font": "14px",
           "fullyVisible": true,
-          "height": 266.515625,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 14.54326923076923,
-            "pixelsPerMetreY": 8.213141025641026,
-            "plotHeight": 205,
-            "plotWidth": 363,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 471.328125,
-          "x": 952.328125,
-          "y": 550.484375
-        },
-        "densityCanvas": {
-          "bitmap": [
-            471,
-            267
-          ],
-          "bottom": 817,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 266.515625,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 14.54326923076923,
-            "pixelsPerMetreY": 8.213141025641026,
-            "plotHeight": 205,
-            "plotWidth": 363,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 471.328125,
-          "x": 469,
-          "y": 550.484375
-        },
-        "mapCanvas": {
-          "bitmap": [
-            950,
-            351
-          ],
-          "bottom": 483.875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 351.375,
+          "height": 199.765625,
           "view": {
             "aspectMode": "equal",
             "auto": true,
-            "pixelsPerMetreX": 14.238123874117573,
-            "pixelsPerMetreY": 14.238123874117573,
-            "plotHeight": 289,
-            "plotWidth": 890,
-            "xmax": 61.25411774292345,
-            "xmin": -1.254117742923448,
+            "pixelsPerMetreX": 6.378205128205128,
+            "pixelsPerMetreY": 6.378205128205128,
+            "plotHeight": 138,
+            "plotWidth": 398,
+            "xmax": 61.2,
+            "xmin": -1.2000000000000028,
+            "ymax": 25.89186057559241,
+            "ymin": 4.255679671069796
+          },
+          "width": 505.671875,
+          "x": 872.65625,
+          "y": 617.21875
+        },
+        "densityCanvas": {
+          "bitmap": [
+            506,
+            200
+          ],
+          "bottom": 816.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 199.765625,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 6.378205128205128,
+            "pixelsPerMetreY": 6.378205128205128,
+            "plotHeight": 138,
+            "plotWidth": 398,
+            "xmax": 61.2,
+            "xmin": -1.2000000000000028,
+            "ymax": 25.89186057559241,
+            "ymin": 4.255679671069796
+          },
+          "width": 505.65625,
+          "x": 355,
+          "y": 617.21875
+        },
+        "mapCanvas": {
+          "bitmap": [
+            1155,
+            418
+          ],
+          "bottom": 550.625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 418.125,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 17.539003803411266,
+            "pixelsPerMetreY": 17.539003803411266,
+            "plotHeight": 356,
+            "plotWidth": 1095,
+            "xmax": 61.21614010332294,
+            "xmin": -1.2161401033229424,
             "ymax": 25.222579143224223,
             "ymin": 4.924961103437983
           },
-          "width": 949.65625,
-          "x": 713.171875,
+          "width": 1154.8125,
+          "x": 548.078125,
           "y": 132.5
         },
         "metricChart": {
           "bitmap": [
-            471,
-            281
+            506,
+            214
           ],
-          "bottom": 817,
+          "bottom": 816.984375,
           "font": "14px",
           "fullyVisible": true,
-          "height": 280.609375,
+          "height": 213.859375,
           "view": null,
-          "width": 471.34375,
-          "x": 1435.65625,
-          "y": 536.390625
+          "width": 505.65625,
+          "x": 1390.328125,
+          "y": 603.125
         }
       },
       "rawPanel": {
-        "bottom": 484.875,
+        "bottom": 551.625,
         "font": "14px",
         "fullyVisible": true,
-        "height": 418.875,
-        "width": 951.65625,
-        "x": 712.171875,
+        "height": 485.625,
+        "width": 1156.8125,
+        "x": 547.078125,
         "y": 66
       },
       "rawCaption": {
@@ -414,8 +186,8 @@
         "font": "14px",
         "fullyVisible": true,
         "height": 65.5,
-        "width": 949.65625,
-        "x": 713.171875,
+        "width": 1154.8125,
+        "x": 548.078125,
         "y": 67
       }
     },
@@ -426,7 +198,7 @@
       ],
       "overflow": 0,
       "sidebar": {
-        "width": 456,
+        "width": 342,
         "clientHeight": 1026,
         "scrollHeight": 1026,
         "scrollTop": 0
@@ -450,49 +222,49 @@
       "metrics": [
         {
           "label": "중앙 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "P95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "off-wall [%]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "F1 · 0.4 m",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "CA-MSD [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         },
         {
           "label": "CA-HD95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
+          "font": "13px",
+          "height": 15.59375,
+          "lineHeight": "15.6px",
           "oneLine": true,
           "unclipped": true
         }
@@ -500,477 +272,101 @@
       "views": {
         "contrastCanvas": {
           "bitmap": [
-            471,
-            332
+            506,
+            251
           ],
           "bottom": 966.984375,
           "font": "14px",
           "fullyVisible": true,
-          "height": 331.71875,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 14.54326923076923,
-            "pixelsPerMetreY": 10.817307692307692,
-            "plotHeight": 270,
-            "plotWidth": 363,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 471.328125,
-          "x": 952.328125,
-          "y": 635.265625
-        },
-        "densityCanvas": {
-          "bitmap": [
-            471,
-            332
-          ],
-          "bottom": 966.984375,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 331.71875,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 14.54326923076923,
-            "pixelsPerMetreY": 10.817307692307692,
-            "plotHeight": 270,
-            "plotWidth": 363,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 471.328125,
-          "x": 469,
-          "y": 635.265625
-        },
-        "mapCanvas": {
-          "bitmap": [
-            1210,
-            436
-          ],
-          "bottom": 568.65625,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 436.15625,
+          "height": 251.484375,
           "view": {
             "aspectMode": "equal",
             "auto": true,
-            "pixelsPerMetreX": 18.425807366505097,
-            "pixelsPerMetreY": 18.425807366505097,
-            "plotHeight": 374,
-            "plotWidth": 1150,
-            "xmax": 61.20623094352163,
-            "xmin": -1.2062309435216283,
-            "ymax": 25.222579143224223,
-            "ymin": 4.924961103437983
-          },
-          "width": 1210.296875,
-          "x": 582.84375,
-          "y": 132.5
-        },
-        "metricChart": {
-          "bitmap": [
-            471,
-            346
-          ],
-          "bottom": 966.984375,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 345.8125,
-          "view": null,
-          "width": 471.34375,
-          "x": 1435.65625,
-          "y": 621.171875
-        }
-      },
-      "rawPanel": {
-        "bottom": 569.65625,
-        "font": "14px",
-        "fullyVisible": true,
-        "height": 503.65625,
-        "width": 1212.296875,
-        "x": 581.84375,
-        "y": 66
-      },
-      "rawCaption": {
-        "bottom": 132.5,
-        "font": "14px",
-        "fullyVisible": true,
-        "height": 65.5,
-        "width": 1210.296875,
-        "x": 582.84375,
-        "y": 67
-      }
-    },
-    {
-      "viewport": [
-        1440,
-        900
-      ],
-      "overflow": 0,
-      "sidebar": {
-        "width": 312,
-        "clientHeight": 846,
-        "scrollHeight": 1400,
-        "scrollTop": 0
-      },
-      "settings": {
-        "count": 28,
-        "fullyVisible": 19,
-        "minFont": 14,
-        "minControlHeight": 32
-      },
-      "details": [
-        {
-          "open": true,
-          "title": "산란·필드 세부 설정"
-        },
-        {
-          "open": true,
-          "title": "표시 · 레이어"
-        }
-      ],
-      "metrics": [
-        {
-          "label": "중앙 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "P95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "off-wall [%]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "F1 · 0.4 m",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "CA-MSD [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "CA-HD95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        }
-      ],
-      "views": {
-        "contrastCanvas": {
-          "bitmap": [
-            359,
-            253
-          ],
-          "bottom": 786.984375,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 253.46875,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 10.056089743589745,
-            "pixelsPerMetreY": 7.652243589743589,
-            "plotHeight": 191,
-            "plotWidth": 251,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 359.328125,
-          "x": 696.328125,
-          "y": 533.515625
-        },
-        "densityCanvas": {
-          "bitmap": [
-            359,
-            253
-          ],
-          "bottom": 786.984375,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 253.46875,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 10.056089743589745,
-            "pixelsPerMetreY": 7.652243589743589,
-            "plotHeight": 191,
-            "plotWidth": 251,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 359.328125,
-          "x": 325,
-          "y": 533.515625
-        },
-        "mapCanvas": {
-          "bitmap": [
-            897,
-            334
-          ],
-          "bottom": 466.90625,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 334.40625,
-          "view": {
-            "aspectMode": "equal",
-            "auto": true,
-            "pixelsPerMetreX": 13.40058717564007,
-            "pixelsPerMetreY": 13.40058717564007,
-            "plotHeight": 272,
-            "plotWidth": 837,
-            "xmax": 61.22997481489169,
-            "xmin": -1.229974814891694,
-            "ymax": 25.222579143224223,
-            "ymin": 4.924961103437983
-          },
-          "width": 897.484375,
-          "x": 427.25,
-          "y": 132.5
-        },
-        "metricChart": {
-          "bitmap": [
-            359,
-            268
-          ],
-          "bottom": 786.984375,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 267.5625,
-          "view": null,
-          "width": 359.34375,
-          "x": 1067.65625,
-          "y": 519.421875
-        }
-      },
-      "rawPanel": {
-        "bottom": 467.90625,
-        "font": "14px",
-        "fullyVisible": true,
-        "height": 401.90625,
-        "width": 899.484375,
-        "x": 426.25,
-        "y": 66
-      },
-      "rawCaption": {
-        "bottom": 132.5,
-        "font": "14px",
-        "fullyVisible": true,
-        "height": 65.5,
-        "width": 897.484375,
-        "x": 427.25,
-        "y": 67
-      }
-    },
-    {
-      "viewport": [
-        1366,
-        768
-      ],
-      "overflow": 0,
-      "sidebar": {
-        "width": 312,
-        "clientHeight": 714,
-        "scrollHeight": 1330,
-        "scrollTop": 0
-      },
-      "settings": {
-        "count": 28,
-        "fullyVisible": 19,
-        "minFont": 14,
-        "minControlHeight": 28
-      },
-      "details": [
-        {
-          "open": true,
-          "title": "산란·필드 세부 설정"
-        },
-        {
-          "open": true,
-          "title": "표시 · 레이어"
-        }
-      ],
-      "metrics": [
-        {
-          "label": "중앙 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "P95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "off-wall [%]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "F1 · 0.4 m",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "CA-MSD [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        },
-        {
-          "label": "CA-HD95 [m]",
-          "font": "14px",
-          "height": 16.796875,
-          "lineHeight": "16.8px",
-          "oneLine": true,
-          "unclipped": true
-        }
-      ],
-      "views": {
-        "contrastCanvas": {
-          "bitmap": [
-            335,
-            196
-          ],
-          "bottom": 655,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 196.09375,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 9.09455128205128,
-            "pixelsPerMetreY": 5.368589743589744,
-            "plotHeight": 134,
-            "plotWidth": 227,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 334.671875,
-          "x": 671.65625,
-          "y": 458.90625
-        },
-        "densityCanvas": {
-          "bitmap": [
-            335,
-            196
-          ],
-          "bottom": 655,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 196.09375,
-          "view": {
-            "aspectMode": "fill",
-            "auto": true,
-            "pixelsPerMetreX": 9.09455128205128,
-            "pixelsPerMetreY": 5.368589743589744,
-            "plotHeight": 134,
-            "plotWidth": 227,
-            "xmax": 60.48,
-            "xmin": 35.519999999999996,
-            "ymax": 27.54994511574363,
-            "ymin": 2.589945115743628
-          },
-          "width": 334.65625,
-          "x": 325,
-          "y": 458.90625
-        },
-        "mapCanvas": {
-          "bitmap": [
-            668,
-            260
-          ],
-          "bottom": 392.296875,
-          "font": "14px",
-          "fullyVisible": true,
-          "height": 259.796875,
-          "view": {
-            "aspectMode": "equal",
-            "auto": true,
-            "pixelsPerMetreX": 9.743589743589745,
-            "pixelsPerMetreY": 9.743589743589745,
-            "plotHeight": 198,
-            "plotWidth": 608,
+            "pixelsPerMetreX": 6.378205128205128,
+            "pixelsPerMetreY": 6.378205128205128,
+            "plotHeight": 189,
+            "plotWidth": 398,
             "xmax": 61.2,
             "xmin": -1.2000000000000028,
-            "ymax": 25.234296439120577,
-            "ymin": 4.913243807541628
+            "ymax": 29.889850525341153,
+            "ymin": 0.25768972132105183
           },
-          "width": 668.109375,
-          "x": 504.9375,
+          "width": 505.671875,
+          "x": 872.65625,
+          "y": 715.5
+        },
+        "densityCanvas": {
+          "bitmap": [
+            506,
+            251
+          ],
+          "bottom": 966.984375,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 251.484375,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 6.378205128205128,
+            "pixelsPerMetreY": 6.378205128205128,
+            "plotHeight": 189,
+            "plotWidth": 398,
+            "xmax": 61.2,
+            "xmin": -1.2000000000000028,
+            "ymax": 29.889850525341153,
+            "ymin": 0.25768972132105183
+          },
+          "width": 505.65625,
+          "x": 355,
+          "y": 715.5
+        },
+        "mapCanvas": {
+          "bitmap": [
+            1457,
+            516
+          ],
+          "bottom": 648.90625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 516.40625,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 22.367156535811,
+            "pixelsPerMetreY": 22.367156535811,
+            "plotHeight": 454,
+            "plotWidth": 1397,
+            "xmax": 61.22882423081649,
+            "xmin": -1.2288242308164925,
+            "ymax": 25.222579143224223,
+            "ymin": 4.924961103437983
+          },
+          "width": 1456.953125,
+          "x": 397.015625,
           "y": 132.5
         },
         "metricChart": {
           "bitmap": [
-            335,
-            210
+            506,
+            266
           ],
-          "bottom": 655,
+          "bottom": 966.984375,
           "font": "14px",
           "fullyVisible": true,
-          "height": 210.1875,
+          "height": 265.578125,
           "view": null,
-          "width": 334.65625,
-          "x": 1018.328125,
-          "y": 444.8125
+          "width": 505.65625,
+          "x": 1390.328125,
+          "y": 701.40625
         }
       },
       "rawPanel": {
-        "bottom": 393.296875,
+        "bottom": 649.90625,
         "font": "14px",
         "fullyVisible": true,
-        "height": 327.296875,
-        "width": 670.109375,
-        "x": 503.9375,
+        "height": 583.90625,
+        "width": 1458.953125,
+        "x": 396.015625,
         "y": 66
       },
       "rawCaption": {
@@ -978,8 +374,8 @@
         "font": "14px",
         "fullyVisible": true,
         "height": 65.5,
-        "width": 668.109375,
-        "x": 504.9375,
+        "width": 1456.953125,
+        "x": 397.015625,
         "y": 67
       }
     }
@@ -1068,57 +464,57 @@
           364,
           300
         ],
-        "bottom": 2934.859375,
+        "bottom": 3000.25,
         "font": "16px",
         "fullyVisible": false,
         "height": 300,
         "view": {
-          "aspectMode": "fill",
+          "aspectMode": "equal",
           "auto": true,
-          "pixelsPerMetreX": 10.256410256410255,
-          "pixelsPerMetreY": 9.53525641025641,
+          "pixelsPerMetreX": 4.102564102564102,
+          "pixelsPerMetreY": 4.102564102564102,
           "plotHeight": 238,
           "plotWidth": 256,
-          "xmax": 60.48,
-          "xmin": 35.519999999999996,
-          "ymax": 27.54994511574363,
-          "ymin": 2.589945115743628
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 44.0800201233311,
+          "ymin": -13.932479876668898
         },
         "width": 364,
         "x": 13,
-        "y": 2634.859375
+        "y": 2700.25
       },
       "densityCanvas": {
         "bitmap": [
           364,
           300
         ],
-        "bottom": 2557.46875,
+        "bottom": 2622.859375,
         "font": "16px",
         "fullyVisible": false,
         "height": 300,
         "view": {
-          "aspectMode": "fill",
+          "aspectMode": "equal",
           "auto": true,
-          "pixelsPerMetreX": 10.256410256410255,
-          "pixelsPerMetreY": 9.53525641025641,
+          "pixelsPerMetreX": 4.102564102564102,
+          "pixelsPerMetreY": 4.102564102564102,
           "plotHeight": 238,
           "plotWidth": 256,
-          "xmax": 60.48,
-          "xmin": 35.519999999999996,
-          "ymax": 27.54994511574363,
-          "ymin": 2.589945115743628
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 44.0800201233311,
+          "ymin": -13.932479876668898
         },
         "width": 364,
         "x": 13,
-        "y": 2257.46875
+        "y": 2322.859375
       },
       "mapCanvas": {
         "bitmap": [
           364,
           161
         ],
-        "bottom": 2180.078125,
+        "bottom": 2245.46875,
         "font": "16px",
         "fullyVisible": false,
         "height": 160.875,
@@ -1136,149 +532,1410 @@
         },
         "width": 364,
         "x": 13,
-        "y": 2019.203125
+        "y": 2084.59375
       },
       "metricChart": {
         "bitmap": [
           364,
           340
         ],
-        "bottom": 3378.859375,
+        "bottom": 3444.25,
         "font": "16px",
         "fullyVisible": false,
         "height": 340,
         "view": null,
         "width": 364,
         "x": 13,
-        "y": 3038.859375
+        "y": 3104.25
       }
     },
     "rawPanel": {
-      "bottom": 2181.078125,
+      "bottom": 2246.46875,
       "font": "16px",
       "fullyVisible": false,
-      "height": 254.875,
+      "height": 289.875,
       "width": 366,
       "x": 12,
-      "y": 1926.203125
+      "y": 1956.59375
     },
     "rawCaption": {
-      "bottom": 2019.203125,
+      "bottom": 2084.59375,
       "font": "16px",
       "fullyVisible": false,
-      "height": 92,
+      "height": 127,
       "width": 364,
       "x": 13,
-      "y": 1927.203125
+      "y": 1957.59375
     }
   },
-  "resizeStability": {
-    "freshWidth": 951.65625,
-    "afterMobileWidth": 951.65625,
-    "equal": true
-  },
-  "truthHiddenDomain": {
-    "bitmap": [
-      639,
-      351
-    ],
-    "bottom": 483.875,
-    "font": "14px",
-    "fullyVisible": true,
-    "height": 351.375,
-    "view": {
-      "aspectMode": "equal",
-      "auto": true,
-      "pixelsPerMetreX": 9.262820512820513,
-      "pixelsPerMetreY": 9.262820512820513,
-      "plotHeight": 289,
-      "plotWidth": 579,
-      "xmax": 61.253979238754326,
-      "xmin": -1.2539792387543258,
-      "ymax": 30.6,
-      "ymin": -0.5999999999999996
-    },
-    "width": 638.765625,
-    "x": 868.609375,
-    "y": 132.5
-  },
-  "manualFieldAspect": {
-    "unchanged": true,
-    "before": {
-      "aspectMode": "equal",
-      "auto": false,
-      "pixelsPerMetreX": 18.50956103635285,
-      "pixelsPerMetreY": 18.50956103635285,
-      "plotHeight": 289,
-      "plotWidth": 890,
-      "xmax": 54.04162903301804,
-      "xmin": 5.958370966981963,
-      "ymax": 22.880546292479657,
-      "ymin": 7.266993954182549
-    },
-    "after": {
-      "aspectMode": "equal",
-      "auto": false,
-      "pixelsPerMetreX": 18.50956103635285,
-      "pixelsPerMetreY": 18.50956103635285,
-      "plotHeight": 289,
-      "plotWidth": 890,
-      "xmax": 54.04162903301804,
-      "xmin": 5.958370966981963,
-      "ymax": 22.880546292479657,
-      "ymin": 7.266993954182549
-    }
+  "beforeRun": {
+    "buttonEnabled": true,
+    "zoomClickScale": 29.64091642776504,
+    "rawDefaultScale": 17.539003803411266,
+    "autoRestored": true,
+    "settingsPreserved": true,
+    "snapshot": "0 / 60",
+    "status": "실행 전 기본 보기로 돌아왔습니다. 설정은 유지합니다."
   },
   "firstSnapshot": {
     "max": "60",
-    "raw": {
-      "aspectMode": "equal",
-      "auto": true,
-      "pixelsPerMetreX": 14.238123874117573,
-      "pixelsPerMetreY": 14.238123874117573,
-      "plotHeight": 289,
-      "plotWidth": 890,
-      "xmax": 61.25411774292345,
-      "xmin": -1.254117742923448,
-      "ymax": 25.222579143224223,
-      "ymin": 4.924961103437983
-    },
     "selected": "1",
-    "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다."
-  },
-  "automatedTests": {
-    "passed": 105,
-    "failed": 0
-  },
-  "numericalChanges": false,
-  "expectedDefaultHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
-  "runtimeErrors": [],
-  "previousClassicRuntimeEvidence": {
-    "date": "2026-10-01T14:00:42.130Z",
-    "runtime": "classic bundle and Blob Workers under HTTP; file:// browser control unavailable",
-    "sweep": {
-      "status": "완료 · 1 / 1 · 원본 .m 대조 미완료",
-      "table": "Sweep 수치 결과σ [deg]σ_d [m]seeds중앙 |오차| [m]P95 [m]off-wall [%]20.110.140 ± — (유효 1/1, 실패 0, 미관측 0)0.829 ± — (유효 1/1, 실패 0, 미관측 0)11.2 ± — (유효 1/1, 실패 0, 미관측 0)",
-      "conditions": {
-        "sigmaD": [
-          0.1
-        ],
-        "roughness": [
-          2
-        ],
-        "seeds": [
-          1
-        ],
-        "snapshots": 60,
-        "grid": 150
+    "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다.",
+    "views": [
+      {
+        "aspectMode": "equal",
+        "auto": true,
+        "id": "mapCanvas",
+        "pixelsPerMetreX": 17.539003803411266,
+        "pixelsPerMetreY": 17.539003803411266,
+        "plotHeight": 356,
+        "plotWidth": 1095,
+        "xmax": 61.21614010332294,
+        "xmin": -1.2161401033229424,
+        "ymax": 25.222579143224223,
+        "ymin": 4.924961103437983
       },
-      "errors": []
-    }
+      {
+        "aspectMode": "equal",
+        "auto": true,
+        "id": "densityCanvas",
+        "pixelsPerMetreX": 6.378205128205128,
+        "pixelsPerMetreY": 6.378205128205128,
+        "plotHeight": 138,
+        "plotWidth": 398,
+        "xmax": 61.2,
+        "xmin": -1.2000000000000028,
+        "ymax": 25.89186057559241,
+        "ymin": 4.255679671069796
+      },
+      {
+        "aspectMode": "equal",
+        "auto": true,
+        "id": "contrastCanvas",
+        "pixelsPerMetreX": 6.378205128205128,
+        "pixelsPerMetreY": 6.378205128205128,
+        "plotHeight": 138,
+        "plotWidth": 398,
+        "xmax": 61.2,
+        "xmin": -1.2000000000000028,
+        "ymax": 25.89186057559241,
+        "ymin": 4.255679671069796
+      }
+    ]
   },
   "defaultResult": {
     "q": "2904",
     "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
     "time": "60 / 60",
     "status": "계산 완료 · 측정 생성 0.50 s · 참조 .m 원본 대조 미완료"
+  },
+  "expectedDefaultHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+  "runtimeErrors": [],
+  "numericalChanges": false,
+  "layoutChanges": {
+    "sidebar": [
+      456,
+      342
+    ],
+    "rowRatio": [
+      1.3,
+      1.9
+    ],
+    "fieldAspect": "equal",
+    "fieldFullX": [
+      0,
+      60
+    ],
+    "spatialGridMetres": 10
+  },
+  "previousLayoutEvidence": {
+    "schema": "echomap-drf-layout-validation/4",
+    "date": "2026-10-02T01:53:45.105Z",
+    "url": "http://127.0.0.1:8871/drf.html#v1=%7B%22scene%22%3A%22reference%22%2C%22vehicles%22%3A3%2C%22snapshots%22%3A60%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22roughness%22%3A2%2C%22lambda0%22%3A10%2C%22cellStep%22%3A0.02%2C%22resolution%22%3A0%2C%22specular%22%3Atrue%2C%22grid%22%3A150%2C%22band%22%3A4%2C%22perimeter%22%3A%22exact%22%2C%22seed%22%3A1%7D",
+    "runtime": "ES modules under HTTP; generated classic bundle checked by Node VM tests; file:// UI remains unverified",
+    "layout": "claymorphism; RAW equal metre scales and fitted panel; all graphs with grids; 456 px desktop sidebar with all settings expanded",
+    "desktop": [
+      {
+        "viewport": [
+          1920,
+          930
+        ],
+        "overflow": 0,
+        "sidebar": {
+          "width": 456,
+          "clientHeight": 876,
+          "scrollHeight": 876,
+          "scrollTop": 0
+        },
+        "settings": {
+          "count": 28,
+          "fullyVisible": 28,
+          "minFont": 14,
+          "minControlHeight": 28,
+          "controls": [
+            {
+              "id": "runButton",
+              "x": 12,
+              "y": 60,
+              "width": 83,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "stepButton",
+              "x": 99,
+              "y": 60,
+              "width": 83,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "pauseButton",
+              "x": 186,
+              "y": 60,
+              "width": 83,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "resetButton",
+              "x": 273,
+              "y": 60,
+              "width": 83,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "cancelButton",
+              "x": 360,
+              "y": 60,
+              "width": 83,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "scene",
+              "x": 43.765625,
+              "y": 153.984375,
+              "width": 178.734375,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "seed",
+              "x": 269.234375,
+              "y": 153.984375,
+              "width": 173.765625,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "vehicles",
+              "x": 60.5625,
+              "y": 183.984375,
+              "width": 161.9375,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "snapshots",
+              "x": 315.40625,
+              "y": 183.984375,
+              "width": 127.59375,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "sigmaP",
+              "x": 99.078125,
+              "y": 213.984375,
+              "width": 123.421875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "sigmaD",
+              "x": 319.578125,
+              "y": 213.984375,
+              "width": 123.421875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "specular",
+              "x": 12,
+              "y": 272.78125,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "roughness",
+              "x": 106.609375,
+              "y": 294.78125,
+              "width": 115.890625,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "lambda0",
+              "x": 319.453125,
+              "y": 294.78125,
+              "width": 123.546875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "cellStep",
+              "x": 76.90625,
+              "y": 352.96875,
+              "width": 145.59375,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "resolution",
+              "x": 328.921875,
+              "y": 352.96875,
+              "width": 114.078125,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "grid",
+              "x": 73.453125,
+              "y": 382.96875,
+              "width": 149.046875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "band",
+              "x": 292.328125,
+              "y": 382.96875,
+              "width": 150.671875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "perimeter",
+              "x": 73.453125,
+              "y": 412.96875,
+              "width": 369.546875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "heatField",
+              "x": 73.453125,
+              "y": 727.09375,
+              "width": 149.046875,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "scaleMode",
+              "x": 281.0625,
+              "y": 727.09375,
+              "width": 161.9375,
+              "height": 28,
+              "fullyVisible": true
+            },
+            {
+              "id": "showEllipses",
+              "x": 17,
+              "y": 787.328125,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "showVehicles",
+              "x": 107.453125,
+              "y": 787.328125,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "showProxy",
+              "x": 201.828125,
+              "y": 787.328125,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "showTruth",
+              "x": 17,
+              "y": 843.015625,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "showSpecular",
+              "x": 81.6875,
+              "y": 843.015625,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "showDiffuse",
+              "x": 168.21875,
+              "y": 843.015625,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            },
+            {
+              "id": "showObserved",
+              "x": 260.4375,
+              "y": 843.015625,
+              "width": 16,
+              "height": 16,
+              "fullyVisible": true
+            }
+          ]
+        },
+        "details": [
+          {
+            "open": true,
+            "title": "산란·필드 세부 설정"
+          },
+          {
+            "open": true,
+            "title": "표시 · 레이어"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "중앙 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "P95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "off-wall [%]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "F1 · 0.4 m",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-MSD [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-HD95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          }
+        ],
+        "views": {
+          "contrastCanvas": {
+            "bitmap": [
+              471,
+              267
+            ],
+            "bottom": 817,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 266.515625,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 14.54326923076923,
+              "pixelsPerMetreY": 8.213141025641026,
+              "plotHeight": 205,
+              "plotWidth": 363,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 471.328125,
+            "x": 952.328125,
+            "y": 550.484375
+          },
+          "densityCanvas": {
+            "bitmap": [
+              471,
+              267
+            ],
+            "bottom": 817,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 266.515625,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 14.54326923076923,
+              "pixelsPerMetreY": 8.213141025641026,
+              "plotHeight": 205,
+              "plotWidth": 363,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 471.328125,
+            "x": 469,
+            "y": 550.484375
+          },
+          "mapCanvas": {
+            "bitmap": [
+              950,
+              351
+            ],
+            "bottom": 483.875,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 351.375,
+            "view": {
+              "aspectMode": "equal",
+              "auto": true,
+              "pixelsPerMetreX": 14.238123874117573,
+              "pixelsPerMetreY": 14.238123874117573,
+              "plotHeight": 289,
+              "plotWidth": 890,
+              "xmax": 61.25411774292345,
+              "xmin": -1.254117742923448,
+              "ymax": 25.222579143224223,
+              "ymin": 4.924961103437983
+            },
+            "width": 949.65625,
+            "x": 713.171875,
+            "y": 132.5
+          },
+          "metricChart": {
+            "bitmap": [
+              471,
+              281
+            ],
+            "bottom": 817,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 280.609375,
+            "view": null,
+            "width": 471.34375,
+            "x": 1435.65625,
+            "y": 536.390625
+          }
+        },
+        "rawPanel": {
+          "bottom": 484.875,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 418.875,
+          "width": 951.65625,
+          "x": 712.171875,
+          "y": 66
+        },
+        "rawCaption": {
+          "bottom": 132.5,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 65.5,
+          "width": 949.65625,
+          "x": 713.171875,
+          "y": 67
+        }
+      },
+      {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "overflow": 0,
+        "sidebar": {
+          "width": 456,
+          "clientHeight": 1026,
+          "scrollHeight": 1026,
+          "scrollTop": 0
+        },
+        "settings": {
+          "count": 28,
+          "fullyVisible": 28,
+          "minFont": 14,
+          "minControlHeight": 28
+        },
+        "details": [
+          {
+            "open": true,
+            "title": "산란·필드 세부 설정"
+          },
+          {
+            "open": true,
+            "title": "표시 · 레이어"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "중앙 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "P95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "off-wall [%]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "F1 · 0.4 m",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-MSD [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-HD95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          }
+        ],
+        "views": {
+          "contrastCanvas": {
+            "bitmap": [
+              471,
+              332
+            ],
+            "bottom": 966.984375,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 331.71875,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 14.54326923076923,
+              "pixelsPerMetreY": 10.817307692307692,
+              "plotHeight": 270,
+              "plotWidth": 363,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 471.328125,
+            "x": 952.328125,
+            "y": 635.265625
+          },
+          "densityCanvas": {
+            "bitmap": [
+              471,
+              332
+            ],
+            "bottom": 966.984375,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 331.71875,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 14.54326923076923,
+              "pixelsPerMetreY": 10.817307692307692,
+              "plotHeight": 270,
+              "plotWidth": 363,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 471.328125,
+            "x": 469,
+            "y": 635.265625
+          },
+          "mapCanvas": {
+            "bitmap": [
+              1210,
+              436
+            ],
+            "bottom": 568.65625,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 436.15625,
+            "view": {
+              "aspectMode": "equal",
+              "auto": true,
+              "pixelsPerMetreX": 18.425807366505097,
+              "pixelsPerMetreY": 18.425807366505097,
+              "plotHeight": 374,
+              "plotWidth": 1150,
+              "xmax": 61.20623094352163,
+              "xmin": -1.2062309435216283,
+              "ymax": 25.222579143224223,
+              "ymin": 4.924961103437983
+            },
+            "width": 1210.296875,
+            "x": 582.84375,
+            "y": 132.5
+          },
+          "metricChart": {
+            "bitmap": [
+              471,
+              346
+            ],
+            "bottom": 966.984375,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 345.8125,
+            "view": null,
+            "width": 471.34375,
+            "x": 1435.65625,
+            "y": 621.171875
+          }
+        },
+        "rawPanel": {
+          "bottom": 569.65625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 503.65625,
+          "width": 1212.296875,
+          "x": 581.84375,
+          "y": 66
+        },
+        "rawCaption": {
+          "bottom": 132.5,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 65.5,
+          "width": 1210.296875,
+          "x": 582.84375,
+          "y": 67
+        }
+      },
+      {
+        "viewport": [
+          1440,
+          900
+        ],
+        "overflow": 0,
+        "sidebar": {
+          "width": 312,
+          "clientHeight": 846,
+          "scrollHeight": 1400,
+          "scrollTop": 0
+        },
+        "settings": {
+          "count": 28,
+          "fullyVisible": 19,
+          "minFont": 14,
+          "minControlHeight": 32
+        },
+        "details": [
+          {
+            "open": true,
+            "title": "산란·필드 세부 설정"
+          },
+          {
+            "open": true,
+            "title": "표시 · 레이어"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "중앙 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "P95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "off-wall [%]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "F1 · 0.4 m",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-MSD [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-HD95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          }
+        ],
+        "views": {
+          "contrastCanvas": {
+            "bitmap": [
+              359,
+              253
+            ],
+            "bottom": 786.984375,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 253.46875,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 10.056089743589745,
+              "pixelsPerMetreY": 7.652243589743589,
+              "plotHeight": 191,
+              "plotWidth": 251,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 359.328125,
+            "x": 696.328125,
+            "y": 533.515625
+          },
+          "densityCanvas": {
+            "bitmap": [
+              359,
+              253
+            ],
+            "bottom": 786.984375,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 253.46875,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 10.056089743589745,
+              "pixelsPerMetreY": 7.652243589743589,
+              "plotHeight": 191,
+              "plotWidth": 251,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 359.328125,
+            "x": 325,
+            "y": 533.515625
+          },
+          "mapCanvas": {
+            "bitmap": [
+              897,
+              334
+            ],
+            "bottom": 466.90625,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 334.40625,
+            "view": {
+              "aspectMode": "equal",
+              "auto": true,
+              "pixelsPerMetreX": 13.40058717564007,
+              "pixelsPerMetreY": 13.40058717564007,
+              "plotHeight": 272,
+              "plotWidth": 837,
+              "xmax": 61.22997481489169,
+              "xmin": -1.229974814891694,
+              "ymax": 25.222579143224223,
+              "ymin": 4.924961103437983
+            },
+            "width": 897.484375,
+            "x": 427.25,
+            "y": 132.5
+          },
+          "metricChart": {
+            "bitmap": [
+              359,
+              268
+            ],
+            "bottom": 786.984375,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 267.5625,
+            "view": null,
+            "width": 359.34375,
+            "x": 1067.65625,
+            "y": 519.421875
+          }
+        },
+        "rawPanel": {
+          "bottom": 467.90625,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 401.90625,
+          "width": 899.484375,
+          "x": 426.25,
+          "y": 66
+        },
+        "rawCaption": {
+          "bottom": 132.5,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 65.5,
+          "width": 897.484375,
+          "x": 427.25,
+          "y": 67
+        }
+      },
+      {
+        "viewport": [
+          1366,
+          768
+        ],
+        "overflow": 0,
+        "sidebar": {
+          "width": 312,
+          "clientHeight": 714,
+          "scrollHeight": 1330,
+          "scrollTop": 0
+        },
+        "settings": {
+          "count": 28,
+          "fullyVisible": 19,
+          "minFont": 14,
+          "minControlHeight": 28
+        },
+        "details": [
+          {
+            "open": true,
+            "title": "산란·필드 세부 설정"
+          },
+          {
+            "open": true,
+            "title": "표시 · 레이어"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "중앙 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "P95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "off-wall [%]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "F1 · 0.4 m",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-MSD [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          },
+          {
+            "label": "CA-HD95 [m]",
+            "font": "14px",
+            "height": 16.796875,
+            "lineHeight": "16.8px",
+            "oneLine": true,
+            "unclipped": true
+          }
+        ],
+        "views": {
+          "contrastCanvas": {
+            "bitmap": [
+              335,
+              196
+            ],
+            "bottom": 655,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 196.09375,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 9.09455128205128,
+              "pixelsPerMetreY": 5.368589743589744,
+              "plotHeight": 134,
+              "plotWidth": 227,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 334.671875,
+            "x": 671.65625,
+            "y": 458.90625
+          },
+          "densityCanvas": {
+            "bitmap": [
+              335,
+              196
+            ],
+            "bottom": 655,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 196.09375,
+            "view": {
+              "aspectMode": "fill",
+              "auto": true,
+              "pixelsPerMetreX": 9.09455128205128,
+              "pixelsPerMetreY": 5.368589743589744,
+              "plotHeight": 134,
+              "plotWidth": 227,
+              "xmax": 60.48,
+              "xmin": 35.519999999999996,
+              "ymax": 27.54994511574363,
+              "ymin": 2.589945115743628
+            },
+            "width": 334.65625,
+            "x": 325,
+            "y": 458.90625
+          },
+          "mapCanvas": {
+            "bitmap": [
+              668,
+              260
+            ],
+            "bottom": 392.296875,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 259.796875,
+            "view": {
+              "aspectMode": "equal",
+              "auto": true,
+              "pixelsPerMetreX": 9.743589743589745,
+              "pixelsPerMetreY": 9.743589743589745,
+              "plotHeight": 198,
+              "plotWidth": 608,
+              "xmax": 61.2,
+              "xmin": -1.2000000000000028,
+              "ymax": 25.234296439120577,
+              "ymin": 4.913243807541628
+            },
+            "width": 668.109375,
+            "x": 504.9375,
+            "y": 132.5
+          },
+          "metricChart": {
+            "bitmap": [
+              335,
+              210
+            ],
+            "bottom": 655,
+            "font": "14px",
+            "fullyVisible": true,
+            "height": 210.1875,
+            "view": null,
+            "width": 334.65625,
+            "x": 1018.328125,
+            "y": 444.8125
+          }
+        },
+        "rawPanel": {
+          "bottom": 393.296875,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 327.296875,
+          "width": 670.109375,
+          "x": 503.9375,
+          "y": 66
+        },
+        "rawCaption": {
+          "bottom": 132.5,
+          "font": "14px",
+          "fullyVisible": true,
+          "height": 65.5,
+          "width": 668.109375,
+          "x": 504.9375,
+          "y": 67
+        }
+      }
+    ],
+    "mobile": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": 0,
+      "sidebar": {
+        "width": 390,
+        "clientHeight": 1801,
+        "scrollHeight": 1801,
+        "scrollTop": 0
+      },
+      "settings": {
+        "count": 28,
+        "fullyVisible": 14,
+        "minFont": 16,
+        "minControlHeight": 44
+      },
+      "details": [
+        {
+          "open": true,
+          "title": "산란·필드 세부 설정"
+        },
+        {
+          "open": true,
+          "title": "표시 · 레이어"
+        }
+      ],
+      "metrics": [
+        {
+          "label": "중앙 [m]",
+          "font": "16px",
+          "height": 21.59375,
+          "lineHeight": "21.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "P95 [m]",
+          "font": "16px",
+          "height": 21.59375,
+          "lineHeight": "21.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "off-wall [%]",
+          "font": "16px",
+          "height": 21.59375,
+          "lineHeight": "21.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "F1 · 0.4 m",
+          "font": "16px",
+          "height": 21.59375,
+          "lineHeight": "21.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "CA-MSD [m]",
+          "font": "16px",
+          "height": 21.59375,
+          "lineHeight": "21.6px",
+          "oneLine": true,
+          "unclipped": true
+        },
+        {
+          "label": "CA-HD95 [m]",
+          "font": "16px",
+          "height": 21.59375,
+          "lineHeight": "21.6px",
+          "oneLine": true,
+          "unclipped": true
+        }
+      ],
+      "views": {
+        "contrastCanvas": {
+          "bitmap": [
+            364,
+            300
+          ],
+          "bottom": 2934.859375,
+          "font": "16px",
+          "fullyVisible": false,
+          "height": 300,
+          "view": {
+            "aspectMode": "fill",
+            "auto": true,
+            "pixelsPerMetreX": 10.256410256410255,
+            "pixelsPerMetreY": 9.53525641025641,
+            "plotHeight": 238,
+            "plotWidth": 256,
+            "xmax": 60.48,
+            "xmin": 35.519999999999996,
+            "ymax": 27.54994511574363,
+            "ymin": 2.589945115743628
+          },
+          "width": 364,
+          "x": 13,
+          "y": 2634.859375
+        },
+        "densityCanvas": {
+          "bitmap": [
+            364,
+            300
+          ],
+          "bottom": 2557.46875,
+          "font": "16px",
+          "fullyVisible": false,
+          "height": 300,
+          "view": {
+            "aspectMode": "fill",
+            "auto": true,
+            "pixelsPerMetreX": 10.256410256410255,
+            "pixelsPerMetreY": 9.53525641025641,
+            "plotHeight": 238,
+            "plotWidth": 256,
+            "xmax": 60.48,
+            "xmin": 35.519999999999996,
+            "ymax": 27.54994511574363,
+            "ymin": 2.589945115743628
+          },
+          "width": 364,
+          "x": 13,
+          "y": 2257.46875
+        },
+        "mapCanvas": {
+          "bitmap": [
+            364,
+            161
+          ],
+          "bottom": 2180.078125,
+          "font": "16px",
+          "fullyVisible": false,
+          "height": 160.875,
+          "view": {
+            "aspectMode": "equal",
+            "auto": true,
+            "pixelsPerMetreX": 4.871794871794871,
+            "pixelsPerMetreY": 4.871794871794871,
+            "plotHeight": 99,
+            "plotWidth": 304,
+            "xmax": 61.2,
+            "xmin": -1.2000000000000028,
+            "ymax": 25.234296439120577,
+            "ymin": 4.913243807541628
+          },
+          "width": 364,
+          "x": 13,
+          "y": 2019.203125
+        },
+        "metricChart": {
+          "bitmap": [
+            364,
+            340
+          ],
+          "bottom": 3378.859375,
+          "font": "16px",
+          "fullyVisible": false,
+          "height": 340,
+          "view": null,
+          "width": 364,
+          "x": 13,
+          "y": 3038.859375
+        }
+      },
+      "rawPanel": {
+        "bottom": 2181.078125,
+        "font": "16px",
+        "fullyVisible": false,
+        "height": 254.875,
+        "width": 366,
+        "x": 12,
+        "y": 1926.203125
+      },
+      "rawCaption": {
+        "bottom": 2019.203125,
+        "font": "16px",
+        "fullyVisible": false,
+        "height": 92,
+        "width": 364,
+        "x": 13,
+        "y": 1927.203125
+      }
+    },
+    "resizeStability": {
+      "freshWidth": 951.65625,
+      "afterMobileWidth": 951.65625,
+      "equal": true
+    },
+    "truthHiddenDomain": {
+      "bitmap": [
+        639,
+        351
+      ],
+      "bottom": 483.875,
+      "font": "14px",
+      "fullyVisible": true,
+      "height": 351.375,
+      "view": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 9.262820512820513,
+        "pixelsPerMetreY": 9.262820512820513,
+        "plotHeight": 289,
+        "plotWidth": 579,
+        "xmax": 61.253979238754326,
+        "xmin": -1.2539792387543258,
+        "ymax": 30.6,
+        "ymin": -0.5999999999999996
+      },
+      "width": 638.765625,
+      "x": 868.609375,
+      "y": 132.5
+    },
+    "manualFieldAspect": {
+      "unchanged": true,
+      "before": {
+        "aspectMode": "equal",
+        "auto": false,
+        "pixelsPerMetreX": 18.50956103635285,
+        "pixelsPerMetreY": 18.50956103635285,
+        "plotHeight": 289,
+        "plotWidth": 890,
+        "xmax": 54.04162903301804,
+        "xmin": 5.958370966981963,
+        "ymax": 22.880546292479657,
+        "ymin": 7.266993954182549
+      },
+      "after": {
+        "aspectMode": "equal",
+        "auto": false,
+        "pixelsPerMetreX": 18.50956103635285,
+        "pixelsPerMetreY": 18.50956103635285,
+        "plotHeight": 289,
+        "plotWidth": 890,
+        "xmax": 54.04162903301804,
+        "xmin": 5.958370966981963,
+        "ymax": 22.880546292479657,
+        "ymin": 7.266993954182549
+      }
+    },
+    "firstSnapshot": {
+      "max": "60",
+      "raw": {
+        "aspectMode": "equal",
+        "auto": true,
+        "pixelsPerMetreX": 14.238123874117573,
+        "pixelsPerMetreY": 14.238123874117573,
+        "plotHeight": 289,
+        "plotWidth": 890,
+        "xmax": 61.25411774292345,
+        "xmin": -1.254117742923448,
+        "ymax": 25.222579143224223,
+        "ymin": 4.924961103437983
+      },
+      "selected": "1",
+      "status": "첫 snapshot으로 돌아왔습니다. 계산된 기록은 유지합니다."
+    },
+    "automatedTests": {
+      "passed": 105,
+      "failed": 0
+    },
+    "numericalChanges": false,
+    "expectedDefaultHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+    "runtimeErrors": [],
+    "previousClassicRuntimeEvidence": {
+      "date": "2026-10-01T14:00:42.130Z",
+      "runtime": "classic bundle and Blob Workers under HTTP; file:// browser control unavailable",
+      "sweep": {
+        "status": "완료 · 1 / 1 · 원본 .m 대조 미완료",
+        "table": "Sweep 수치 결과σ [deg]σ_d [m]seeds중앙 |오차| [m]P95 [m]off-wall [%]20.110.140 ± — (유효 1/1, 실패 0, 미관측 0)0.829 ± — (유효 1/1, 실패 0, 미관측 0)11.2 ± — (유효 1/1, 실패 0, 미관측 0)",
+        "conditions": {
+          "sigmaD": [
+            0.1
+          ],
+          "roughness": [
+            2
+          ],
+          "seeds": [
+            1
+          ],
+          "snapshots": 60,
+          "grid": 150
+        },
+        "errors": []
+      }
+    },
+    "defaultResult": {
+      "q": "2904",
+      "hash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+      "time": "60 / 60",
+      "status": "계산 완료 · 측정 생성 0.50 s · 참조 .m 원본 대조 미완료"
+    }
+  },
+  "automatedTests": {
+    "command": "npm test",
+    "passed": 113,
+    "failed": 0,
+    "durationMs": 14650.61275
   }
 }

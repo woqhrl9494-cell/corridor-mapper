@@ -10,7 +10,7 @@ const section=(start,end)=>{
   return source.slice(a,b);
 };
 
-test('actual app first snapshot preserves records and restart/reset clear stale replay',async()=>{
+test('actual app first snapshot restores an empty preview, preserves records and clears stale replay',async()=>{
   const nodes=new Map(),pending=new Map(),charts=new Map();let nextFrame=0,stoppedWorkers=0,cancelledSweeps=0,fitCalls=0,releaseField;
   const $=id=>{
     if (!nodes.has(id)) nodes.set(id,{id,value:'',textContent:'old snapshot value',checked:false,options:[],
@@ -39,6 +39,24 @@ test('actual app first snapshot preserves records and restart/reset clear stale 
     section('async function advance(','async function hashField('),
     section('function replayTick(','$(\'runButton\').onclick'),reset,
   ].join('\n'),context);
+  const completed={...state},settingsValue=snapshots.value,workers=state.workers;
+  Object.assign(state,{frames:[],evaluations:[],scenario:null,grid:null,selected:0,next:0,valid:false,followLive:true,sweep:null,sweepRuns:[],generation:17});
+  for (const mode of ['idle','running']) {
+    state.mode=mode;context.controls();
+    assert.equal($('firstSnapshot').disabled,false,`First view must be available while ${mode} without records`);
+    const beforeFit=fitCalls,frames=state.frames,evaluations=state.evaluations;
+    context.firstSnapshot();
+    assert.equal(fitCalls-beforeFit,3,'An empty preview must restore all three map cameras');
+    assert.equal(state.mode,mode,'Restoring the preview must not pause generation');
+    assert.equal(state.followLive,true);assert.equal(state.selected,0);assert.equal(state.next,0);
+    assert.equal(state.generation,17);assert.equal(state.scenario,null);assert.equal(state.valid,false);
+    assert.equal(state.frames,frames);assert.equal(state.evaluations,evaluations);
+    assert.equal(state.frames.length,0);assert.equal(state.evaluations.length,0);
+    assert.equal(state.workers,workers);assert.equal(stoppedWorkers,0);
+    assert.equal(snapshots.value,settingsValue);assert.equal(context.location.hash,'#old');
+    assert.equal($('firstSnapshot').disabled,false);
+  }
+  Object.assign(state,completed);fitCalls=0;
   vm.runInContext('controls();',context);
   assert.equal(Number($('timeSlider').max),3);assert.equal(Number($('timeSlider').value),3);
   vm.runInContext('toggleReplay();stopReplay();toggleReplay();',context);

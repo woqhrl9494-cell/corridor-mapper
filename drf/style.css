@@ -113,7 +113,7 @@ dd { margin: 3px 0 0; font: 600 18px/1.15 "DM Mono", ui-monospace, SFMono-Regula
 .timing { font-variant-numeric: tabular-nums; color: var(--color-ink); }
 .views { min-width: 0; padding: 12px; background: var(--color-bg); }
 .primary-workspace { display: flex; flex-direction: column; gap: 8px; min-height: 640px; }
-.dashboard { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: minmax(0,1.3fr) minmax(0,1fr); gap: 10px; flex: 1; min-height: 0; }
+.dashboard { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: minmax(0,1.9fr) minmax(0,1fr); gap: 10px; flex: 1; min-height: 0; }
 .view { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--color-line); border-radius: var(--radius-panel); overflow: hidden; background: var(--color-surface-1); box-shadow: var(--shadow-clay); }
 .map-panel { grid-column: 1/-1; justify-self: center; align-self: start; max-width: 100%; }
 .map-panel .view-body { flex: none; height: 340px; }
@@ -205,24 +205,31 @@ dialog p + p { margin-top: 14px; }
   .section-title { margin-bottom: 4px; }
 }
 @media (min-width: 1680px) {
-  :root { --sidebar: 456px; }
-  .sidebar-section { padding: 6px 12px; }
+  :root { --sidebar: 342px; }
+  .sidebar-section { padding: 2px 12px; }
   .sidebar .section-title { margin-bottom: 4px; line-height: 1.2; }
-  .sidebar .run-actions { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 4px; margin-bottom: 4px; }
+  .sidebar .run-actions { grid-template-columns: 1fr 1.15fr 1.35fr 1.05fr .85fr; gap: 4px; margin-bottom: 4px; }
   .sidebar .run-actions .primary { grid-column: auto; }
   .sidebar .run-actions button { min-height: 28px; padding: 3px 5px; white-space: nowrap; }
   .sidebar .status { padding: 4px 7px; line-height: 1.3; }
-  .sidebar label:not(.check):not(.toggle-chip) { grid-template-columns: max-content minmax(0,1fr); align-items: center; gap: 6px; margin-bottom: 2px; white-space: nowrap; }
+  .sidebar label:not(.check):not(.toggle-chip) { grid-template-columns: max-content minmax(0,1fr); align-items: center; gap: 6px; margin-bottom: 0; white-space: nowrap; }
   .sidebar input:not([type="checkbox"]):not([type="range"]),.sidebar select { min-height: 28px; padding: 2px 5px; }
-  .sidebar .input-pair,.sidebar .advanced-grid { column-gap: 10px; }
+  .sidebar .input-pair,.sidebar .advanced-grid { column-gap: 8px; }
+  .sidebar fieldset { margin-bottom: 0; }
+  .sidebar legend { margin-bottom: 4px; }
   .sidebar .check { min-height: 24px; margin-bottom: 2px; }
   .sidebar summary { min-height: 24px; padding: 3px 0; line-height: 1.3; }
-  .sidebar details[open] > summary { margin-bottom: 4px; }
+  .sidebar details[open] > summary { margin-bottom: 2px; }
   .sidebar .display-settings[open] > summary { padding-bottom: 3px; }
   .sidebar .metrics { gap: 4px; }
   .sidebar .metrics > div { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-height: 28px; padding: 3px 6px; }
-  .sidebar .metrics dt { white-space: nowrap; }
-  .sidebar .metrics dd { margin: 0; white-space: nowrap; }
+  .sidebar .metrics dt { font-size: 13px; white-space: nowrap; }
+  .sidebar .metrics dd { margin: 0; font-size: 16px; white-space: nowrap; }
+  .sidebar .path-metrics > div:not(.path-composition) { flex-wrap: wrap; }
+  .sidebar .path-metrics dd { margin-left: auto; }
+  .sidebar .evaluation-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .sidebar .evaluation-metrics > div { display: block; min-height: 48px; padding: 4px 6px; }
+  .sidebar .evaluation-metrics dd { margin-top: 2px; }
   .sidebar #pathValue { white-space: normal; }
   .sidebar .results-panel h3 { margin-top: 6px; }
   .sidebar .timing-label { margin-top: 4px; }
@@ -230,7 +237,7 @@ dialog p + p { margin-top: 14px; }
   .sidebar .layer-groups legend { margin-bottom: 4px; line-height: 1.2; }
   .sidebar .toggle-row { gap: 4px; }
   .sidebar .toggle-chip { min-height: 26px; padding: 3px 4px; white-space: nowrap; }
-  .sidebar .prior-note { margin-top: 4px; padding: 4px 6px; line-height: 1.3; }
+  .sidebar .prior-note { margin-top: 2px; padding: 2px 6px; line-height: 1.3; }
 }
 @media (max-width: 999px) {
   .site-header { flex-wrap: wrap; gap: 8px 12px; padding: 8px 12px; }

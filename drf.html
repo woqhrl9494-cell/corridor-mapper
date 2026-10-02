@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
-    <title>EchoMap — DRF 실험실</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261002-grid6" />
+    <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
+    <link rel="stylesheet" href="drf/style.css?v=20261002-view10" />
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="./"><span class="logo-dot" aria-hidden="true"></span><h1>EchoMap</h1><span class="brand-sub">/ DRF Lab</span></a>
+      <a class="brand" href="./"><span class="logo-dot" aria-hidden="true"></span><h1>EchoMap</h1><span class="brand-sub">/ DRF 시뮬레이터 · 한양대학교 WSL</span></a>
       <nav aria-label="페이지 메뉴"><a href="./">SURF</a><a href="drf.html" aria-current="page">DRF</a><a href="legacy.html">이전 비교판 ↗</a></nav>
       <span class="header-badge">참조 84/96 · 12 미충족</span>
       <div class="header-actions"><button id="aboutButton" type="button">방법과 범위</button><button id="themeButton" type="button">테마</button></div>
@@ -33,7 +33,7 @@
             <details class="advanced-settings" open><summary>산란·필드 세부 설정</summary>
               <div class="advanced-grid">
                 <label>셀 Δs [m]<input name="cellStep" type="number" min="0.005" max="0.2" step="0.005" value="0.02" required /></label><label>병합 ε_res [m]<input name="resolution" type="number" min="0" max="2" step="0.01" value="0" required /></label>
-                <label>필드 격자<select name="grid"><option value="100">100 × 100</option><option value="150" selected>150 × 150</option><option value="200">200 × 200</option></select></label>
+                <label>격자<select name="grid" aria-label="필드 격자"><option value="100">100 × 100</option><option value="150" selected>150 × 150</option><option value="200">200 × 200</option></select></label>
                 <label>잔차 c_B<select name="band"><option value="3">3 σ_r</option><option value="4" selected>4 σ_r</option><option value="5">5 σ_r</option><option value="full">전체 격자</option></select></label>
                 <label>타원 둘레<select name="perimeter"><option value="exact">정확 적분</option><option value="ramanujan">Ramanujan 근사</option></select></label>
               </div>
@@ -60,11 +60,11 @@
         <section class="primary-workspace" aria-label="측정 지도와 DRF 대시보드">
           <div class="dashboard">
             <figure class="view map-panel" id="viewMain">
-              <figcaption class="vlabel"><div><span class="tag">RAW</span><h2 id="mapTitle">측정 타원 · 차량 궤적</h2><span class="view-unit">x, y [m] · 1:1</span></div><div class="map-toolbar" role="group" aria-label="지도 조작"><button id="fitView" type="button">전체 보기</button><button id="zoomIn" type="button" aria-label="지도 확대">＋</button><button id="zoomOut" type="button" aria-label="지도 축소">−</button><button id="firstSnapshot" type="button" disabled title="첫 snapshot과 기본 확대 상태로 돌아갑니다. 기록은 유지합니다.">처음으로</button><select id="aspectMode" aria-label="필드 축 비율" title="하단 D̄/β̂ 필드에 적용합니다. RAW 지도는 항상 x/y의 1 m 길이가 같습니다."><option value="fill" selected>필드 채움</option><option value="equal">필드 등척</option></select></div></figcaption>
+              <figcaption class="vlabel"><div><span class="tag">RAW</span><h2 id="mapTitle">측정 타원 · 차량 궤적</h2><span class="view-unit">x, y [m] · 1:1</span></div><div class="map-toolbar" role="group" aria-label="지도 조작"><button id="fitView" type="button">전체 보기</button><button id="zoomIn" type="button" aria-label="지도 확대">＋</button><button id="zoomOut" type="button" aria-label="지도 축소">−</button><button id="firstSnapshot" type="button" title="기본 보기로 돌아갑니다. 기록이 있으면 첫 snapshot을 표시합니다.">처음으로</button><select id="aspectMode" aria-label="필드 축 비율" title="하단 D̄/β̂ 필드에 적용합니다. RAW 지도는 항상 x/y의 1 m 길이가 같습니다."><option value="fill">필드 채움</option><option value="equal" selected>필드 등척</option></select></div></figcaption>
               <div class="plot-shell view-body"><canvas id="mapCanvas" class="dashboard-canvas" aria-label="측정 타원, 차량 궤적과 평가 레이어">Canvas를 지원하는 브라우저가 필요합니다.</canvas></div>
             </figure>
-            <figure class="view" id="viewDensity"><figcaption class="vlabel field-label"><div><span class="tag">D̄</span><h2>누적 경로 평균</h2><span class="view-unit">[1/m²]</span></div><p class="view-hint">현재 차량 주변 확대 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="densityCanvas" class="dashboard-canvas" aria-label="누적 Direct Residual Field Dbar"></canvas></div></figure>
-            <figure class="view" id="viewContrast"><figcaption class="vlabel field-label"><div><span class="tag">β̂</span><h2>필드 대비</h2><span class="view-unit">무차원</span></div><p class="view-hint">현재 차량 주변 확대 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="contrastCanvas" class="dashboard-canvas" aria-label="필드 대비 지표 betaHat"></canvas></div></figure>
+            <figure class="view" id="viewDensity"><figcaption class="vlabel field-label"><div><span class="tag">D̄</span><h2>누적 경로 평균</h2><span class="view-unit">[1/m²]</span></div><p class="view-hint">전체 0–60 m · x/y 등척 기본 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="densityCanvas" class="dashboard-canvas" aria-label="누적 Direct Residual Field Dbar"></canvas></div></figure>
+            <figure class="view" id="viewContrast"><figcaption class="vlabel field-label"><div><span class="tag">β̂</span><h2>필드 대비</h2><span class="view-unit">무차원</span></div><p class="view-hint">전체 0–60 m · x/y 등척 기본 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="contrastCanvas" class="dashboard-canvas" aria-label="필드 대비 지표 betaHat"></canvas></div></figure>
             <figure class="view" id="viewMetrics"><figcaption class="vlabel evaluation"><div><span class="tag">EVAL</span><h2>snapshot 평가</h2></div><select id="historyMetric" aria-label="시간별 평가 지표"><option value="p95" selected>P95 |오차| [m]</option><option value="offset">Signed offset [m]</option><option value="offwall">off-wall [%]</option></select></figcaption><div class="view-body"><canvas id="metricChart" class="dashboard-canvas compact-chart" aria-label="선택 지표의 시간별 사후 평가"></canvas></div></figure>
           </div>
           <div class="playback-bar"><div class="timeline"><button id="replayButton" type="button" aria-label="계산된 snapshot 재생">재생</button><label class="time-label" for="timeSlider">snapshot <output id="snapshotLabel">0 / 60</output></label><input id="timeSlider" type="range" min="0" max="60" step="1" value="0" /><label class="speed-label">속도<select id="playbackSpeed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label></div><p class="note keyboard-note">Space 재생·정지 · ← / → 기록 이동</p></div>
@@ -79,14 +79,14 @@
           </div>
         </details>
         <section class="provenance"><span>Commit: <code id="provenanceCommit">확인 중</code></span><span>Frozen core SHA-256: <code id="provenanceCore">확인 중</code></span></section>
-        <footer>EchoMap DRF Lab · 현재 snapshot까지 누적 · 참값은 사후 평가에만 사용</footer>
+        <footer>한양대학교 WSL · EchoMap DRF 시뮬레이터 · 현재 snapshot까지 누적 · 참값은 사후 평가에만 사용</footer>
       </div>
     </main>
     <dialog id="aboutDialog"><div class="dialog-title"><h2>방법과 검증 범위</h2><button id="closeAbout" type="button" aria-label="방법 설명 닫기">닫기</button></div><p>wall-shape-model-free Direct Residual Field. 현재 snapshot까지의 측정만 누적합니다.</p><div class="information-flow"><span>참 장면 → 측정 생성</span><span>측정 wire → F10–F40 → 필드</span><span class="evaluation">필드 + 참값 → 사후 평가</span></div><p>F10–11: 유효 경로 선택. F16–22: 타원 둘레. F24–33: 잔차와 위치·거리 불확실성. F36–40: 누적, 채택 경로 평균과 β̂.</p><p>β̂는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">Outer-Peak: corridor prior · 평가용 · 최종 extractor 아님. 벽 추출법은 미확정이며 검증 범위는 코리도 장면입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-model8';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-model8'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-view10';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-view10'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>
