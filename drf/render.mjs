@@ -132,8 +132,7 @@ export class DrfMap {
     const previous=this.state;
     this.state=state;
     if (state.aspectMode !== previous.aspectMode) {this.auto=true;this.camera=null;}
-    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || (state.focus && !this.fullDomain && state.frame !== previous.frame)
-      || (state.mode==='geometry' && (state.frame !== previous.frame || state.wire !== previous.wire)))) this.camera=null;
+    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls)) this.camera=null;
     if (state.frame !== previous.frame || state.grid !== previous.grid || state.heatField !== previous.heatField || state.scaleMode !== previous.scaleMode) this.buildHeat();
     this.draw();
   }
@@ -178,27 +177,10 @@ export class DrfMap {
     // 52 px left margin keeps y tick labels clear of the rotated axis title.
     const geometry=this.state.mode === "geometry",box={ x:52,y:16,w:Math.max(1,width-(geometry ? 68 : 116)),h:Math.max(1,height-62) }, g=this.state.grid;
     const domain=g?.domain ?? (g ? [g.xmin,g.xmax,g.ymin,g.ymax] : [0,60,0,30]);
-    let bounds={xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]};
-    if (this.state.focus && !this.fullDomain) {
-        // Drawing-only 24 m window follows current noisy poses, never future wire or truth.
-        const poses=(this.state.wire?.configs ?? []).flatMap(c=>[c.pHat_i,c.pHat_j]),n=poses.length;
-        const cx=Math.max(domain[0]+12,Math.min(domain[1]-12,n ? poses.reduce((s,p)=>s+p[0],0)/n : (domain[0]+domain[1])/2));
-        const cy=Math.max(domain[2]+12,Math.min(domain[3]-12,n ? poses.reduce((s,p)=>s+p[1],0)/n : (domain[2]+domain[3])/2));
-        bounds={xmin:cx-12,xmax:cx+12,ymin:cy-12,ymax:cy+12};
-    } else if (!this.fullDomain && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
-    // RAW includes only poses measured through the selected snapshot, including the open exit.
-    // The inference grid and the lower field maps retain their fixed [0,60] x [0,30] m domain.
-    if (geometry) {
-      const snapshots=[...(this.state.history ?? []).filter(s=>s.t<=(this.state.frame?.t ?? 0)),this.state.wire];
-      for (const snapshot of snapshots) for (const c of snapshot?.configs ?? []) for (const p of [c.pHat_i,c.pHat_j]) {
-        if (snapshot.t>(this.state.frame?.t ?? 0) || p?.length!==2 || !p.every(Number.isFinite)) continue;
-        bounds={xmin:Math.min(bounds.xmin,p[0]),xmax:Math.max(bounds.xmax,p[0]),ymin:Math.min(bounds.ymin,p[1]),ymax:Math.max(bounds.ymax,p[1])};
-      }
-      // Wall candidates are field output for this snapshot; keep every drawn one inside the frame,
-      // whether or not the layer is shown, so toggles never move the camera.
-      for (const p of this.state.proxy ?? []) if (p?.length===2 && p.every(Number.isFinite))
-        bounds={xmin:Math.min(bounds.xmin,p[0]),xmax:Math.max(bounds.xmax,p[0]),ymin:Math.min(bounds.ymin,p[1]),ymax:Math.max(bounds.ymax,p[1])};
-    }
+    // Static scene bounds keep all spatial views fixed as vehicles leave the visible map.
+    // Wall candidates and measured poses affect overlays only, never the camera or inference.
+    const wallPoints=this.state.walls?.flat(),bounds=!this.fullDomain && wallPoints?.length
+      ? boundsOf(wallPoints) : {xmin:domain[0],xmax:domain[1],ymin:domain[2],ymax:domain[3]};
     const panel=this.canvas.closest?.('.map-panel');
     // CSS owns the full card size; fit metres inside it without shrinking the frame.
     // CSS pixels/metre: every viewport and visible-range change updates the zoom floor.

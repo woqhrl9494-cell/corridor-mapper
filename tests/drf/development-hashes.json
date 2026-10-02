@@ -1,33 +1,32 @@
 {
-  "baseCommit": "a82f5f5081af97a3e0f1215ca174c2c6580e6c9b",
+  "baseCommit": "1d73fb384042abf1f5a2fa9a34b6bae461b835ae",
   "branch": "feat/drf-lab",
   "deployed": false,
   "sha256": {
-    "drf.html": "18d6dff07bda075e03e0d3f283a4643866f788b47ef0ef23d3558641d1f81132",
-    "drf/app.mjs": "94c21447de35113e325b5a1ed53172008eb7b97f4ca388fefd711b5c864499af",
+    "drf.html": "96bf67e3862eb63d249b385699990f31b7b7e8990db063964eb73ebb2912beda",
+    "drf/app.mjs": "84354ef4080243acdafa95dffbf80c5ebe229817f35130fb26a379e0cf970954",
     "drf/diffuse.mjs": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
     "drf/eval.worker.mjs": "15a5d15418cfeea319c6a90f93e5304f431fdd01288b21c027cc32b2347e9b1c",
     "drf/evaluate.mjs": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/field.worker.mjs": "f1c991b422e7b5f93d36d7df29496088c9f83708e30f90bb0378453bda85ad64",
-    "drf/offline.bundle.js": "0b75ee45ec206d64fad54b3118e64688404880a845f92f4d0e844ff3c53742cb",
+    "drf/offline.bundle.js": "ab889aad4333d9d387b66ee5b93aa235ceb44228f4be711fdaf4988471d277f0",
     "drf/poly.mjs": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
     "drf/provenance.json": "d967ebc636ffc4254b673893449d8a37253b69b1fb45748023fd3f6164650406",
     "drf/reference/octave/fixtures.json": "563d63edf14d334c86c07769ff7bde6453d88875214082e87e4a196c567c39c4",
-    "drf/render.mjs": "631c60a788394349de764273ac863046368652e257a4c71f090e48e529b33db4",
+    "drf/render.mjs": "8a9c5f9335c34dda4053e8de720c13cd60d480228223665bd42f8c73e7db6bff",
     "drf/rng.mjs": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
     "drf/scenario.mjs": "f4b357c6e1fe85aac371d0476f11068ac937e0b5a7025ca8e08e2a4ce7e86d31",
     "drf/scenario.worker.mjs": "f129eacec3946bedb6d2d3e9cebdfa62c8c5c844ae2e4045e5040bca4dfb0d86",
     "drf/specular.mjs": "4d9b42edcd25625078f8239813108ef08dbd5fb59da60ebc3ae4a90a853f2eb4",
-    "drf/style.css": "94bac50f0fbc79f330a9d8ee972bf9d9d85e50e89a046ba8e320453f13bd5c5c",
+    "drf/style.css": "c664054355d8339cafde87ce5075bad2e9071325b143c0223a4b7c2b71041c0d",
     "drf/sweep.mjs": "6b038e75bf9895f575a96a7cd8424a24fb75a88cc42566687c2bd4d06a478800",
     "drf/sweep.worker.mjs": "ad5028327d0e3c0ffaf2f02d5a9af148259f13d508f70a9335789054aa7c738a",
     "drf/wall.mjs": "dc2a7ce0404c9034c47b83365a3575462f4b8e32043ee90dcc6ba9e7cd90e440",
     "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72",
-    "index.html": "29b830e20245dee2cec0831f06ff053345ffcf9e5eb5f542f8f659027d40c35d",
-    "package.json": "1a02ff55f4150e37d28b36466ba6401ea18dbf27228e73a475679b33f00d9d0d",
+    "surf/exports.mjs": "87a75181c08506097e4d7dd26421b27a3e92b4e99485da5a9d4a1087ac998d26",
     "surf/map.mjs": "9a8c31b8c87c0c157f73db4a22d0f8b8a7cafa7c13bacaf60b6b8c4136b39d60",
-    "surf/style.css": "e62e5bb7c4cfd1ee3e1f38e5d80dda5e7b9bb4c12d0836c1956d6a34026ef27e"
+    "wall_metrics.js": "f8ff5b04d61c9cdbfbd6208851e7c947732df67402d907e92e35567b7a0be290"
   },
-  "status": "pre-deployment source snapshot with Korean word-preserving wrapping and compact scene labels"
+  "status": "pre-deployment DRF-only runtime snapshot with fixed spatial cameras; 119 automated checks passed"
 }

@@ -10,8 +10,7 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="./"><span class="logo-dot" aria-hidden="true"></span><h1>EchoMap</h1><span class="brand-sub">DRF 시뮬레이터 · 한양대학교 WSL</span></a>
-      <nav aria-label="페이지 메뉴"><a href="./">SURF</a><a href="drf.html" aria-current="page">DRF</a><a href="legacy.html">이전 비교판 ↗</a></nav>
+      <a class="brand" href="drf.html"><span class="logo-dot" aria-hidden="true"></span><h1>EchoMap</h1><span class="brand-sub">DRF 시뮬레이터 · 한양대학교 WSL</span></a>
       <span class="header-badge">참조 84/96 · 12 미충족</span>
       <div class="header-actions"><button id="aboutButton" type="button">방법과 범위</button><button id="themeButton" type="button">테마</button></div>
     </header>
@@ -134,8 +133,8 @@
       <p><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">벽 후보점은 누적 필드의 바깥쪽 봉우리에서 선택한 벽 위치 후보입니다. corridor 형태를 가정하며 사후 평가에 사용합니다. 벽 추출법은 미확정입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-design24';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-design24'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-fixedview27';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-fixedview27'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>

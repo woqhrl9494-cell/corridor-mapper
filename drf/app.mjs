@@ -2,7 +2,7 @@ import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-design24';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-fixedview27';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -172,8 +172,8 @@ function renderSelected() {
     history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
   map.set({...display,mode:'geometry'});
   const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
-  densityMap.set({...display,layers:fieldLayers,heatField:'Dbar',focus:false});
-  contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat',focus:false});
+  densityMap.set({...display,layers:fieldLayers,heatField:'Dbar'});
+  contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat'});
   $('snapshotLabel').textContent = `${frame?.t ?? 0} / ${scenario?.input.snapshots ?? form.elements.namedItem('snapshots').value}`;
   $('qValue').textContent = frame?.Q ?? 0; $('acceptedValue').textContent = frame?.admitted ?? 0; $('rejectedValue').textContent = frame?.rejected ?? 0;
   const metricIds = { medianValue: 'medianError', p95Value: 'p95', f1Value: 'f1', msdValue: 'caMsd', hd95Value: 'caHd95' };

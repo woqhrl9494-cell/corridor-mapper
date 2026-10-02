@@ -1,11 +1,11 @@
 # EchoMap DRF 검증 기록
 
-상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 현재 차량 2–20대, 기본/최대 80 snapshots를 지원하며 전체 실행은 저장된 짧은 설정도 80회로 연장한다. 자동 검사 118/118과 현재 수치 source SHA에 연결된 명시적 60 snapshot 조건의 160회 통계를 확인했다. 160회 결과와 기존 12개 수용 미충족은 유지한다. 끝단 관측 개선과 내부 오차 변화는 별도 60/80 paired 실험으로 기록한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
+상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 현재 차량 2–20대, 기본/최대 80 snapshots를 지원하며 전체 실행은 저장된 짧은 설정도 80회로 연장한다. 자동 검사 119/119과 현재 수치 source SHA에 연결된 명시적 60 snapshot 조건의 160회 통계를 확인했다. 160회 결과와 기존 12개 수용 미충족은 유지한다. 끝단 관측 개선과 내부 오차 변화는 별도 60/80 paired 실험으로 기록한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
 
 ## 변경과 재현 조건
 
 - 기준 저장소 commit: `751f34e3d8d7ee1317554672152d6a2563ce2e0c`, 작업 branch: `feat/drf-lab`.
-- SURF 홈 유지, `drf.html` 별도 추가. 승인된 기존 변경은 nav 링크와 글자/컨트롤/표시 여백/문자 대비이다. 기존 알고리즘과 나머지 44개 보호 파일의 SHA-256은 유지한다.
+- 최초에는 SURF 홈을 유지하고 `drf.html`을 별도로 추가했다. 현재 공개 배포는 DRF만 포함하며 아래 DRF 전용 배포 기록을 따른다. 승인된 기존 변경은 nav 링크와 글자/컨트롤/표시 여백/문자 대비이다. 기존 알고리즘과 나머지 44개 보호 파일의 SHA-256은 유지한다.
 - 사용자 요청에 따라 첫 화면의 정보량을 늘렸다. 폭 1680 px 이상의 화면에서 342 px 사이드바는 설정만 표시하고, 상단 RAW 오른쪽 300 px 성능창에 Q, 채택/거부 수, path 구성, 평가 6지표와 계산 시간을 배치한다. 하단 세 그래프는 전체 폭에 맞춘다. 상하 행 비율은 1.9:1이며 성능창의 지표 라벨은 한 줄이다. 모바일 DOM 글자는 16 px 이상, 버튼 높이는 44 px 이상이다.
 - 밝은 clay 스타일의 표면과 컨트롤, 흰 plot 배경 및 내부 격자를 적용했다. RAW는 등척을 유지하며 panel 크기를 표시할 metre 범위에 맞춘다. 하단 두 필드에도 기본 등척을 적용하며 선택 가능한 채움 방식을 유지한다. 화면의 도구명은 DRF 시뮬레이터, 소속 표기는 한양대학교 WSL이다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
@@ -217,3 +217,12 @@ HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 �
 ## 한글 단어 단위 줄바꿈
 
 본문에 word-break:keep-all과 overflow-wrap:normal을 적용하고 상태·조회·지표·provenance의 anywhere 줄바꿈을 제거했다. 코드 문자열은 별도 anywhere를 유지한다. 장면 선택은 좁은 입력칸에 맞춰 Reference / Random으로 짧게 표시하고 title에 전체 corridor 이름을 유지한다. 일반 설명의 corridor 표기는 같다. 변경 뒤 표시·offline 관련 5/5 검사가 통과했다(466.007541 ms). 로컬 HTTP 1920×930 및 390×844의 설정 안내·설명 대화창·상태·조회 문구에서 computed word-break=keep-all, overflow-wrap=normal을 확인했고 문단 및 대화창 scrollWidth/clientWidth가 같았다. 이는 CSS/폭 검사이며 모든 단어의 문자별 줄 위치를 자동 비교한 결과는 아니다.
+
+
+## 2026-10-02 DRF 전용 공개 배포와 고정 지도 시점
+
+공개 artifact는 `build-pages.mjs`의 runtime allowlist 24개만 포함한다. HTML은 `drf.html` 하나이며 루트 index, 이전 비교판, SURF 앱과 테스트 화면은 포함하지 않는다. README 자동 변환을 포함하는 기존 branch-root Pages 대신 `.github/workflows/pages.yml`에서 이 artifact를 배포한다. 기존 연구 소스와 44개 보호 파일은 저장소에 유지한다.
+
+세 공간 지도는 정적 벽 extent 또는 사용자가 선택한 전체 domain으로 기본 범위를 계산한다. 현재/과거 차량 위치와 벽 후보점을 bounds에 합치던 코드와 frame/wire 변경 때 자동 camera를 지우던 코드를 제거했다. 차량이 오른쪽으로 화면 밖에 나가도 시점과 배율은 유지되며, 화면 밖의 그리기는 기존 canvas clip을 따른다. 수동 확대와 이동, 기본 축소 하한, 처음으로와 화면 크기 변경의 등척 동작은 유지한다. 추정기 입력, 차량 주행식과 수치 source는 변경하지 않았다. 이전 기록의 RAW 차량 범위 자동 확장은 현재 동작에 적용되지 않는다.
+
+`npm test` 119/119, 실패 0, 17.140796625 s. RAW, Dbar, betaHat에 120–150 m 차량과 [300,400] 후보점 및 미래 기록을 전달해도 camera, 표시 범위와 축소 하한이 변하지 않는지 검사했다. 확대 상태 유지와 기본 보기 복귀, layer toggle, pan/resize와 입력 불변도 검사했다. 배포 검사는 HTML 진입점 하나와 runtime 의존성의 완전성 및 원본 byte 일치를 확인한다. 현재 offline bundle의 22개 source SHA와 VM/Blob Worker 및 동결된 estimator hash 검사도 통과했다.

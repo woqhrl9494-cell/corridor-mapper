@@ -102,18 +102,18 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}],'p95');
     assert.equal(rectangles.length,1);assert.ok(rectangles[0][3]>=170,'selected metric uses one large plot');
     assertChartGrids('selected history');
-    const display={grid:{nx:2,ny:2,domain:[0,60,0,30]},frame,layers:{showTruth:false},walls:[[[0,-100],[60,100]]],wire:{configs:[{pHat_i:[50,15],pHat_j:[52,15]}]},focus:true};
+    const display={grid:{nx:2,ny:2,domain:[0,60,0,30]},frame,layers:{showTruth:false},walls:[[[0,6],[60,24]]],wire:{configs:[{pHat_i:[50,15],pHat_j:[52,15]}]}};
     map.set(display);map.paint(canvas,2);const view=JSON.parse(canvas.dataset.view);
-    assert.equal(map.camera.cx,48);assert.equal(map.camera.cy,15);
-    assert.ok(view.xmax-view.xmin<40,'current-pose view must magnify the local field');
-    map.set({...display,walls:[[[0,-1000],[60,1000]]]});map.paint(canvas,2);
-    assert.deepEqual(JSON.parse(canvas.dataset.view),view,'hidden truth cannot change the view');
+    assert.equal(map.camera.cx,30);assert.equal(map.camera.cy,15);
+    assert.equal(view.xmax-view.xmin,60*1.04,'automatic fit uses the static scene width');
+    map.set({...display,layers:{showTruth:true}});map.paint(canvas,2);
+    assert.deepEqual(JSON.parse(canvas.dataset.view),view,'actual wall visibility cannot change the view');
     map.fit(true);map.paint(canvas,2);assert.equal(map.camera.cx,30,'full view returns to the public domain');
     map.fit();canvas.clientWidth=1700;canvas.clientHeight=350;
     const card={style:{},parentElement:{clientWidth:1702},firstElementChild:{offsetHeight:68}},body={style:{}};
     canvas.closest=()=>card;canvas.parentElement=body;
     gridSegments.length=0;
-    map.set({...display,focus:false,mode:'geometry',aspectMode:'fill',layers:{showTruth:true},walls:[[[0,6],[60,24]]]});map.paint(canvas,2);
+    map.set({...display,mode:'geometry',aspectMode:'fill',layers:{showTruth:true}});map.paint(canvas,2);
     assert.deepEqual([card.style,body.style],[{},{}],'RAW fitting must leave CSS frame and plot-body dimensions unchanged');
     const wideView=JSON.parse(canvas.dataset.view);
     assert.equal(wideView.plotWidth,1632,'the graph must use the full available panel width');
@@ -144,21 +144,28 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       assert.equal(bottomCanvas.dataset.view,manualView,`${heatField}: showing truth preserves the manual camera`);
       assert.deepEqual(bottom.defaultScale,visibleFloor);
     }
-    const beforeExit=map.state,exitWire={t:80,configs:[{pHat_i:[64,15],pHat_j:[70,16]}]};
-    map.set({...beforeExit,frame:{...frame,t:80},wire:exitWire,layers:{showTruth:true,showVehicles:true},
-      history:[exitWire,{t:81,configs:[{pHat_i:[999,999],pHat_j:[1000,999]}]}]});
-    map.paint(canvas,1);const exitView=JSON.parse(canvas.dataset.view);
-    assert.ok(exitView.xmax>=70 && exitView.xmax<100,'RAW fits the measured open-exit poses and ignores future history');
-    assert.equal(exitView.pixelsPerMetreX,exitView.pixelsPerMetreY);
-    const exitCamera=canvas.dataset.view,exitFloor={...map.defaultScale};
-    map.set({...map.state,layers:{showTruth:false,showVehicles:false}});map.paint(canvas,1);
-    assert.equal(canvas.dataset.view,exitCamera,'RAW layer toggles preserve the full measured exit range');
-    assert.deepEqual(map.defaultScale,exitFloor,'RAW layer toggles preserve the zoom floor');
-    map.fit();map.paint(canvas,1);assert.equal(canvas.dataset.view,exitCamera,'RAW reset is independent of layer visibility');
-    map.set({...map.state,layers:{showTruth:true,showVehicles:true}});map.paint(canvas,1);
-    assert.equal(canvas.dataset.view,exitCamera);
-    const exitField=new DrfMap(makeCanvas());exitField.set({...map.state,mode:undefined,heatField:'Dbar'});exitField.paint(exitField.canvas,1);
-    assert.equal(exitField.camera.cx,30,'Lower field maps retain the wall domain when vehicles pass the exit');
+    const beforeExit=map.state,exitWire={t:80,configs:[{i:1,j:2,pHat_i:[120,15],pHat_j:[150,16]}]};
+    for (const [name,mode,heatField] of [['RAW','geometry','Dbar'],['density',undefined,'Dbar'],['contrast',undefined,'betaHat']]) {
+      const exitMap=name==='RAW' ? map : new DrfMap(makeCanvas()),exitCanvas=exitMap.canvas;
+      exitMap.set({...beforeExit,mode,heatField,aspectMode:'equal'});exitMap.fit();exitMap.paint(exitCanvas,1);
+      const initialCamera={...exitMap.camera},initialView=exitCanvas.dataset.view,initialFloor={...exitMap.defaultScale};
+      const exitState={...exitMap.state,frame:{...frame,t:80},wire:exitWire,proxy:[[300,400]],layers:{showTruth:true,showVehicles:true,showProxy:true},
+        history:[exitWire,{t:81,configs:[{pHat_i:[999,999],pHat_j:[1000,999]}]}]},record=JSON.stringify(exitState);
+      exitMap.set(exitState);exitMap.paint(exitCanvas,1);
+      assert.deepEqual(exitMap.camera,initialCamera,`${name}: advancing outside the map must not recenter or rescale`);
+      assert.equal(exitCanvas.dataset.view,initialView,`${name}: current/past/future poses and wall candidates cannot expand the map`);
+      assert.deepEqual(exitMap.defaultScale,initialFloor,`${name}: advancing cannot alter the zoom floor`);
+      const outside=mapToScreen(exitWire.configs[0].pHat_j,exitMap.camera,exitMap.box);
+      assert.ok(outside[0]>exitMap.box.x+exitMap.box.w,`${name}: the exiting vehicle stays clipped instead of changing the camera`);
+      exitMap.set({...exitState,layers:{showTruth:false,showVehicles:false,showProxy:false}});exitMap.paint(exitCanvas,1);
+      assert.equal(exitCanvas.dataset.view,initialView,`${name}: layer toggles retain the static view`);
+      exitMap.zoom(1.3,[100,80]);exitMap.paint(exitCanvas,1);const manualCamera={...exitMap.camera};
+      exitMap.set({...exitState,frame:{...frame,t:81}});exitMap.paint(exitCanvas,1);
+      assert.deepEqual(exitMap.camera,manualCamera,`${name}: advancing preserves manual zoom`);
+      exitMap.fit();exitMap.paint(exitCanvas,1);
+      assert.equal(exitCanvas.dataset.view,initialView,`${name}: reset restores the initial scene view after vehicles exit`);
+      assert.equal(JSON.stringify(exitState),record,`${name}: fixed framing must not mutate field, measured poses or evaluation candidates`);
+    }
     map.set(beforeExit);map.paint(canvas,1);
     map.zoom(1.3,[100,80]);map.paint(canvas,2);
     const manualCamera={...map.camera},manualView=canvas.dataset.view,manualBox={...map.box};
