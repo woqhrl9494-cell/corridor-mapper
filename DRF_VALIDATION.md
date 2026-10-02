@@ -1,21 +1,22 @@
 # EchoMap DRF 검증 기록
 
-상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. model8 배포 당시 자동 검사 113/113과 현재 수치 source SHA에 연결된 160회 통계를 확인했다. 현재 차량 수를 2–20대로 확장했으며 기본 3대 160회 통계의 수치 결과를 유지한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
+상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 현재 차량 2–20대, 기본/최대 80 snapshots를 지원하며 자동 검사 117/117과 현재 수치 source SHA에 연결된 명시적 60 snapshot 조건의 160회 통계를 확인했다. 160회 결과와 기존 12개 수용 미충족은 유지한다. 끝단 관측 개선과 내부 오차 변화는 별도 60/80 paired 실험으로 기록한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
 
 ## 변경과 재현 조건
 
 - 기준 저장소 commit: `751f34e3d8d7ee1317554672152d6a2563ce2e0c`, 작업 branch: `feat/drf-lab`.
 - SURF 홈 유지, `drf.html` 별도 추가. 승인된 기존 변경은 nav 링크와 글자/컨트롤/표시 여백/문자 대비이다. 기존 알고리즘과 나머지 44개 보호 파일의 SHA-256은 유지한다.
-- 사용자 요청에 따라 첫 화면의 정보량을 늘렸다. 참고 HTML 배치에 맞추어 데스크톱 설정 글자와 축은 14 px 이상, 일반 입력과 실행 버튼 높이는 28–36 px이다. 폭 1680 px 이상의 화면에서는 사이드바를 456 px에서 342 px로 줄이고 설정 라벨과 입력, 지표와 수치를 같은 행에 표시한다. 사후 평가 라벨은 13 px이며 한 줄로 표시한다. 상단 RAW와 하단 행의 비율은 1.3:1에서 1.9:1로 바꿨다. 모바일 DOM 글자는 16 px 이상, 버튼 높이는 44 px 이상이다.
+- 사용자 요청에 따라 첫 화면의 정보량을 늘렸다. 폭 1680 px 이상의 화면에서 342 px 사이드바는 설정만 표시하고, 상단 RAW 오른쪽 300 px 성능창에 Q, 채택/거부 수, path 구성, 평가 6지표와 계산 시간을 배치한다. 하단 세 그래프는 전체 폭에 맞춘다. 상하 행 비율은 1.9:1이며 성능창의 지표 라벨은 한 줄이다. 모바일 DOM 글자는 16 px 이상, 버튼 높이는 44 px 이상이다.
 - 밝은 clay 스타일의 표면과 컨트롤, 흰 plot 배경 및 내부 격자를 적용했다. RAW는 등척을 유지하며 panel 크기를 표시할 metre 범위에 맞춘다. 하단 두 필드에도 기본 등척을 적용하며 선택 가능한 채움 방식을 유지한다. 화면의 도구명은 DRF 시뮬레이터, 소속 표기는 한양대학교 WSL이다.
 - 새 런타임 의존성 없음. Node 표준 라이브러리와 기존 브라우저 API 사용.
 - `file://` 실행을 위한 classic bundle 추가. 기존 esbuild로 동일한 앱과 scenario/field/eval/sweep Worker를 묶고, Worker는 4종의 classic Blob script로 실행한다. provenance와 참조 fixtures JSON도 bundle에 포함하므로 로컬 파일에서 module import나 JSON fetch에 의존하지 않는다.
-- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. 이 truth-side 변경은 model8에 적용했다. 직전 UI 변경에서는 Field/evaluator 누적식과 수치 소스 11개를 수정하지 않았다. 이번 차량 확장은 scenario의 궤적과 입력 범위, sweep의 cache URL을 변경했으며 Field/evaluator 누적식은 유지한다.
+- 새 truth-side 명세에 맞춰 벽별 thinning 전/후 diffuse 개수를 진단 기록에 추가했다. 기존 `generated.diffuse`는 thinning 후, resolution 병합 전 합계로 유지한다. Newton의 불안정 이동과 최종 Fermat 잔차를 검사하고 near-multiple 근 개수를 미확정으로 보고한다. 이 truth-side 변경은 model8에 적용했다. 현재 주행 연장은 scenario의 기본/최대 snapshot 수와 cache URL을 변경하며 0.75 m/snapshot 궤적, 벽, 산란 생성식과 Field/evaluator 누적식은 유지한다.
 
 ```sh
 npm run build:drf-offline
 npm test
 node tests/drf/run-reference.mjs --seed-count 10 --workers 3
+node tests/drf/run-endpoint.mjs
 python3 -m http.server 8871 --bind 127.0.0.1
 ```
 
@@ -38,7 +39,7 @@ HTTP(S)에서는 기존 module 앱과 module Worker를 사용하고, `file://`�
 
 ## 160회 통계 재현
 
-환경: v26.7.0, darwin arm64, 3 workers. 각 조건은 60 snapshots, 150 × 150 격자, seed 1–10. Truth-side 진단과 근 보호, 캐시 URL 수정 후 2026-10-02T02:14:22.179Z 실행은 완료 160/160, 실행 오류 0, 실행 중 소스 변경 없음, 전체 48.057688 s였다. 이전 49.790 s 실행의 160개 input/summary/final 체크섬, aggregate와 실패 행이 모두 정확히 같았다. 수치 소스 11개의 실행 전후 SHA가 현재 파일과 일치한다. 아래 수치 표는 그대로 유지하며 ±는 seed 간 표본 표준편차다.
+환경: v26.7.0, darwin arm64, 3 workers. 각 조건은 명시적 60 snapshots, 150 × 150 격자, seed 1–10이다. model8의 2026-10-02T02:14:22.179Z 실행은 완료 160/160, 실행 오류 0, 전체 48.057688 s이며 이전 실행과 수치가 같았다. 기본/최대 snapshot 수를 80으로 확장한 현재 source의 2026-10-02T05:39:32.596Z 재실행도 완료 160/160, 실행 오류 0, sourcesStable=true, 47.503462416 s이다. 이전 160개 input/summary/final, aggregate/comparisons/failures가 모두 정확히 같고 실행 전후 수치 source 11개의 SHA는 현재 파일과 일치한다. 아래 수치 표는 60 snapshot 조건을 유지하며 ±는 seed 간 표본 표준편차다. 이 결과를 80 snapshot 통계로 해석하지 않는다.
 
 중앙 절대오차 16조건, diffuse 수, 중복 비율, 관측 열 비율, 거칠기 2°의 Theorem 2 평균/중앙은 통과했다. **전체 판정 84/96 통과, 12개 실패**다. 참고 수치는 제공 문서의 3-seed 값이며 원본 집계 정의는 아직 확인하지 못했다.
 
@@ -107,9 +108,9 @@ UI 추가 조작 결과는 [ui-validation.json](tests/drf/ui-validation.json)과
 
 ## 참고 HTML 배치 적용
 
-사용자가 제공한 corridor_mapper.html의 밝은 배경과 배치를 바탕으로 clay 스타일을 적용했다. 왼쪽에는 설정과 수치, 상단에는 측정 타원과 차량 궤적을 표시한다. 하단에는 D̄, β̂, 선택한 시간별 평가 지표를 각각 표시한다. 산란/필드 세부 설정과 표시/레이어는 기본으로 펼쳐 둔다. 큰 데스크톱에서는 입력 라벨과 값, 지표 라벨과 수치를 같은 행에 표시해 모든 설정을 볼 수 있게 했다. 작은 화면에서는 설정과 추가 실험을 스크롤로 접근하고 모바일은 세로로 배치한다.
+사용자가 제공한 corridor_mapper.html의 밝은 배경과 배치를 바탕으로 clay 스타일을 적용했다. 왼쪽에는 설정만, 상단 행에는 측정 타원/차량 궤적과 우측 성능창을 표시한다. Q, 채택/거부 수, path 구성, 평가 6지표와 계산 시간은 성능창으로 옮겼다. 하단 D̄, β̂, 시간별 평가 지표는 그 아래 전체 폭에 맞추어 각각 표시한다. 산란/필드 세부 설정과 표시/레이어는 기본으로 펼쳐 둔다. 큰 데스크톱에서는 설정 라벨과 입력을 같은 행에 표시하고 평가 라벨은 한 줄로 유지한다. 작은 화면에서는 설정과 추가 실험을 스크롤로 접근하고 모바일은 세로로 배치한다.
 
-상단 자동 보기는 명시적으로 켠 평가용 참벽의 범위 또는 공개 60 × 30 m 영역을 사용한다. 하단 필드도 전체 x=0–60 m를 표시한다. 평가용 참벽 표시를 켜면 그 범위에 자동으로 맞추고, 끄면 공개 계산 영역을 사용한다. 차량 주변 24 × 24 m 확대는 기본 화면에서 제거했다. 이후 관측은 보기에 사용하지 않는다. 휠과 드래그는 수동 보기를 유지하며 전체 보기는 공개 계산 영역으로 돌아간다. 계산 격자, 수치 필드와 평가값은 변경하지 않았다.
+상단 자동 보기는 명시적으로 켠 평가용 참벽의 범위 또는 공개 60 × 30 m 영역에서 시작한다. 차량 표시를 켠 RAW는 현재 wire와 선택 시점까지의 과거 측정 pHat 범위를 합쳐 출구를 지난 차량도 표시한다. 미래 관측과 숨겨진 참 위치는 사용하지 않는다. 하단 필드와 계산 격자는 전체 x=0–60 m를 유지하며 차량 주변 24 × 24 m 확대는 기본 화면에서 제거했다. 휠과 드래그는 수동 보기를 유지하고 기본 보기 복원은 같은 인과적 표시 범위를 다시 계산한다. Camera는 추정기 입력과 수치 평가에 영향을 주지 않는다.
 
 RAW는 항상 x/y의 1 m 길이를 같게 표시한다. 공개 영역이나 명시적으로 켠 참벽 범위의 가로세로 비율과 사용할 수 있는 행 높이에 맞추어 panel 자체의 폭과 canvas 높이를 조절한다. RAW 제목과 조작 버튼은 두 행으로 고정해 줄바꿈에 따른 크기 피드백을 줄였다. 이 과정에서 측정 좌표나 추정 수치를 변경하지 않는다.
 
@@ -117,7 +118,7 @@ RAW는 항상 x/y의 1 m 길이를 같게 표시한다. 공개 영역이나 명�
 
 RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도에 내부 격자를 표시한다. 거리 지도 x/y 격자와 profile x 격자는 10 m 간격이며 확대 시에도 물리 간격은 유지한다. 시간별 평가와 분석 그래프의 plot 여백도 줄였다. D̄는 밝은 warm 순차색, β̂는 밝은 blue 순차색이며 정확히 0인 셀은 투명하다. Canvas와 dashboard 크기를 관찰하고 metricChart도 별도로 관찰해 크기 변경 후 다시 그린다.
 
-확대 버튼 옆의 `처음으로`는 세 지도의 확대와 이동만 기본 보기로 복원한다. 현재 snapshot, 기록, 설정과 실행/일시정지/재생 상태를 그대로 유지한다. 축소 버튼과 마우스 휠은 기본 보기의 배율 아래로 축소하지 않는다. 이전의 첫 snapshot 선택과 일시정지 동작은 사용자가 명확히 한 camera-only 요구에 맞춰 제거했다. 이전 버튼 검사 기록은 당시 동작의 기록이며 현재 동작을 뜻하지 않는다.
+확대 버튼 옆의 `처음으로`는 세 지도의 확대와 이동만 기본 보기로 복원한다. 현재 snapshot, 기록, 설정과 실행/일시정지/재생 상태를 그대로 유지한다. 축소 버튼과 마우스 휠은 현재 plot 크기와 표시 범위의 기본 배율 아래로 축소하지 않는다. 그 하한에서 휠로 다시 축소하면 해당 지도의 기본 중심과 배율을 복원한다. 하단 Dbar와 betaHat의 확대, 축소, 처음으로 버튼은 각 지도만 조작한다. 현재 snapshot과 계산 기록은 유지한다. 이전의 첫 snapshot 선택과 일시정지 동작은 사용자가 명확히 한 camera-only 요구에 맞춰 제거했다. 이전 버튼 검사 기록은 당시 동작의 기록이며 현재 동작을 뜻하지 않는다.
 
 직전 clay/RAW 표시 버전의 HTTP module 기본 60 snapshot 실행은 Q=2904, 정반사 369 / diffuse 2535, D̄/β̂ Float32 SHA-256 991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926로 이전 버전과 같았다. 당시 브라우저 경고/오류 기록은 비어 있었으며 `처음으로` 실제 클릭 후 1/60, 전체 기록 보존과 자동 camera 복원을 확인했다. 첫 실행 전에는 평가용 참벽만 미리 표시하며 가짜 필드나 측정값을 생성하지 않는다. 새 truth-side 변경 후 브라우저 확인과는 구분한다.
 
@@ -139,7 +140,7 @@ RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도�
 
 ### 이전 schema 5 표시와 버튼 검사
 
-[density-validation.json](tests/drf/density-validation.json)의 schema 5는 실제 HTTP 화면 검사이며 이전 schema 4 전체는 `previousLayoutEvidence`에 보존한다. 현재 1920 × 930과 1920 × 1080에서 사이드바는 342 px이고 clientHeight/scrollHeight는 각각 876/876 px, 1026/1026 px이다. 설정 컨트롤 28개와 네 canvas가 모두 첫 화면에 보였다. 설정 글자는 최소 14 px, 컨트롤 높이는 최소 28 px이다. 사후 평가 라벨 6개는 13 px, 높이 15.59375 px, line-height 15.6 px로 한 줄이며 잘림이 없었다. 모바일 390 × 844의 document 가로 넘침은 0, DOM 글자는 최소 16 px, 컨트롤 높이는 최소 44 px이다.
+[density-validation.json](tests/drf/density-validation.json)의 schema 5는 이전 실제 HTTP 화면 검사이며 schema 4 전체는 `previousLayoutEvidence`에 보존한다. 당시 1920 × 930과 1920 × 1080에서 사이드바는 342 px이고 clientHeight/scrollHeight는 각각 876/876 px, 1026/1026 px이었다. 설정 컨트롤 28개와 네 canvas가 모두 첫 화면에 보였다. 설정 글자는 최소 14 px, 컨트롤 높이는 최소 28 px이었다. 사후 평가 라벨 6개는 13 px, 높이 15.59375 px, line-height 15.6 px로 한 줄이며 잘림이 없었다. 당시 모바일 390 × 844의 document 가로 넘침은 0, DOM 글자는 최소 16 px, 컨트롤 높이는 최소 44 px이었다.
 
 - 1920 × 930: RAW panel 1156.8125 × 485.625 px, canvas 1154.8125 × 418.125 px, plot 1095 × 356 px, x/y 동일 17.5390038034 px/m.
 - 1920 × 1080: RAW panel 1458.953125 × 583.90625 px, canvas 1456.953125 × 516.40625 px, plot 1397 × 454 px, x/y 동일 22.367156535811 px/m.
@@ -149,11 +150,11 @@ RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도�
 
 직전 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. VM 회귀 검사에는 기록 없는 idle/측정 준비 중 버튼 활성화와 세 camera 복원, 설정/기록/worker/실행 상태 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지가 포함된다. Offline 22개 source bundle과 classic Blob Worker, 44개 보호 파일, 기존 160회 보고서의 수치 source SHA 검사도 통과했다. 직전 표시 수정에서는 수치 소스 11개의 SHA가 그대로여서 160회를 다시 실행하지 않았다. 이번 차량 확장은 다음 별도 기록을 따른다. 참조 수용 기준의 12개 미충족도 유지한다.
 
-## 차량 2–20대 확장
+## 이전 차량 2–20대 확장
 
 기존 3대 제한을 확장하고 실제 20대 궤적과 190쌍을 생성한다. 기존 1–3번 궤적과 공통 쌍의 RNG 주소를 보존한다. 추가 차량은 고정 x0∈[1,14] m 슬롯을 사용하며 60개 시점에서 벽 내부에 머문다. 차량의 차폭과 접속 스케줄은 모델에 포함하지 않는다.
 
-[fleet-validation.json](tests/drf/fleet-validation.json)의 Node 기본 20대 전체 실행은 60/60, 187,631개 경로, 모든 field 값 유한, 최종 SHA `3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254`를 확인했다. 단일 seed 완료 검사이며 20대 성능의 모집단 통계가 아니다. 계산 시간과 단일 process의 표본 메모리는 HTTP 화면 및 Worker 메모리와 구분한다.
+[fleet-validation.json](tests/drf/fleet-validation.json)의 이전 Node 20대 전체 실행은 60/60, 187,631개 경로, 모든 field 값 유한, 최종 SHA `3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254`를 확인했다. 단일 seed 완료 검사이며 20대 성능의 모집단 통계가 아니다. 계산 시간과 단일 process의 표본 메모리는 HTTP 화면 및 Worker 메모리와 구분한다.
 
 기본 3대 160회 통계도 새 source로 다시 실행했다. 46.974087 s, 실행 오류 0, sourcesStable=true이며 이전 160개의 input/summary/final과 aggregate/comparisons/failures는 정확히 같다. 참조 수용 조건은 84/96 통과, 기존 12개 미충족이다.
 
@@ -163,7 +164,7 @@ RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도�
 
 차량 확장 수정 당시 HTTP module 화면에서 차량 20대, 60/60, Q=187631과 같은 최종 필드 SHA를 확인했다. 1920×930 content viewport에서 사이드바는 342 px, clientHeight/scrollHeight=876/876 px이고 28개 설정 컨트롤과 네 canvas가 모두 첫 화면에 보였다. 마지막 시점의 측정 4326개 중 타원 541개가 표시됐다. 생성 중 취소는 기록 0개와 실행 가능 상태로 돌아갔고, 완료 후 `처음으로`는 1/60을 선택하며 60개 기록을 유지했다. Console warning/error는 0개였다. 20대 수치 폭으로 하단 설명이 5 px 잘린 문제는 desktop section 상하 여백 2→1 px로 해결했다. 이 마지막 CSS/cache/bundle 수정 후 관련 7개 표시·버튼·offline 검사는 모두 통과했다. 실제 file 화면 검증으로 확대하지 않는다.
 
-## 보기 초기화와 축소 하한 수정
+## 이전 보기 초기화와 축소 하한 수정
 
 `처음으로`에서 첫 snapshot 선택, 재생 정지와 실행 일시정지를 제거했다. 세 지도의 camera 복원만 수행하므로 현재 시점과 기록, 입력, worker와 실행/재생 상태를 유지한다. 기본 배율은 현재 plot 크기와 표시 범위의 CSS px/m로 계산하며 버튼과 휠에서 두 축 모두 그 배율보다 작아지지 않게 제한한다. 화면 크기나 표시 범위 변경 때도 하한을 갱신한다. 이동 중심과 확대 anchor를 보존한다.
 
@@ -172,3 +173,17 @@ RAW, D̄/β̂, 시간별 평가, Sweep, 히스토그램, profile 및 산점도�
 HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 그대로였다. 세 지도를 확대하고 이동한 뒤 `처음으로`를 눌렀을 때 60/60과 상태, 기록 및 수치는 그대로이고 세 camera가 기본 보기로 복원됐다. 59/60을 따로 선택한 검사도 그 시점을 유지했다. 반복 축소 버튼과 세 지도의 휠 축소는 초기 배율에서 멈췄다. Console warning/error는 0개였다. 상세 기록은 [view-reset-validation.json](tests/drf/view-reset-validation.json)이다.
 
 수치 source 11개와 기존 160회 reference 보고서의 SHA가 일치하므로 수치 실험은 다시 실행하지 않았다. 기존 참조 수용 조건 12개 미충족도 그대로이다. offline 22개 source bundle을 다시 생성하고 검사했으며 실제 file 화면 검증으로 확대하지 않는다.
+
+## 2026-10-02 주행 연장과 성능창 이동
+
+기본/최대 snapshot 수를 80으로 늘렸다. 차량은 원래 0.75 m/snapshot 식을 계속 사용하며 벽 길이, 계산 영역과 산란/누적식은 유지한다. x=60 m는 닫힌 끝벽이 없는 열린 출구이며 20대의 t=80 참 x 범위는 61–74 m이다. 이동량을 실제 속도로 해석할 물리 dt는 없다. 두 Float32 field history는 기본 80×150²에서 14.4 MB, 최대 80×200²에서 25.6 MB이며 T*G 상한은 3.2×10⁶이다. Truth/wire와 Worker 복사본 비용은 이 값에 포함하지 않는다.
+
+[endpoint-validation.json](tests/drf/endpoint-validation.json)은 2/3대와 seed 1–5의 10개 paired 조건을 기록한다. 같은 80개 wire를 순서대로 누적하고 60/80번째 결과를 비교한다. x=55–60 m의 벽별 51표본에 현재까지의 hit가 1 m 이내로 들어온 비율은 양벽 모두 0%에서 100%로 증가했다. 기본 3대/seed 1의 끝단 아래/위 벽 proxy P95는 5.852/5.174 m에서 0.0589/0.1354 m로 감소했다. 반면 내부 x=10–50 m P95는 0.829에서 0.937 m로 증가했고 2대의 끝단 proxy에는 모호성이 남는다. 관측률 개선을 전체 정확도나 최종 추출기 성능 개선으로 주장하지 않는다. 누락 proxy는 문자열 `Infinity`로 보존한다. GT와 이 진단은 평가에만 사용한다.
+
+독립 60/80 생성의 첫 60개 truth/wire가 같고, 60번째 field SHA는 기존 `991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926`와 같다. 미래 truth를 추가해도 실제 60번째 frame의 평가 출력 전체는 같았다. 현재 80번째 기본 Node/HTTP 결과는 Q=3609, Float32 field SHA `99ed8989b86da39ddd824608f05bf6178ca2efc06b07e50de69b858246755049`로 일치한다.
+
+현재 전체 `npm test`는 117/117 통과, 실패 0, 17.856888625 s이다. 명시적 60 snapshot 조건의 160회 재실행은 47.503462416 s, 완료 160/160, 실행 오류 0, sourcesStable=true이며 기존 input/summary/final/aggregate/comparisons/failures를 모두 유지했다. 수용 조건 84/96 통과와 12개 미충족은 그대로이며 80 snapshot의 새 통계 수용 판정을 의미하지 않는다.
+
+작은 그래프 틀의 첫 페인트는 RAW가 CSS 초기 크기에서 최종 등척 크기로 조정되기 전에 보이던 화면이다. `#mapCanvas[data-view]` 준비 전 dashboard를 숨겨 최종 camera와 표시 크기 계산 뒤 공개한다. RAW 자동 범위에는 현재/과거 측정 pHat만 합치며 미래는 제외한다. 기본 축소 하한에서 휠 축소를 하면 해당 지도만 기본 보기로 돌아가고, 하단 Dbar/β̂의 −/＋/처음으로는 각 지도를 독립 조작하며 snapshot과 기록을 유지한다.
+
+상단 행의 RAW 오른쪽에 300 px 성능창을 배치하고 왼쪽은 설정만 남겼다. 하단 세 그래프는 전체 폭에 맞춘다. 실제 HTTP 1920×930에서 성능창 clientHeight/scrollHeight는 484/484 px, 사이드바는 876/876 px이고 평가 라벨의 두 줄 표시가 없었다. 실제 기본 80/80 실행, 하단 독립 조작과 휠 하한 복원의 상태 보존, 모바일 버튼 44 px 및 콘솔 경고/오류 0개는 [view-controls-validation.json](tests/drf/view-controls-validation.json)의 `finalEndpointAndPerformanceLayout`에 기록했다. 같은 파일의 초기 116개 검사와 이전 배치 기록은 당시 증거로 유지한다. 이 기록은 로컬 HTTP/Node 검증이며 공개 배포 완료와 실제 file 화면 실행의 검증은 별도로 판정한다.

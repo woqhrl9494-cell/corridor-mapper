@@ -1,0 +1,502 @@
+{
+  "schema": "echomap-drf-view-controls-validation/1",
+  "verifiedAt": "2026-10-02T05:35:45.491Z",
+  "scope": "HTTP UI. Actual file browser was not tested.",
+  "tests": {
+    "passed": 116,
+    "failed": 0,
+    "durationMs": 3525.926667
+  },
+  "startup": {
+    "before": {
+      "rawWidth": 682,
+      "visibility": "visible",
+      "hasMapView": false
+    },
+    "fixedPending": {
+      "rawWidth": 682,
+      "visibility": "hidden",
+      "hasMapView": false
+    },
+    "fixedReady": {
+      "rawWidth": 1156.8125,
+      "visibility": "visible",
+      "hasMapView": true,
+      "unchangedFinalLayout": true
+    }
+  },
+  "localControls": {
+    "selected": {
+      "q": "258",
+      "state": "paused",
+      "status": "필드 계산 1 / 60",
+      "time": "1 / 60"
+    },
+    "lowerButtonResetIndependent": true,
+    "allThreeWheelResetToDefault": true,
+    "selectionPreserved": true,
+    "defaults": {
+      "contrastCanvas": {
+        "scaleX": 6.378205128205128,
+        "scaleY": 6.378205128205128,
+        "xmin": -1.2000000000000028,
+        "xmax": 61.2,
+        "ymin": 4.804423389662761,
+        "ymax": 25.343116856999444
+      },
+      "densityCanvas": {
+        "scaleX": 6.378205128205128,
+        "scaleY": 6.378205128205128,
+        "xmin": -1.2000000000000028,
+        "xmax": 61.2,
+        "ymin": 4.804423389662761,
+        "ymax": 25.343116856999444
+      },
+      "mapCanvas": {
+        "scaleX": 17.539003803411266,
+        "scaleY": 17.539003803411266,
+        "xmin": -1.2161401033229424,
+        "xmax": 61.21614010332294,
+        "ymin": 4.924961103437983,
+        "ymax": 25.222579143224223
+      }
+    }
+  },
+  "responsive": {
+    "desktopSidebar": {
+      "height": 876,
+      "scrollHeight": 876
+    },
+    "desktopLowerToolbarOverflow": false,
+    "mobile": {
+      "dashboardVisibility": "visible",
+      "hasMapView": true,
+      "lowerToolbars": [
+        {
+          "buttons": [
+            {
+              "height": 44,
+              "label": "−",
+              "width": 111.328125
+            },
+            {
+              "height": 44,
+              "label": "＋",
+              "width": 111.34375
+            },
+            {
+              "height": 44,
+              "label": "처음으로",
+              "width": 111.328125
+            }
+          ],
+          "scrollWidth": 344,
+          "width": 344
+        },
+        {
+          "buttons": [
+            {
+              "height": 44,
+              "label": "−",
+              "width": 111.328125
+            },
+            {
+              "height": 44,
+              "label": "＋",
+              "width": 111.34375
+            },
+            {
+              "height": 44,
+              "label": "처음으로",
+              "width": 111.328125
+            }
+          ],
+          "scrollWidth": 344,
+          "width": 344
+        }
+      ],
+      "pageWidth": 390,
+      "scrollWidth": 390,
+      "state": "paused",
+      "time": "1 / 60"
+    }
+  },
+  "consoleWarningsErrors": [],
+  "finalEndpointAndPerformanceLayout": {
+    "capturedAt": "2026-10-02T05:45:11.998Z",
+    "scope": "HTTP module browser; file UI not tested",
+    "tests": {
+      "passed": 117,
+      "failed": 0,
+      "durationMs": 17856.888625
+    },
+    "default80Run": {
+      "hash": "99ed8989b86da39ddd824608f05bf6178ca2efc06b07e50de69b858246755049",
+      "q": "3609",
+      "state": "done",
+      "status": "계산 완료 · 측정 생성 0.82 s · 참조 .m 원본 대조 미완료",
+      "time": "80 / 80",
+      "views": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 16.10019451554141,
+          "pixelsPerMetreY": 16.10019451554141,
+          "plotHeight": 327,
+          "plotWidth": 1171,
+          "xmax": 71.33334744012865,
+          "xmin": -1.3986930870613463,
+          "ymax": 25.228926934770527,
+          "ymin": 4.918613311891679
+        }
+      }
+    },
+    "default80Layout": {
+      "charts": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 6.378205128205128,
+          "pixelsPerMetreY": 6.378205128205128,
+          "plotHeight": 131,
+          "plotWidth": 398,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 25.343116856999444,
+          "ymin": 4.804423389662761
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 16.10019451554141,
+          "pixelsPerMetreY": 16.10019451554141,
+          "plotHeight": 327,
+          "plotWidth": 1171,
+          "xmax": 71.33334744012865,
+          "xmin": -1.3986930870613463,
+          "ymax": 25.228926934770527,
+          "ymin": 4.918613311891679
+        }
+      },
+      "contrast": {
+        "clientHeight": 254,
+        "height": 255.859375,
+        "scrollHeight": 254,
+        "width": 507.671875,
+        "x": 871.65625,
+        "y": 562.125
+      },
+      "dashboardVisibility": "visible",
+      "density": {
+        "clientHeight": 254,
+        "height": 255.859375,
+        "scrollHeight": 254,
+        "width": 507.65625,
+        "x": 354,
+        "y": 562.125
+      },
+      "mapRow": {
+        "clientHeight": 486,
+        "height": 486.125,
+        "scrollHeight": 486,
+        "width": 1542.984375,
+        "x": 354,
+        "y": 66
+      },
+      "metrics": {
+        "clientHeight": 254,
+        "height": 255.859375,
+        "scrollHeight": 254,
+        "width": 507.65625,
+        "x": 1389.328125,
+        "y": 562.125
+      },
+      "performance": {
+        "clientHeight": 484,
+        "height": 486.125,
+        "scrollHeight": 484,
+        "width": 300,
+        "x": 1596.984375,
+        "y": 66
+      },
+      "raw": {
+        "clientHeight": 454,
+        "height": 456.296875,
+        "scrollHeight": 454,
+        "width": 1233,
+        "x": 354,
+        "y": 66
+      },
+      "sidebar": {
+        "clientHeight": 876,
+        "height": 876,
+        "scrollHeight": 876,
+        "width": 342,
+        "x": 0,
+        "y": 54
+      },
+      "snapshots": "80",
+      "state": "done",
+      "statsInsideSidebar": false,
+      "viewsScrollTop": 0,
+      "wrappedMetricLabels": []
+    },
+    "buttons": {
+      "densityOwnZoom": true,
+      "densityOthersUnchanged": true,
+      "contrastOwnZoom": true,
+      "allRestored": true,
+      "simulationPreserved": true
+    },
+    "wheelAtFloor": {
+      "pannedAll": true,
+      "resetAll": true,
+      "simulationPreserved": true
+    },
+    "mobile390": {
+      "buttons": [
+        {
+          "height": 44,
+          "id": "densityZoomOut",
+          "width": 106.328125
+        },
+        {
+          "height": 44,
+          "id": "densityZoomIn",
+          "width": 106.34375
+        },
+        {
+          "height": 44,
+          "id": "densityResetView",
+          "width": 106.328125
+        },
+        {
+          "height": 44,
+          "id": "contrastZoomOut",
+          "width": 106.328125
+        },
+        {
+          "height": 44,
+          "id": "contrastZoomIn",
+          "width": 106.34375
+        },
+        {
+          "height": 44,
+          "id": "contrastResetView",
+          "width": 106.328125
+        }
+      ],
+      "columns": "351px",
+      "documentWidth": 375,
+      "labels": [
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "누적 채택 Q_t",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "채택 / 거부",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 311,
+          "text": "평가용 경로",
+          "width": 311
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "중앙 [m]",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "P95 [m]",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "off-wall [%]",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "F1 · 0.4 m",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "CA-MSD [m]",
+          "width": 146
+        },
+        {
+          "height": 20,
+          "lineHeight": "20px",
+          "scrollWidth": 146,
+          "text": "CA-HD95 [m]",
+          "width": 146
+        }
+      ],
+      "performanceClient": 455,
+      "performanceScroll": 455,
+      "performanceWidth": 351,
+      "sidebarWidth": 375,
+      "viewport": 390
+    },
+    "desktop1440": {
+      "charts": {
+        "contrastCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 3.974358974358974,
+          "pixelsPerMetreY": 3.974358974358974,
+          "plotHeight": 121,
+          "plotWidth": 248,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 30.296350768492395,
+          "ymin": -0.14881052183018895
+        },
+        "densityCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 3.974358974358974,
+          "pixelsPerMetreY": 3.974358974358974,
+          "plotHeight": 121,
+          "plotWidth": 248,
+          "xmax": 61.2,
+          "xmin": -1.2000000000000028,
+          "ymax": 30.296350768492395,
+          "ymin": -0.14881052183018895
+        },
+        "mapCanvas": {
+          "aspectMode": "equal",
+          "auto": true,
+          "pixelsPerMetreX": 10.476813168951798,
+          "pixelsPerMetreY": 10.476813168951798,
+          "plotHeight": 213,
+          "plotWidth": 762,
+          "xmax": 71.33334744012865,
+          "xmin": -1.3986930870613463,
+          "ymax": 25.239075000162774,
+          "ymin": 4.90846524649943
+        }
+      },
+      "contrast": {
+        "clientHeight": 244,
+        "height": 245.515625,
+        "scrollHeight": 244,
+        "width": 357.671875,
+        "x": 691.65625,
+        "y": 452.46875
+      },
+      "dashboardVisibility": "visible",
+      "density": {
+        "clientHeight": 244,
+        "height": 245.515625,
+        "scrollHeight": 244,
+        "width": 357.65625,
+        "x": 324,
+        "y": 452.46875
+      },
+      "mapRow": {
+        "clientHeight": 466,
+        "height": 466.46875,
+        "scrollHeight": 466,
+        "width": 1092.984375,
+        "x": 324,
+        "y": -24
+      },
+      "metrics": {
+        "clientHeight": 244,
+        "height": 245.515625,
+        "scrollHeight": 244,
+        "width": 357.65625,
+        "x": 1059.328125,
+        "y": 452.46875
+      },
+      "performance": {
+        "clientHeight": 464,
+        "height": 466.46875,
+        "scrollHeight": 464,
+        "width": 259.1875,
+        "x": 1157.796875,
+        "y": -24
+      },
+      "raw": {
+        "clientHeight": 340,
+        "height": 342.140625,
+        "scrollHeight": 340,
+        "width": 824,
+        "x": 324,
+        "y": -24
+      },
+      "sidebar": {
+        "clientHeight": 846,
+        "height": 846,
+        "scrollHeight": 1091,
+        "width": 312,
+        "x": 0,
+        "y": 54
+      },
+      "snapshots": "80",
+      "state": "done",
+      "statsInsideSidebar": false,
+      "viewsScrollTop": 90,
+      "wrappedMetricLabels": []
+    },
+    "consoleWarningsOrErrors": []
+  }
+}

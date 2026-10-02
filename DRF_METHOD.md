@@ -8,9 +8,9 @@ DRF 시뮬레이터는 simulator, estimator, evaluator를 분리한 브라우저
 
 기준 장면은 world coordinate system의 `[0,60] × [0,30]` m 영역이다. 아래 벽 knot 높이는 `[8,6,9,7.5,10,8,7]`, 위 벽은 `[22,24,21,23.5,20,22.5,23]`, knot x는 `0:10:60` m이다. `notAKnot`은 cubic interpolating spline이며 B-spline 근사가 아니다. 같은 길이의 x/y 입력에 not-a-knot 경계조건을 쓰는 [MATLAB spline 문서](https://www.mathworks.com/help/matlab/ref/spline.html)에 따른다. 랜덤 장면은 이 knot 높이를 seed로 ±0.5 m 이내에서 변경하는 탐색용 장면이며 참조 통계 비교 대상에서 제외한다.
 
-차량 ID v=1,2,3의 참 위치는 x=4,7,10 m에서 출발해 snapshot마다 0.75 m씩 증가한다. y는 `15 + 2 sin(2πx/30 + v)` m이다. 새 명세의 0-based 궤적 인덱스에 1을 더한 ID이며 RNG와 wire에서도 이 ID를 유지한다. 기준 입력은 차량 3대, snapshot 60개, isotropic 위치 표준편차 0.1 m, range 표준편차 0.1 m, roughness 2°, intensity 10/m, 목표 cell 길이 0.02 m, resolution 0 m, specular true, seed 1이다. 기준 추정기 설정은 격자 150×150, band 4, exact perimeter이다. grid/band/perimeter는 입력 envelope에 보관하지만 벽과 측정 생성식에는 사용하지 않는다. UI가 허용하는 범위는 차량 2–20대, snapshot 1–60개, 격자 100/150/200이다.
+차량 ID v=1,2,3의 참 위치는 x=4,7,10 m에서 출발해 snapshot마다 0.75 m씩 증가한다. y는 `15 + 2 sin(2πx/30 + v)` m이다. 새 명세의 0-based 궤적 인덱스에 1을 더한 ID이며 RNG와 wire에서도 이 ID를 유지한다. 기본 입력은 차량 3대, snapshot 80개, isotropic 위치 표준편차 0.1 m, range 표준편차 0.1 m, roughness 2°, intensity 10/m, 목표 cell 길이 0.02 m, resolution 0 m, specular true, seed 1이다. 기준 추정기 설정은 격자 150×150, band 4, exact perimeter이다. grid/band/perimeter는 입력 envelope에 보관하지만 벽과 측정 생성식에는 사용하지 않는다. UI가 허용하는 범위는 차량 2–20대, snapshot 1–80개, 격자 100/150/200이다. 기존 160회 참조 통계는 비교 조건을 유지하기 위해 명시적으로 60 snapshots를 사용한다.
 
-추가 차량 ID v=4,…,20은 x0=1+13(v−4)/16 m에서 출발하고 같은 0.75 m/snapshot 이동식과 y 식을 사용한다. 고정 슬롯을 쓰므로 차량 수나 전체 snapshot 수를 바꿔도 공통 차량의 궤적과 RNG 주소는 바뀌지 않는다. t=1,…,60에서 모든 참 위치가 코리도 내부에 머문다. 이들은 점 차량이며 실제 차량의 차폭, 충돌 회피와 무선 접속 스케줄을 모사하지 않는다. 160회 참조 통계는 기본 3대 조건이며 20대 단일 실행을 그 통계와 혼용하지 않는다.
+추가 차량 ID v=4,…,20은 x0=1+13(v−4)/16 m에서 출발하고 같은 0.75 m/snapshot 이동식과 y 식을 사용한다. 고정 슬롯을 쓰므로 차량 수나 전체 snapshot 수를 바꿔도 공통 차량의 궤적과 RNG 주소는 바뀌지 않는다. t=1,…,60에서 모든 참 위치가 코리도 내부에 머문다. 이후에는 x=60 m에서 끝나는 유한 벽의 열린 출구를 통과하며 닫힌 끝벽이나 벽 외삽은 추가하지 않는다. t=80의 기본 3대 x는 64/67/70 m, 20대 x 범위는 61–74 m이다. 기존 60개 시점의 truth/wire prefix와 필드는 유지한다. 이들은 점 차량이며 실제 차량의 차폭, 충돌 회피와 무선 접속 스케줄을 모사하지 않는다. 160회 참조 통계는 기본 3대 조건이며 20대 단일 실행을 그 통계와 혼용하지 않는다.
 입력 제한은 위치/range 표준편차 각각 0–2 m, roughness 0–20°, intensity 0–30/m, cell step 0.005–0.2 m, resolution ablation 0–2 m, seed uint32이다. 두 표준편차를 동시에 0으로 만들 수 없다. 실제 cell의 양의 residual variance 조건은 field가 추가로 검사한다.
 
 - 위치와 산란점: 길이 2의 `[x,y]`, 단위 m.
@@ -168,7 +168,7 @@ C는 snapshot당 차량 pair 수, G는 grid cell 수, P는 configuration당 path
 
 Simulator는 configuration마다 M개 quadrature cell과 방출 표본을 처리한다. S개 wall span과 root 비용 R을 두면 최악 visibility 비용은 path당 `O(SR)`, categorical 선택은 `O(log M)`이다. Poisson sampling 비용은 기대 방출 수에 비례한다. Root degree는 9 이하이나 ill-conditioned/multiple roots의 처리 시간과 정확도는 별도 진단 대상이다. Not-a-knot dense solve는 `O(K³)`이며 기준 K=7이다.
 
-단일 실행에서 두 Float32 field history의 비용은 `8*T*G` bytes이다. 기준 60×150²에서는 10.8 MB, 최대 지원 60×200²에서는 19.2 MB이다. 이는 전체 RAM 사용량이 아니다. Truth/wire는 `O(T*C*P)`, evaluator의 모든 누적 ratio history를 보관하면 최악 `O(T²*C*P)`, proxy/observed history와 worker 복사본도 추가된다. 현재 입력 범위에서는 T*G≤2.4×10⁶이므로 첨부의 5×10⁶ keyframe 조건에 도달하지 않는다. 범위 확장 시 keyframe 저장이나 메모리 제한을 먼저 구현해야 한다.
+단일 실행에서 두 Float32 field history의 비용은 `8*T*G` bytes이다. 기본 80×150²에서는 14.4 MB, 최대 지원 80×200²에서는 25.6 MB이다. 기존 60×150²의 10.8 MB와 비교하면 field history만 33.3% 증가한다. 이는 전체 RAM 사용량이 아니다. Truth/wire는 `O(T*C*P)`, evaluator의 모든 누적 ratio history를 보관하면 최악 `O(T²*C*P)`, proxy/observed history와 worker 복사본도 추가된다. 현재 입력 범위에서는 T*G≤3.2×10⁶이므로 첨부의 5×10⁶ keyframe 조건에 도달하지 않는다. 범위 확장 시 keyframe 저장이나 메모리 제한을 먼저 구현해야 한다.
 
 `runExperiment`는 field frame history를 보관하지 않는다. Browser sweep pool은 기본 `hardwareConcurrency−1`개 worker를 사용하며 실행 중 cancellation은 worker를 종료한다. Worker가 보낸 final 두 field는 pool의 완료 record에서 제거하고 scalar summary만 보관한다. 따라서 UI의 완료 job 보관 비용은 `O(J)`이며 J는 완료한 job 수이다. 개별 worker 실행의 임시 field와 truth 비용은 별도로 남는다. Node runner도 final field를 SHA-256으로 축약하고 scalar summary만 저장한다. 실제 메모리와 실행 속도는 장면, path 수, worker 수, 기기에서 측정해야 한다.
 
@@ -176,9 +176,11 @@ Snapshot index와 0.75 m/snapshot은 물리적 Δt를 지정하지 않는다. �
 
 ## 화면과 기본 보기
 
-데스크톱 사이드바는 456 px에서 342 px로 줄이고, 상단 RAW와 하단 그래프의 행 비율은 1.3:1에서 1.9:1로 바꿨다. RAW의 x/y 1 m는 같은 화면 길이이다. 하단 Dbar/β̂도 기본 등척이며 차량 주변 24 m 확대 대신 전체 x=0–60 m를 표시한다. 평가용 참벽 표시를 켜면 그 벽 범위에 자동으로 맞추고, 끄면 공개 계산 영역 [0,60] × [0,30] m를 사용한다. 자동 보기의 참벽은 표시와 평가 전용이며 추정기 입력에 연결되지 않는다. 선택 가능한 `필드 채움`은 하단 필드의 x/y 화면 배율을 독립적으로 사용한다. 거리 지도 x/y 격자와 profile x 격자는 10 m 간격이며 휠 확대에도 물리 간격은 유지한다.
+데스크톱 사이드바는 342 px로 설정만 표시한다. 상단 행은 RAW와 우측 성능창으로 구성하고, 성능창은 화면 폭에 따라 240–300 px이다. 현재 Q, 채택/거부 수, path 구성, 평가 6지표와 계산 시간을 성능창에서 함께 표시한다. 하단 Dbar, β̂와 시간별 평가 그래프는 그 아래 전체 폭에 맞추며 상하 행 비율은 1.9:1이다. RAW의 x/y 1 m는 같은 화면 길이이다. 하단 두 필드도 기본 등척이며 전체 x=0–60 m를 표시한다. 평가용 참벽 표시를 켜면 그 벽 범위, 끄면 공개 계산 영역 [0,60] × [0,30] m를 자동 보기의 시작 범위로 사용한다. 차량 표시를 켠 RAW는 선택 시점까지의 측정 pHat 범위를 합쳐 출구를 지난 차량도 표시한다. 미래 관측이나 숨겨진 truth 위치는 이 범위 확장에 사용하지 않는다. 표시용 참벽과 camera는 추정기 입력에 연결되지 않는다. 선택 가능한 `필드 채움`은 하단 필드의 x/y 화면 배율을 독립적으로 사용한다. 거리 지도 x/y 격자와 profile x 격자는 10 m 간격이며 휠 확대에도 물리 간격은 유지한다.
 
-`처음으로`는 실행 전에도 활성화하며 세 지도의 확대와 이동만 기본 보기로 복원한다. 선택 snapshot, 누적 기록, 설정, 실행/일시정지 상태, 재생과 진행 중 worker를 그대로 유지한다. 진행 중인 계산은 원래의 live-follow 설정대로 계속된다. 축소 버튼과 마우스 휠은 현재 plot 크기와 표시 범위로 계산한 기본 배율까지만 축소한다. 두 조작은 측정 생성식과 수치 필드, 평가식을 변경하지 않는다.
+최초 CSS 크기와 RAW의 최종 등척 크기 사이에서 작은 그래프 틀이 잠깐 보이는 것을 막기 위해 `#mapCanvas[data-view]`가 준비될 때까지 dashboard를 숨긴다. 첫 camera와 표시 크기를 계산한 뒤 그래프 행을 공개하며 초기화 중 가짜 필드나 관측은 만들지 않는다.
+
+`처음으로`는 실행 전에도 활성화하며 세 지도의 확대와 이동만 기본 보기로 복원한다. 선택 snapshot, 누적 기록, 설정, 실행/일시정지 상태, 재생과 진행 중 worker를 그대로 유지한다. 진행 중인 계산은 원래의 live-follow 설정대로 계속된다. 축소 버튼과 마우스 휠은 현재 plot 크기와 표시 범위의 기본 배율 아래로 축소하지 않는다. 그 하한에서 휠로 다시 축소하면 해당 지도의 기본 중심과 배율을 복원한다. 하단 Dbar와 betaHat의 확대, 축소, 처음으로 버튼은 각 지도만 조작한다. 현재 snapshot과 계산 기록은 유지한다.
 
 ## 검증과 내보내기
 
@@ -187,6 +189,7 @@ npm run build:drf-offline
 npm test
 npm run test:legacy-dom
 node tests/drf/run-reference.mjs --seed-count 10 --workers 3
+node tests/drf/run-endpoint.mjs
 python3 -m http.server 8871 --bind 127.0.0.1
 ```
 
@@ -204,11 +207,11 @@ Runner는 browser sweep과 같은 `runExperiment`/`aggregateRuns`를 사용한�
 
 직전 표시 수정 후 자동 검사는 113/113 통과, 실패 0, 14.65061275 s였다. 실행 전/측정 준비 중 `처음으로`의 camera 복원과 설정/기록/worker 보존, 처리 중 결과 도착 뒤 첫 snapshot 선택 유지도 VM 회귀 검사에 포함한다. 수치 소스 11개의 SHA가 기존 160회 통계 보고서와 일치하므로 그 표시 수정에서는 160회를 다시 실행하지 않았다. 원본 22개 offline bundle과 44개 보호 파일 검사도 통과했다. 이전 schema 5 실제 화면 기록은 [density-validation.json](tests/drf/density-validation.json)의 schema 5이며, 이전 schema 4는 `previousLayoutEvidence`에 보존한다.
 
-## 20대 규모 확장 검증
+## 이전 20대 규모 확장 검증
 
 차량 수 입력은 정수 2–20을 허용한다. 실제 생성기와 field 연결을 검사하는 `node --test tests/drf/fleet.test.mjs`는 190개 유일 차량 쌍, 쌍 간 공유 pHat, 기존 3대/5대 공통 쌍의 truth와 wire 일치, 미래 snapshot 설정 독립성과 유한 필드를 확인한다.
 
-20대 기본값, 60 snapshot, 150×150, seed 1의 Node 전체 실행은 187,631개 경로를 모두 채택했다. 생성 17.186 s, 전체 31.949 s, field snapshot p50/p95 217.028/232.608 ms였다. 모든 frame과 evaluation을 보존한 단일 Node process의 snapshot별 표본 RSS 최대값은 330,694,656 byte였다. 이는 browser Worker 복제 메모리나 정확한 process 최대 RSS를 측정한 값이 아니다. 최종 필드 SHA는 `3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254`이다. 조건과 결과는 [fleet-validation.json](tests/drf/fleet-validation.json)에 기록한다.
+이전 20대, 60 snapshot, 150×150, seed 1의 Node 전체 실행은 187,631개 경로를 모두 채택했다. 생성 17.186 s, 전체 31.949 s, field snapshot p50/p95 217.028/232.608 ms였다. 모든 frame과 evaluation을 보존한 단일 Node process의 snapshot별 표본 RSS 최대값은 330,694,656 byte였다. 이는 browser Worker 복제 메모리나 정확한 process 최대 RSS를 측정한 값이 아니다. 최종 필드 SHA는 `3b3897843980dd07c6ac99c0a407ec0677f1750f73328fde6703c7d132c6c254`이다. 조건과 결과는 [fleet-validation.json](tests/drf/fleet-validation.json)에 기록한다.
 
 새 생성기 source로 기본 3대 160회를 다시 실행했다. 완료 160/160, 실행 오류 0, 46.974087 s이며 기존 160개 input/summary/final 체크섬, aggregate와 실패 행이 정확히 같았다. 84/96 수용 조건 통과와 12개 미충족은 유지된다. 새 report의 실행 전후 수치 source SHA가 일치한다.
 
@@ -218,7 +221,7 @@ RAW 타원은 전체 측정 중 일정 stride로 최대 600개만 그린다. 현
 
 차량 확장 수정 당시 HTTP module 화면에서 차량 20대, 60/60, Q=187631과 같은 최종 필드 SHA를 확인했다. 1920×930 content viewport에서 사이드바는 342 px, clientHeight/scrollHeight=876/876 px이고 28개 설정 컨트롤과 네 canvas가 모두 첫 화면에 보였다. 마지막 시점의 측정 4326개 중 타원 541개가 표시됐다. 생성 중 취소는 기록 0개와 실행 가능 상태로 돌아갔고, 완료 후 `처음으로`는 1/60을 선택하며 60개 기록을 유지했다. Console warning/error는 0개였다. 20대 수치 폭으로 하단 설명이 5 px 잘린 문제는 desktop section 상하 여백 2→1 px로 해결했다. 이 마지막 CSS/cache/bundle 수정 후 관련 7개 표시·버튼·offline 검사는 모두 통과했다. 실제 file 화면 검증으로 확대하지 않는다.
 
-## 보기 초기화와 축소 하한 수정
+## 이전 보기 초기화와 축소 하한 수정
 
 `처음으로`에서 첫 snapshot 선택, 재생 정지와 실행 일시정지를 제거했다. 세 지도의 camera 복원만 수행하므로 현재 시점과 기록, 입력, worker와 실행/재생 상태를 유지한다. 기본 배율은 현재 plot 크기와 표시 범위의 CSS px/m로 계산하며 버튼과 휠에서 두 축 모두 그 배율보다 작아지지 않게 제한한다. 화면 크기나 표시 범위 변경 때도 하한을 갱신한다. 이동 중심과 확대 anchor를 보존한다.
 
@@ -227,3 +230,13 @@ RAW 타원은 전체 측정 중 일정 stride로 최대 600개만 그린다. 현
 HTTP 실제 화면에서 기본 60 snapshot의 Q=2904와 최종 Float32 SHA는 그대로였다. 세 지도를 확대하고 이동한 뒤 `처음으로`를 눌렀을 때 60/60과 상태, 기록 및 수치는 그대로이고 세 camera가 기본 보기로 복원됐다. 59/60을 따로 선택한 검사도 그 시점을 유지했다. 반복 축소 버튼과 세 지도의 휠 축소는 초기 배율에서 멈췄다. Console warning/error는 0개였다. 상세 기록은 [view-reset-validation.json](tests/drf/view-reset-validation.json)이다.
 
 수치 source 11개와 기존 160회 reference 보고서의 SHA가 일치하므로 수치 실험은 다시 실행하지 않았다. 기존 참조 수용 조건 12개 미충족도 그대로이다. offline 22개 source bundle을 다시 생성하고 검사했으며 실제 file 화면 검증으로 확대하지 않는다.
+
+## 2026-10-02 주행 연장과 화면 조작 검증
+
+기본/최대 snapshot 수를 80으로 늘리고 원래 0.75 m/snapshot 궤적, 벽 길이와 누적식을 유지했다. [run-endpoint.mjs](tests/drf/run-endpoint.mjs)는 2/3대와 seed 1–5의 10개 조건을 같은 80개 measurement wire로 인과적으로 누적하며 60번째와 80번째 결과를 비교한다. 끝단 x=55–60 m의 벽별 51개 평가 표본에서 현재까지 방출된 hit와 1 m 이내인 비율을 관측률로 정의한다. Proxy 오차는 해당 구간의 격자 13열에서 절대 y 오차로 측정하고 0.4 m 기준 recall을 함께 기록한다. 추출 누락은 Infinity 실패로 보존한다. 모든 GT, 관측 mask와 끝단 진단은 평가에만 사용한다.
+
+[endpoint-validation.json](tests/drf/endpoint-validation.json)의 10개 조건에서 양벽 끝단 관측률은 0%에서 100%로 증가했다. 기본 3대/seed 1의 아래/위 벽 proxy P95는 5.852/5.174 m에서 0.0589/0.1354 m로 감소했고, Q는 2904에서 3609로 증가했다. 같은 조건의 내부 x=10–50 m P95는 0.829에서 0.937 m로 증가했다. 2대에서는 관측률 100%에도 proxy 모호성이 남으므로 전체 정확도 개선이나 최종 wall extractor 성능을 주장하지 않는다. 독립 60/80 생성의 첫 60개 truth/wire와 기존 최종 필드 SHA가 같고, 미래 truth 추가가 실제 60번째 평가 출력에 영향을 주지 않는 것도 검사했다.
+
+현재 `npm test`는 117/117 통과, 실패 0, 17.856888625 s이다. 새 source로 명시적 60 snapshot 조건의 160회 참조 실험도 다시 실행했다. 완료 160/160, 실행 오류 0, sourcesStable=true, 47.503462416 s이며 이전 input/summary/final, aggregate와 comparisons가 모두 같다. 참조 수용 조건은 84/96 통과, 기존 12개 미충족을 유지한다. 현재 보고서는 [validation-results.json](tests/drf/validation-results.json)이다.
+
+HTTP 1920×930 화면 검사에서 우측 성능창의 clientHeight/scrollHeight는 484/484 px, 설정 사이드바는 876/876 px이고 평가 라벨은 한 줄이다. 기본 80/80 실행의 Q=3609와 Float32 field SHA `99ed8989b86da39ddd824608f05bf6178ca2efc06b07e50de69b858246755049`는 Node와 일치했다. 휠 축소 하한에서 해당 지도 기본 보기로 복원하고 하단 지도별 −/＋/처음으로가 현재 snapshot과 기록을 유지한다. [view-controls-validation.json](tests/drf/view-controls-validation.json)의 `finalEndpointAndPerformanceLayout`에 최종 117개 검사와 새 성능창 검사를 기록했으며 초기 116개 검사와 이전 배치 증거는 따로 유지한다. 이 절은 로컬 HTTP/Node 검증이며 공개 배포 완료나 실제 file 화면 실행을 의미하지 않는다.

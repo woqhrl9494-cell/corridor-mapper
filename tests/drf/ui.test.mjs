@@ -8,7 +8,7 @@ import { createWalls, sampleWalls } from '../../drf/wall.mjs';
 
 test('DRF DOM contract and readable stylesheet', () => {
   const html=readFileSync(new URL('../../drf.html',import.meta.url),'utf8');
-  const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas contrastCanvas historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue medianValue p95Value offwallValue f1Value msdValue hd95Value timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
+  const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas densityZoomOut densityZoomIn densityResetView contrastCanvas contrastZoomOut contrastZoomIn contrastResetView historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue medianValue p95Value offwallValue f1Value msdValue hd95Value timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
   for (const id of ids) assert.equal([...html.matchAll(new RegExp(`id="${id}"`,'g'))].length,1,id);
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   for (const path of ['../../drf/style.css','../../surf/style.css']) {
@@ -146,6 +146,15 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       bottom.set({...bottom.state,walls:[[[0,-1000],[60,1000]]]});bottom.paint(bottomCanvas,2);
       assert.equal(bottomCanvas.dataset.view,hiddenView,`${heatField}: hidden truth must not change the public full view`);
     }
+    const beforeExit=map.state,exitWire={t:80,configs:[{pHat_i:[64,15],pHat_j:[70,16]}]};
+    map.set({...beforeExit,frame:{...frame,t:80},wire:exitWire,layers:{showTruth:true,showVehicles:true},
+      history:[exitWire,{t:81,configs:[{pHat_i:[999,999],pHat_j:[1000,999]}]}]});
+    map.paint(canvas,1);const exitView=JSON.parse(canvas.dataset.view);
+    assert.ok(exitView.xmax>=70 && exitView.xmax<100,'RAW fits the measured open-exit poses and ignores future history');
+    assert.equal(exitView.pixelsPerMetreX,exitView.pixelsPerMetreY);
+    const exitField=new DrfMap(makeCanvas());exitField.set({...map.state,mode:undefined,heatField:'Dbar'});exitField.paint(exitField.canvas,1);
+    assert.equal(exitField.camera.cx,30,'Lower field maps retain the wall domain when vehicles pass the exit');
+    map.set(beforeExit);map.paint(canvas,1);
     map.zoom(1.3,[100,80]);map.paint(canvas,2);
     const manualCamera={...map.camera},manualView=canvas.dataset.view,manualBox={...map.box};
     labels.length=0;assert.ok(await map.png() instanceof Blob);
@@ -223,27 +232,50 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.deepEqual([...frame.Dbar],[0,1,2,3]);assert.deepEqual([...frame.betaHat],[0,...new Float32Array([.2,.5]),1]);
     for (const [name,mode,heatField,aspectMode] of [['RAW','geometry','Dbar','fill'],['density',undefined,'Dbar','equal'],['contrast',undefined,'betaHat','fill']]) {
       const floorCanvas=makeCanvas(),floorMap=new DrfMap(floorCanvas),near=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${name}: ${a} != ${b}`);
-      floorMap.set({grid:{nx:2,ny:2,domain:[0,60,0,30]},frame,mode,heatField,aspectMode,layers:{}});floorMap.paint(floorCanvas,2);
+      const selectedFrame={...frame,t:59,Q:2859};
+      floorMap.set({grid:{nx:2,ny:2,domain:[0,60,0,30]},frame:selectedFrame,wire:{t:59,configs:[]},history:[{t:59}],mode,heatField,aspectMode,layers:{}});floorMap.paint(floorCanvas,2);
+      const viewState=floorMap.state,recordBefore=JSON.stringify(viewState);
       const initial={...floorMap.camera},anchor=[floorMap.box.x+floorMap.box.w*.3,floorMap.box.y+floorMap.box.h*.6];
       floorMap.zoom(1/1.3);assert.deepEqual(floorMap.camera,initial,`${name}: minus button cannot shrink the default view`);
       assert.equal(floorMap.auto,true,`${name}: a blocked zoom must preserve automatic fit`);
       let prevented=false;
       floorCanvas.listeners.wheel({deltaY:1e6,offsetX:anchor[0],offsetY:anchor[1],preventDefault(){prevented=true;}});
+      floorMap.paint(floorCanvas,1);
       assert.equal(prevented,true);assert.deepEqual(floorMap.camera,initial,`${name}: wheel cannot shrink the default view`);
+      const wheel=deltaY=> {floorCanvas.listeners.wheel({deltaY,offsetX:anchor[0],offsetY:anchor[1],preventDefault(){}});floorMap.paint(floorCanvas,1);};
+      const pan=()=> {
+        floorCanvas.listeners.pointerdown({button:0,pointerId:1,clientX:anchor[0],clientY:anchor[1]});
+        floorCanvas.listeners.pointermove({clientX:anchor[0]+25,clientY:anchor[1]+17,offsetX:anchor[0]+25,offsetY:anchor[1]+17});
+        floorCanvas.listeners.pointerup();
+      };
+      pan();const pannedDefault={...floorMap.camera};
+      floorMap.zoom(1/1.3);assert.deepEqual(floorMap.camera,pannedDefault,`${name}: minus at the floor preserves manual panning`);
+      wheel(0);assert.deepEqual(floorMap.camera,pannedDefault,`${name}: zero wheel delta must not reset the view`);
+      wheel(1);assert.deepEqual(floorMap.camera,initial,`${name}: further wheel zoom-out at the floor restores the default centre and scale`);
+      assert.equal(floorMap.auto,true,`${name}: wheel reset restores automatic fit`);
       const world=mapToWorld(anchor,floorMap.camera,floorMap.box);
       floorCanvas.listeners.wheel({deltaY:-Math.log(2)*1000,offsetX:anchor[0],offsetY:anchor[1],preventDefault(){}});
       mapToWorld(anchor,floorMap.camera,floorMap.box).forEach((value,k)=>near(value,world[k]));
       near(floorMap.camera.scaleX,initial.scaleX*2);near(floorMap.camera.scaleY,initial.scaleY*2);
-      floorCanvas.listeners.pointerdown({button:0,pointerId:1,clientX:anchor[0],clientY:anchor[1]});
-      floorCanvas.listeners.pointermove({clientX:anchor[0]+25,clientY:anchor[1]+17,offsetX:anchor[0]+25,offsetY:anchor[1]+17});
-      floorCanvas.listeners.pointerup();
+      pan();
       assert.equal(floorMap.auto,false);assert.ok(floorMap.camera.cx!==initial.cx || floorMap.camera.cy!==initial.cy,`${name}: panning remains available`);
       const pannedWorld=mapToWorld(anchor,floorMap.camera,floorMap.box);
-      floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);
+      wheel(1e6);
       near(floorMap.camera.scaleX,initial.scaleX);near(floorMap.camera.scaleY,initial.scaleY);
+      assert.equal(floorMap.auto,false,`${name}: the first wheel zoom-out from above the floor reaches the floor without resetting`);
       mapToWorld(anchor,floorMap.camera,floorMap.box).forEach((value,k)=>near(value,pannedWorld[k]));
       const fittedSpan=JSON.parse(floorCanvas.dataset.view);
       near(fittedSpan.xmax-fittedSpan.xmin,floorMap.box.w/initial.scaleX);near(fittedSpan.ymax-fittedSpan.ymin,floorMap.box.h/initial.scaleY);
+      wheel(1);assert.deepEqual(floorMap.camera,initial,`${name}: only the subsequent wheel zoom-out resets the view`);
+      pan();floorMap.camera.scaleX*=1+8*Number.EPSILON;floorMap.camera.scaleY*=1+8*Number.EPSILON;
+      wheel(1);assert.deepEqual(floorMap.camera,initial,`${name}: floating-point roundoff must not prevent floor reset`);
+      pan();floorMap.camera.scaleX*=1+2e-12;floorMap.camera.scaleY*=1+2e-12;
+      wheel(1e6);assert.equal(floorMap.auto,false,`${name}: a view above the tolerance still reaches the floor first`);
+      wheel(1);assert.deepEqual(floorMap.camera,initial);
+      assert.equal(floorMap.state,viewState,`${name}: wheel reset preserves the selected display state`);
+      assert.equal(floorMap.state.frame,selectedFrame);assert.equal(floorMap.state.frame.t,59);assert.equal(floorMap.state.frame.Q,2859);
+      assert.equal(JSON.stringify(viewState),recordBefore,`${name}: wheel reset must not mutate fields, measurements or history`);
+      pan();
       const panCenter=[floorMap.camera.cx,floorMap.camera.cy],axisRatio=floorMap.camera.scaleX/floorMap.camera.scaleY;
       floorCanvas.clientWidth=1400;floorCanvas.clientHeight=700;floorMap.paint(floorCanvas,2);
       const expected=()=> {
@@ -265,7 +297,13 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9,`${name}: a smaller viewport allows only its own default floor`);
       assert.ok(Math.abs(floorMap.camera.scaleX-minimum[0])<1e-9 || Math.abs(floorMap.camera.scaleY-minimum[1])<1e-9,`${name}: zoom-out must reach the floor instead of retaining a stale large-view minimum`);
       floorMap.fit();floorMap.paint(floorCanvas,1);near(floorMap.camera.scaleX,minimum[0]);near(floorMap.camera.scaleY,minimum[1]);
-      near(floorMap.camera.cx,30);near(floorMap.camera.cy,15);assert.equal(floorMap.state.frame,frame);
+      near(floorMap.camera.cx,30);near(floorMap.camera.cy,15);assert.equal(floorMap.state.frame,selectedFrame);
+      if (mode!=='geometry' && aspectMode==='fill') {
+        floorMap.zoom(2,anchor);floorCanvas.clientWidth=1400;floorMap.paint(floorCanvas,1);minimum=expected();
+        near(floorMap.camera.scaleX,minimum[0]);assert.ok(floorMap.camera.scaleY>minimum[1],`${name}: resize can put only one independent axis at its floor`);
+        wheel(1);near(floorMap.camera.scaleX,minimum[0]);near(floorMap.camera.scaleY,minimum[1]);
+        near(floorMap.camera.cx,30);near(floorMap.camera.cy,15);assert.equal(floorMap.auto,true,`${name}: a wheel attempt at either limiting axis restores both default scales`);
+      }
       floorMap.zoom(1e9,anchor);assert.ok(floorMap.camera.scaleX<=100000 && floorMap.camera.scaleY<=100000,`${name}: retain the existing maximum scale`);
       floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);
       assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9);

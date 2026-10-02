@@ -40,7 +40,7 @@ const rgb = (c) => `rgb(${c.join(",")})`;
 const numberLabel = (x) => !Number.isFinite(x) ? "—" : x !== 0 && (Math.abs(x) < .001 || Math.abs(x) >= 1e4) ? x.toExponential(1) : Number(x.toPrecision(3)).toString();
 
 /** Presentation only. Input field is iy*nx+ix with y ascending; canvas y is inverted.
- * O(nx*ny + displayed paths) per field update; O(nx*ny) heatmap memory.
+ * O(nx*ny + history pairs + displayed paths) per field update; O(nx*ny) heatmap memory.
  * Simulator truth is used only by explicit evaluation overlays, never sent to field.
  */
 export class DrfMap {
@@ -61,7 +61,13 @@ export class DrfMap {
     if (dashboard) resize.observe(dashboard);
     new MutationObserver(() => this.draw()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => this.draw());
-    canvas.addEventListener("wheel", (e) => { e.preventDefault(); this.zoom(Math.exp(-e.deltaY*.001),[e.offsetX,e.offsetY]); }, { passive:false });
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      // At the limiting axis, another zoom-out restores the view; simulation state is untouched.
+      const atFloor=this.camera && this.defaultScale && Math.max(this.defaultScale.scaleX/this.camera.scaleX,this.defaultScale.scaleY/this.camera.scaleY)>=1-1e-12;
+      if (e.deltaY>0 && atFloor) this.fit();
+      else this.zoom(Math.exp(-e.deltaY*.001),[e.offsetX,e.offsetY]);
+    }, { passive:false });
     canvas.addEventListener("pointerdown", (e) => { if (e.button !== 0) return; canvas.setPointerCapture(e.pointerId); this.pointer = [e.clientX,e.clientY]; });
     canvas.addEventListener("pointermove", (e) => {
       if (!this.camera || !this.box) return;
@@ -83,7 +89,8 @@ export class DrfMap {
     const previous=this.state;
     this.state=state;
     if (state.aspectMode !== previous.aspectMode) {this.auto=true;this.camera=null;}
-    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || state.layers?.showTruth !== previous.layers?.showTruth || (state.focus && !this.fullDomain && state.frame !== previous.frame))) this.camera=null;
+    if (this.auto && (state.grid !== previous.grid || state.walls !== previous.walls || state.layers?.showTruth !== previous.layers?.showTruth || (state.focus && !this.fullDomain && state.frame !== previous.frame)
+      || (state.mode==='geometry' && (state.frame !== previous.frame || state.wire !== previous.wire || state.layers?.showVehicles !== previous.layers?.showVehicles)))) this.camera=null;
     if (state.frame !== previous.frame || state.grid !== previous.grid || state.heatField !== previous.heatField || state.scaleMode !== previous.scaleMode) this.buildHeat();
     this.draw();
   }
@@ -134,6 +141,15 @@ export class DrfMap {
         const cy=Math.max(domain[2]+12,Math.min(domain[3]-12,n ? poses.reduce((s,p)=>s+p[1],0)/n : (domain[2]+domain[3])/2));
         bounds={xmin:cx-12,xmax:cx+12,ymin:cy-12,ymax:cy+12};
     } else if (!this.fullDomain && this.state.layers?.showTruth && this.state.walls?.flat().length) bounds=boundsOf(this.state.walls.flat());
+    // RAW includes only poses measured through the selected snapshot, including the open exit.
+    // The inference grid and the lower field maps retain their fixed [0,60] x [0,30] m domain.
+    if (geometry && this.state.layers?.showVehicles) {
+      const snapshots=[...(this.state.history ?? []).filter(s=>s.t<=(this.state.frame?.t ?? 0)),this.state.wire];
+      for (const snapshot of snapshots) for (const c of snapshot?.configs ?? []) for (const p of [c.pHat_i,c.pHat_j]) {
+        if (snapshot.t>(this.state.frame?.t ?? 0) || p?.length!==2 || !p.every(Number.isFinite)) continue;
+        bounds={xmin:Math.min(bounds.xmin,p[0]),xmax:Math.max(bounds.xmax,p[0]),ymin:Math.min(bounds.ymin,p[1]),ymax:Math.max(bounds.ymax,p[1])};
+      }
+    }
     const panel=this.canvas.closest?.('.map-panel'),dashboard=panel?.parentElement,body=this.canvas.parentElement;
     if (geometry && target===this.canvas && dashboard && body && dashboard.clientWidth>0) {
       const rowHeight=matchMedia('(min-width: 1000px)').matches ? parseFloat(getComputedStyle(dashboard).gridTemplateRows) : Infinity;

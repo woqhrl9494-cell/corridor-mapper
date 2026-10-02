@@ -10,7 +10,7 @@ import { createRng } from './rng.mjs';
 import { makeWire } from './wire.mjs';
 
 export const DEFAULT_INPUT = Object.freeze({
-  scene: 'reference', vehicles: 3, snapshots: 60, sigmaP: 0.1, sigmaD: 0.1,
+  scene: 'reference', vehicles: 3, snapshots: 80, sigmaP: 0.1, sigmaD: 0.1,
   roughness: 2, lambda0: 10, cellStep: 0.02, resolution: 0, specular: true,
   grid: 150, band: 4, perimeter: 'exact', seed: 1,
 });
@@ -24,8 +24,8 @@ export function normalizeInput(raw = {}) {
   p.band = p.band === 'full' ? 'full' : Number(p.band);
   p.specular = p.specular === true || p.specular === 'true';
   if (!['reference', 'random'].includes(p.scene)) throw new Error('Unknown corridor scene');
-  if (!Number.isInteger(p.vehicles) || p.vehicles < 2 || p.vehicles > 20 || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 60)
-    throw new Error('Reference trajectories support 2–20 vehicles and 1–60 snapshots');
+  if (!Number.isInteger(p.vehicles) || p.vehicles < 2 || p.vehicles > 20 || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 80)
+    throw new Error('Reference trajectories support 2–20 vehicles and 1–80 snapshots');
   if (![100, 150, 200].includes(p.grid) || ![3, 4, 5, 'full'].includes(p.band) || !['exact', 'ramanujan'].includes(p.perimeter))
     throw new Error('Unsupported numerical setting');
   if (p.sigmaP < 0 || p.sigmaD < 0 || p.sigmaP > 2 || p.sigmaD > 2 || p.sigmaP + p.sigmaD === 0)
@@ -38,7 +38,9 @@ export function normalizeInput(raw = {}) {
 export function truePoses(t, vehicles = 3) {
   return Array.from({ length: vehicles }, (_, v) => {
     // Preserve V1–V3 and all shared RNG addresses. Fixed extra slots keep fleet prefixes equal.
-    // Point-vehicle trajectories: x0 in [1,14], so x(t) remains inside [0,60] for t=1..60.
+    // Point vehicles retain 0.75 m/snapshot independently of the requested duration.
+    // x0 in [1,14]: t=1..60 stays inside; by t=80 all exit the open wall end x=60.
+    // Walls remain finite [0,60] spans; outgoing poses are neither clipped nor extrapolated.
     const x0 = v < 3 ? 4 + 3 * v : 1 + 13 * (v - 3) / 16;
     const x = x0 + 0.75 * t;
     return [x, 15 + 2 * Math.sin(2 * Math.PI * x / 30 + v + 1)];

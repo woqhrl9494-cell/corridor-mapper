@@ -114,8 +114,23 @@ dd { margin: 3px 0 0; font: 600 18px/1.15 "DM Mono", ui-monospace, SFMono-Regula
 .views { min-width: 0; padding: 12px; background: var(--color-bg); }
 .primary-workspace { display: flex; flex-direction: column; gap: 8px; min-height: 640px; }
 .dashboard { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: minmax(0,1.9fr) minmax(0,1fr); gap: 10px; flex: 1; min-height: 0; }
+/* Keep measured layout, but reveal graphs only after RAW sizing and its first paint. */
+.dashboard:not(:has(#mapCanvas[data-view])) { visibility: hidden; }
 .view { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--color-line); border-radius: var(--radius-panel); overflow: hidden; background: var(--color-surface-1); box-shadow: var(--shadow-clay); }
-.map-panel { grid-column: 1/-1; justify-self: center; align-self: start; max-width: 100%; }
+.map-row { grid-column: 1/-1; display: grid; grid-template-columns: minmax(0,1fr) clamp(240px,18vw,300px); grid-template-rows: minmax(0,1fr); gap: 10px; min-width: 0; min-height: 0; }
+.map-slot { display: grid; grid-template-rows: minmax(0,1fr); min-width: 0; min-height: 0; }
+.map-panel { justify-self: center; align-self: start; max-width: 100%; }
+.performance-panel { padding: 10px; gap: 6px; overflow-y: auto; }
+.performance-panel > .section-title { margin: 0; font-size: 15px; }
+.performance-panel h3.section-title { margin: 0; font-size: 14px; }
+.performance-panel .metrics { gap: 5px; }
+.performance-panel .metrics > div { padding: 4px 6px; }
+.performance-panel dt { font-size: 14px; white-space: nowrap; line-height: 1.25; }
+.performance-panel dd { margin-top: 3px; font-size: 18px; white-space: nowrap; }
+.performance-panel .path-composition { display: block; }
+.performance-panel #pathValue { margin-top: 3px; font-size: 14px; text-align: left; white-space: normal; }
+.performance-panel .timing-label { margin-top: auto; padding-top: 6px; border-top: 1px solid var(--color-line); font-size: 14px; line-height: 1.5; }
+.performance-panel .timing { display: block; }
 .map-panel .view-body { flex: none; height: 340px; }
 .map-panel .vlabel { display: grid; grid-template-columns: minmax(0,1fr); gap: 4px; }
 .map-panel .vlabel > div:first-child { flex-wrap: nowrap; white-space: nowrap; }
@@ -127,6 +142,8 @@ dd { margin: 3px 0 0; font: 600 18px/1.15 "DM Mono", ui-monospace, SFMono-Regula
 .evaluation .tag { color: var(--color-eval); }
 .view-unit { font-size: 14px; color: var(--color-ink-muted); }
 .field-label { display: block; }
+.field-heading > div:first-child { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.field-label .map-toolbar { margin-left: auto; flex-wrap: nowrap; }
 .view-hint { margin-top: 3px; font-size: 14px; color: var(--color-ink-muted); font-weight: 400; }
 .view-body { flex: 1; min-width: 0; min-height: 0; background: var(--color-plot-bg); }
 .dashboard-canvas { display: block; width: 100%; height: 100%; }
@@ -221,18 +238,6 @@ dialog p + p { margin-top: 14px; }
   .sidebar summary { min-height: 24px; padding: 3px 0; line-height: 1.3; }
   .sidebar details[open] > summary { margin-bottom: 2px; }
   .sidebar .display-settings[open] > summary { padding-bottom: 3px; }
-  .sidebar .metrics { gap: 4px; }
-  .sidebar .metrics > div { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-height: 28px; padding: 3px 6px; }
-  .sidebar .metrics dt { font-size: 13px; white-space: nowrap; }
-  .sidebar .metrics dd { margin: 0; font-size: 16px; white-space: nowrap; }
-  .sidebar .path-metrics > div:not(.path-composition) { flex-wrap: wrap; }
-  .sidebar .path-metrics dd { margin-left: auto; }
-  .sidebar .evaluation-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
-  .sidebar .evaluation-metrics > div { display: block; min-height: 48px; padding: 4px 6px; }
-  .sidebar .evaluation-metrics dd { margin-top: 2px; }
-  .sidebar #pathValue { white-space: normal; }
-  .sidebar .results-panel h3 { margin-top: 6px; }
-  .sidebar .timing-label { margin-top: 4px; }
   .sidebar .layer-groups fieldset { margin-top: 4px; }
   .sidebar .layer-groups legend { margin-bottom: 4px; line-height: 1.2; }
   .sidebar .toggle-row { gap: 4px; }
@@ -245,7 +250,10 @@ dialog p + p { margin-top: 14px; }
   .workspace { grid-template-columns: 280px minmax(0,1fr); }
   .primary-workspace { min-height: 0; }
   .dashboard { grid-template-columns: 1fr; grid-template-rows: auto; flex: none; }
-  .map-panel { grid-column: auto; }
+  .map-row { grid-column: auto; grid-template-columns: minmax(0,1fr); grid-template-rows: auto; }
+  .map-slot { grid-template-rows: auto; }
+  .performance-panel { gap: 8px; }
+  .performance-panel .timing-label { margin-top: 0; }
   .view-body { height: 300px; flex: none; }
   #viewMain .view-body { height: 340px; }
   #viewMetrics .view-body { height: 340px; }
@@ -272,6 +280,9 @@ dialog p + p { margin-top: 14px; }
   .run-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .run-actions .primary { grid-column: 1/-1; }
   .evaluation-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .performance-panel { padding: 12px; }
+  .performance-panel dt,.performance-panel #pathValue,.performance-panel .timing-label { font-size: 16px; }
+  .performance-panel dd { font-size: 22px; }
   dd { font-size: 22px; }
   #pathValue { font-size: 16px; }
   .views { padding: 12px; }

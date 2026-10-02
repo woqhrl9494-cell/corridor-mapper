@@ -10,6 +10,18 @@ const section=(start,end)=>{
   return source.slice(a,b);
 };
 
+test('actual lower-map buttons affect only their own camera',()=>{
+  const nodes=new Map(),calls=[],$=id=>{if (!nodes.has(id)) nodes.set(id,{});return nodes.get(id);};
+  const view=name=>({zoom:factor=>calls.push([name,'zoom',factor]),fit:()=>calls.push([name,'fit'])});
+  vm.runInNewContext(section("for (const [prefix,view] of [['density'","$('configSelect').onchange"),
+    {$,densityMap:view('density'),contrastMap:view('contrast')});
+  for (const prefix of ['density','contrast']) {
+    $(prefix+'ZoomIn').onclick();$(prefix+'ZoomOut').onclick();$(prefix+'ResetView').onclick();
+  }
+  assert.deepEqual(calls,[['density','zoom',1.3],['density','zoom',1/1.3],['density','fit'],
+    ['contrast','zoom',1.3],['contrast','zoom',1/1.3],['contrast','fit']]);
+});
+
 test('actual view reset preserves simulation, selection and replay; experiment reset still clears them',async()=>{
   const nodes=new Map(),pending=new Map(),charts=new Map();let nextFrame=0,stoppedWorkers=0,cancelledSweeps=0,fitCalls=0,releaseField;
   const $=id=>{

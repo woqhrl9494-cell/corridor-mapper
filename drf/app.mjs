@@ -1,8 +1,8 @@
-import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-fleet11';
+import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass17';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-fleet11';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-viewreset14';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-endpass17';
 import { createWalls, sampleWalls } from './wall.mjs';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -24,7 +24,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-fleet11`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-endpass17`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -237,6 +237,11 @@ document.addEventListener('keydown', event => {
 });
 for (const id of ['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved', 'heatField', 'scaleMode','historyMetric','aspectMode']) $(id).onchange = renderSelected;
 $('fitView').onclick = () => { for (const view of [map,densityMap,contrastMap]) view.fit(true); }; $('zoomIn').onclick = () => map.zoom(1.3); $('zoomOut').onclick = () => map.zoom(1 / 1.3);
+for (const [prefix,view] of [['density',densityMap],['contrast',contrastMap]]) {
+  $(prefix+'ZoomIn').onclick = () => view.zoom(1.3);
+  $(prefix+'ZoomOut').onclick = () => view.zoom(1 / 1.3);
+  $(prefix+'ResetView').onclick = () => view.fit();
+}
 $('configSelect').onchange = updateProfile;
 $('aboutButton').onclick = () => $('aboutDialog').showModal(); $('closeAbout').onclick = () => $('aboutDialog').close();
 $('themeButton').onclick = () => {

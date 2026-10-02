@@ -1,0 +1,1397 @@
+{
+  "schema": "echomap-drf-endpoint-validation/1",
+  "date": "2026-10-02T05:39:35.131Z",
+  "command": "node tests/drf/run-endpoint.mjs",
+  "sourceSHA256": {
+    "drf/rng.mjs": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
+    "drf/poly.mjs": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
+    "drf/wall.mjs": "dc2a7ce0404c9034c47b83365a3575462f4b8e32043ee90dcc6ba9e7cd90e440",
+    "drf/specular.mjs": "4d9b42edcd25625078f8239813108ef08dbd5fb59da60ebc3ae4a90a853f2eb4",
+    "drf/diffuse.mjs": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
+    "drf/scenario.mjs": "f4b357c6e1fe85aac371d0476f11068ac937e0b5a7025ca8e08e2a4ce7e86d31",
+    "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72",
+    "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+    "drf/evaluate.mjs": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
+    "drf/sweep.mjs": "6b038e75bf9895f575a96a7cd8424a24fb75a88cc42566687c2bd4d06a478800",
+    "wall_metrics.js": "f8ff5b04d61c9cdbfbd6208851e7c947732df67402d907e92e35567b7a0be290"
+  },
+  "byteOrder": "LE",
+  "dtype": "Float32Array",
+  "original60PrefixEqual": true,
+  "original60FieldHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+  "protocol": {
+    "vehicles": [
+      2,
+      3
+    ],
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "snapshots": [
+      60,
+      80
+    ],
+    "grid": [
+      150,
+      150
+    ],
+    "gridDomainM": [
+      0,
+      60,
+      0,
+      30
+    ],
+    "routeStepMPerSnapshot": 0.75,
+    "endpointXM": [
+      55,
+      60
+    ],
+    "samplesPerWall": 51,
+    "sampleStepXM": 0.1,
+    "observedHitRadiusM": 1,
+    "proxyToleranceM": 0.4,
+    "missingProxyError": "Infinity",
+    "standardErrorXM": [
+      10,
+      50
+    ]
+  },
+  "limitations": [
+    "Ground truth and endpoint diagnostics are evaluation-only.",
+    "The outer-peak proxy uses a corridor prior; observed coverage does not guarantee extraction accuracy.",
+    "Two vehicles retain endpoint ambiguity despite 100% observed coverage.",
+    "Internal median/P95 can worsen while endpoint coverage improves.",
+    "Walls end at x=60 m with an open exit; extended point vehicles may travel outside the finite wall interval.",
+    "One snapshot is a sampling index; 0.75 m/snapshot is not a specified physical speed."
+  ],
+  "finalFleetXRangeM": [
+    61,
+    74
+  ],
+  "runs": [
+    {
+      "vehicles": 2,
+      "seed": 1,
+      "input": {
+        "scene": "reference",
+        "vehicles": 2,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 1
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 1084,
+          "fieldHash": "ccb99cc4ae97a834009ffb59908879f676844f662b9ea5727c22b571d12bd36f",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 3,
+              "proxyRecall04": 0,
+              "proxyMedian": 4.230303822202444,
+              "proxyP95": "Infinity"
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 4,
+              "proxyRecall04": 0,
+              "proxyMedian": 5.828911321387146,
+              "proxyP95": "Infinity"
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.3309467227747813,
+            "p95": 2.4663567329073928,
+            "observedFraction": 0.835,
+            "coverage": 0.821939586645469,
+            "f1": 0.5375720439240429,
+            "caMsd": 0.7687932625564559,
+            "caHd95": 3.2155295614962,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 1349,
+          "fieldHash": "708cf3c6932f79bad08fd3e670b6ecef5a3e031e140977772b59ec98f33dca9a",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 1,
+              "diffuse": 53,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.9230769230769231,
+              "proxyMedian": 0.06667403816408779,
+              "proxyP95": 0.946315433789132
+            },
+            {
+              "wall": 1,
+              "specular": 3,
+              "diffuse": 49,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.5384615384615384,
+              "proxyMedian": 0.10973658612806148,
+              "proxyP95": 2.0269850737626385
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.33094672551383386,
+            "p95": 2.5798708498757783,
+            "observedFraction": 0.875,
+            "coverage": 1,
+            "f1": 0.612647931861949,
+            "caMsd": 0.570520504454495,
+            "caHd95": 2.357277664033433,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 2,
+      "seed": 2,
+      "input": {
+        "scene": "reference",
+        "vehicles": 2,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 2
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 1061,
+          "fieldHash": "eb97d56f69794b15522206dc67c8dcb6d1eaf351bad1f9bb0b8edf5a382f5942",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 3,
+              "proxyRecall04": 0,
+              "proxyMedian": 4.438262274150574,
+              "proxyP95": "Infinity"
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 4,
+              "proxyRecall04": 0,
+              "proxyMedian": 5.814300807900473,
+              "proxyP95": "Infinity"
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.4297419488483589,
+            "p95": 2.4959656798681387,
+            "observedFraction": 0.835,
+            "coverage": 0.8203497615262321,
+            "f1": 0.486374726597039,
+            "caMsd": 0.8554930266142976,
+            "caHd95": 4.635367379759946,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 1313,
+          "fieldHash": "701efbab0cfefd840904eecf82519b0338567c9587d5aacb138ad1074ad64581",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 1,
+              "diffuse": 53,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.14211479286986517,
+              "proxyP95": 0.18014962412360624
+            },
+            {
+              "wall": 1,
+              "specular": 3,
+              "diffuse": 50,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 1.7724430256265755,
+              "proxyP95": 2.245694781198761
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.3842169671454343,
+            "p95": 2.4648133658281903,
+            "observedFraction": 0.875,
+            "coverage": 1,
+            "f1": 0.5466315611488202,
+            "caMsd": 0.6329611168488256,
+            "caHd95": 2.1902797474278697,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 2,
+      "seed": 3,
+      "input": {
+        "scene": "reference",
+        "vehicles": 2,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 3
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 1043,
+          "fieldHash": "8a8d9acff51b96673d646e572f5d030791b74d4417e7da23654d583e59508d7f",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 3,
+              "proxyRecall04": 0,
+              "proxyMedian": 4.11788268247536,
+              "proxyP95": "Infinity"
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 4,
+              "proxyRecall04": 0,
+              "proxyMedian": 5.654373537848922,
+              "proxyP95": "Infinity"
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.4786182579558691,
+            "p95": 2.606639200576323,
+            "observedFraction": 0.835,
+            "coverage": 0.8187599364069952,
+            "f1": 0.4745122805090679,
+            "caMsd": 0.8689451250010692,
+            "caHd95": 3.9249901773666807,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 1321,
+          "fieldHash": "a0ca632b35ad04f96bbbf0ce144d8d50119083e9657f2503201985ca0e466a48",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 1,
+              "diffuse": 57,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.7692307692307693,
+              "proxyMedian": 0.017129370907604802,
+              "proxyP95": 1.2823920258831656
+            },
+            {
+              "wall": 1,
+              "specular": 3,
+              "diffuse": 66,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.8461538461538461,
+              "proxyMedian": 0.11006266319425606,
+              "proxyP95": 2.1893832348023103
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.5552731352661864,
+            "p95": 2.6624203989377797,
+            "observedFraction": 0.875,
+            "coverage": 1,
+            "f1": 0.5487385459005749,
+            "caMsd": 0.6275891315542348,
+            "caHd95": 2.3744320420752674,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 2,
+      "seed": 4,
+      "input": {
+        "scene": "reference",
+        "vehicles": 2,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 4
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 1139,
+          "fieldHash": "094f01b7860f4f17db50dec335a1333d1226e919b344da90cee547e7ac345040",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 3,
+              "proxyRecall04": 0,
+              "proxyMedian": 5.39187870754719,
+              "proxyP95": "Infinity"
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 4,
+              "proxyRecall04": 0,
+              "proxyMedian": 7.042056700718785,
+              "proxyP95": "Infinity"
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.34842862484791226,
+            "p95": 2.5952341596680917,
+            "observedFraction": 0.835,
+            "coverage": 0.8171701112877583,
+            "f1": 0.5348250521004717,
+            "caMsd": 0.8753474408644304,
+            "caHd95": 4.382307622085719,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 1388,
+          "fieldHash": "73241270b913b95684600c1701974bdc8102f53106f28e6bb60136dc004df9ba",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 1,
+              "diffuse": 47,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.5384615384615384,
+              "proxyMedian": 0.04179178865158839,
+              "proxyP95": 1.7349818045248924
+            },
+            {
+              "wall": 1,
+              "specular": 3,
+              "diffuse": 52,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.6153846153846154,
+              "proxyMedian": 0.05440346111424432,
+              "proxyP95": 1.8626847589069087
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.3512822809609233,
+            "p95": 2.6309099313115034,
+            "observedFraction": 0.875,
+            "coverage": 1,
+            "f1": 0.595734322373342,
+            "caMsd": 0.5941602751600075,
+            "caHd95": 2.357099892239429,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 2,
+      "seed": 5,
+      "input": {
+        "scene": "reference",
+        "vehicles": 2,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 5
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 1011,
+          "fieldHash": "326f38ff36b2c8c0c11f93b56a071addc35f25b3a6b7dd8791daab948f476110",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 3,
+              "proxyRecall04": 0,
+              "proxyMedian": 5.145571109361726,
+              "proxyP95": "Infinity"
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 4,
+              "proxyRecall04": 0,
+              "proxyMedian": 6.832711338529869,
+              "proxyP95": "Infinity"
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.3435094769321472,
+            "p95": 2.4785522338750807,
+            "observedFraction": 0.835,
+            "coverage": 0.8171701112877583,
+            "f1": 0.5479632765843657,
+            "caMsd": 0.7624265850418493,
+            "caHd95": 3.95554978332201,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 1292,
+          "fieldHash": "a74c7734242fb5700727fd63318fc98f4741d63c2782f1428a35d4fd7398a8b2",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 1,
+              "diffuse": 55,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.6153846153846154,
+              "proxyMedian": 0.09887880428816942,
+              "proxyP95": 1.384960173965343
+            },
+            {
+              "wall": 1,
+              "specular": 3,
+              "diffuse": 60,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.38461538461538464,
+              "proxyMedian": 1.346400691430155,
+              "proxyP95": 2.1791366781284545
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.37748703972613384,
+            "p95": 2.7347938894743855,
+            "observedFraction": 0.875,
+            "coverage": 1,
+            "f1": 0.5958605568178804,
+            "caMsd": 0.585652979649534,
+            "caHd95": 2.4188251994204153,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 3,
+      "seed": 1,
+      "input": {
+        "scene": "reference",
+        "vehicles": 3,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 1
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 2904,
+          "fieldHash": "991070913d2413f391b6d6417326dd9764053ce1111bb0061874050ea524c926",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ],
+            [
+              55,
+              16.855837311283796
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 3.9855229730588615,
+              "proxyP95": 5.8517060836169925
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 2.313703760741017,
+              "proxyP95": 5.173593946635542
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.13986282126951455,
+            "p95": 0.8292345929947427,
+            "observedFraction": 0.94,
+            "coverage": 0.8696343402225755,
+            "f1": 0.7846830558329061,
+            "caMsd": 0.38209986752594033,
+            "caHd95": 2.711766628769031,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 3609,
+          "fieldHash": "99ed8989b86da39ddd824608f05bf6178ca2efc06b07e50de69b858246755049",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ],
+            [
+              70,
+              13.1441626887162
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 3,
+              "diffuse": 150,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.014974651562281949,
+              "proxyP95": 0.058873098637624466
+            },
+            {
+              "wall": 1,
+              "specular": 5,
+              "diffuse": 163,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.06638419075506974,
+              "proxyP95": 0.1354308636850341
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.1441194794190679,
+            "p95": 0.9372121749218465,
+            "observedFraction": 0.94,
+            "coverage": 1,
+            "f1": 0.8573934690020044,
+            "caMsd": 0.22136528409642797,
+            "caHd95": 0.7906314853003344,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 3,
+      "seed": 2,
+      "input": {
+        "scene": "reference",
+        "vehicles": 3,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 2
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 2778,
+          "fieldHash": "be3600c8d28596cbd3f5abaf5131f7fca5e8857c6bdf6243ced0eebd6eadb9ab",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ],
+            [
+              55,
+              16.855837311283796
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 2.9644836421299363,
+              "proxyP95": 4.403902591032977
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.07692307692307693,
+              "proxyMedian": 1.6546242922443888,
+              "proxyP95": 5.8234554900847115
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.13519806982550797,
+            "p95": 0.7984895029820578,
+            "observedFraction": 0.94,
+            "coverage": 0.8728139904610492,
+            "f1": 0.7531802947853976,
+            "caMsd": 0.37007071615132814,
+            "caHd95": 2.0410483126600845,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 3522,
+          "fieldHash": "3bdf42e3eb13a37e403b1a5340ba4cb27395934e2dd3b9f4a585b8ca5915accc",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ],
+            [
+              70,
+              13.1441626887162
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 3,
+              "diffuse": 155,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.8461538461538461,
+              "proxyMedian": 0.09932059717462849,
+              "proxyP95": 0.6476210625280325
+            },
+            {
+              "wall": 1,
+              "specular": 5,
+              "diffuse": 168,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.02977153101276997,
+              "proxyP95": 0.09346141279789677
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.13442821051382836,
+            "p95": 0.9339242422335996,
+            "observedFraction": 0.94,
+            "coverage": 1,
+            "f1": 0.8117153173958568,
+            "caMsd": 0.25330416635736386,
+            "caHd95": 0.9065444838610186,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 3,
+      "seed": 3,
+      "input": {
+        "scene": "reference",
+        "vehicles": 3,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 3
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 2749,
+          "fieldHash": "0f1e71fb1127be1e957217df4656c7184dcc1a3fa0b370d7def80982cf898704",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ],
+            [
+              55,
+              16.855837311283796
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 3.5581442826421847,
+              "proxyP95": 5.778297966093891
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 1.6074589661564929,
+              "proxyP95": 4.349680212569648
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.14400758797924595,
+            "p95": 1.0151481331671954,
+            "observedFraction": 0.94,
+            "coverage": 0.8791732909379968,
+            "f1": 0.7394760511794116,
+            "caMsd": 0.38935842078837374,
+            "caHd95": 2.1370810723010254,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 3500,
+          "fieldHash": "b726a51258d04e690b0551ff01e5c2b26532a2a18ab8037e5bd176014b119e65",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ],
+            [
+              70,
+              13.1441626887162
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 3,
+              "diffuse": 151,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.0738736434287448,
+              "proxyP95": 0.09648478711519282
+            },
+            {
+              "wall": 1,
+              "specular": 5,
+              "diffuse": 176,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.05840859151233602,
+              "proxyP95": 0.1632826618201655
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.15613670247151745,
+            "p95": 1.0151481360220114,
+            "observedFraction": 0.94,
+            "coverage": 1,
+            "f1": 0.8123654862062217,
+            "caMsd": 0.25565435050563107,
+            "caHd95": 0.8365429200249253,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 3,
+      "seed": 4,
+      "input": {
+        "scene": "reference",
+        "vehicles": 3,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 4
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 2887,
+          "fieldHash": "11ca288fb9701f53390bf436712072754517b476e3578b670d58ed31e6390332",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ],
+            [
+              55,
+              16.855837311283796
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 3.150384354220101,
+              "proxyP95": 4.63793277943115
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.15384615384615385,
+              "proxyMedian": 1.4317778432191979,
+              "proxyP95": 3.897264633775503
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.12884656074319167,
+            "p95": 0.832307591882099,
+            "observedFraction": 0.94,
+            "coverage": 0.8728139904610492,
+            "f1": 0.8093088395238307,
+            "caMsd": 0.33980934346726194,
+            "caHd95": 2.1275275138885683,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 3632,
+          "fieldHash": "c61d8cfa4ec31102682e1a2dda288c52feb99e26e2faa5f7ae3369d99f309a7a",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ],
+            [
+              70,
+              13.1441626887162
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 3,
+              "diffuse": 150,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.6153846153846154,
+              "proxyMedian": 0.08395357083127486,
+              "proxyP95": 0.7198655310014832
+            },
+            {
+              "wall": 1,
+              "specular": 5,
+              "diffuse": 190,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.05293717409582044,
+              "proxyP95": 0.08126040127410761
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.13000440732911756,
+            "p95": 0.8989634089221727,
+            "observedFraction": 0.94,
+            "coverage": 1,
+            "f1": 0.8418350978504973,
+            "caMsd": 0.23760977144227302,
+            "caHd95": 0.8067958815723492,
+            "missing": 0
+          }
+        }
+      ]
+    },
+    {
+      "vehicles": 3,
+      "seed": 5,
+      "input": {
+        "scene": "reference",
+        "vehicles": 3,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 5
+      },
+      "checkpoints": [
+        {
+          "t": 60,
+          "Q": 2793,
+          "fieldHash": "7c4d5226f42419fd8ea40a275492f3038cc2727834c50b8bb2efc636fefcc4b5",
+          "poses": [
+            [
+              49,
+              13.070846293805388
+            ],
+            [
+              52,
+              15.637639355910112
+            ],
+            [
+              55,
+              16.855837311283796
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0,
+              "proxyMedian": 3.4279994008007604,
+              "proxyP95": 6.092484976352624
+            },
+            {
+              "wall": 1,
+              "specular": 0,
+              "diffuse": 0,
+              "observedSamples": 0,
+              "totalSamples": 51,
+              "coverage1m": 0,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 0.07692307692307693,
+              "proxyMedian": 1.5558286386163118,
+              "proxyP95": 2.6031244068114567
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.11745223216877498,
+            "p95": 0.8463168200485356,
+            "observedFraction": 0.94,
+            "coverage": 0.8744038155802861,
+            "f1": 0.8059450364554122,
+            "caMsd": 0.33300244810670854,
+            "caHd95": 1.7028766224677856,
+            "missing": 0
+          }
+        },
+        {
+          "t": 80,
+          "Q": 3530,
+          "fieldHash": "6d60dd79521466a13dd9983faa389d8896b1a1d658ccc5e5405e56bbe6f2802a",
+          "poses": [
+            [
+              64,
+              16.92915370619461
+            ],
+            [
+              67,
+              14.36236064408989
+            ],
+            [
+              70,
+              13.1441626887162
+            ]
+          ],
+          "endpoint": [
+            {
+              "wall": 0,
+              "specular": 3,
+              "diffuse": 162,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.04014426759392453,
+              "proxyP95": 0.06158402956155662
+            },
+            {
+              "wall": 1,
+              "specular": 5,
+              "diffuse": 171,
+              "observedSamples": 51,
+              "totalSamples": 51,
+              "coverage1m": 1,
+              "proxyColumns": 13,
+              "missingProxy": 0,
+              "proxyRecall04": 1,
+              "proxyMedian": 0.028880170783853742,
+              "proxyP95": 0.07922756535278097
+            }
+          ],
+          "standardEvaluation": {
+            "medianError": 0.11745223515522696,
+            "p95": 0.8463168229388884,
+            "observedFraction": 0.94,
+            "coverage": 1,
+            "f1": 0.8635715271706621,
+            "caMsd": 0.22402187565086498,
+            "caHd95": 0.823070392595947,
+            "missing": 0
+          }
+        }
+      ]
+    }
+  ]
+}

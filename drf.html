@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261002-viewreset14" />
+    <link rel="stylesheet" href="drf/style.css?v=20261002-endpass17" />
   </head>
   <body>
     <header class="site-header">
@@ -16,7 +16,7 @@
       <div class="header-actions"><button id="aboutButton" type="button">방법과 범위</button><button id="themeButton" type="button">테마</button></div>
     </header>
     <main class="workspace">
-      <aside class="sidebar settings-panel" aria-label="실험 설정과 수치">
+      <aside class="sidebar settings-panel" aria-label="실험 설정">
         <section class="sidebar-section run-section">
           <div class="run-actions"><button id="runButton" class="primary" type="button" disabled>실행</button><button id="stepButton" type="button" disabled>한 step</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="resetButton" type="button">재설정</button><button id="cancelButton" class="danger" type="button" disabled>취소</button></div>
           <p id="status" class="status" role="status" aria-live="polite">설정을 확인한 뒤 실행하세요.</p>
@@ -24,7 +24,7 @@
         <form id="settings" class="sidebar-section">
           <fieldset><legend class="section-title">장면과 측정</legend>
             <div class="input-pair"><label>장면<select name="scene"><option value="reference">기준 코리도</option><option value="random">랜덤 코리도</option></select></label><label>seed<input name="seed" type="number" min="0" max="4294967295" step="1" value="1" required /></label></div>
-            <div class="input-pair"><label>차량 수<input name="vehicles" type="number" min="2" max="20" step="1" value="3" required title="2–20대 · 모든 차량 쌍의 측정 생성" /></label><label>snapshot 수<input name="snapshots" type="number" min="1" max="60" step="1" value="60" required /></label></div>
+            <div class="input-pair"><label>차량 수<input name="vehicles" type="number" min="2" max="20" step="1" value="3" required title="2–20대 · 모든 차량 쌍의 측정 생성" /></label><label>snapshot 수<input name="snapshots" type="number" min="1" max="80" step="1" value="80" required /></label></div>
             <div class="input-pair"><label>위치 σ_p [m]<input name="sigmaP" type="number" min="0" max="2" step="0.01" value="0.1" required /></label><label>거리 σ_d [m]<input name="sigmaD" type="number" min="0" max="2" step="0.01" value="0.1" required /></label></div>
           </fieldset>
           <fieldset><legend class="section-title">산란</legend>
@@ -40,13 +40,6 @@
             </details>
           </fieldset>
         </form>
-        <section class="sidebar-section results-panel" aria-labelledby="resultsTitle">
-          <h2 id="resultsTitle" class="section-title">현재 snapshot</h2>
-          <dl class="metrics path-metrics"><div><dt>누적 채택 Q_t</dt><dd id="qValue">0</dd></div><div><dt>채택 / 거부</dt><dd><span id="acceptedValue">0</span> / <span id="rejectedValue">0</span></dd></div><div class="path-composition evaluation"><dt>평가용 경로</dt><dd id="pathValue">—</dd></div></dl>
-          <h3 class="section-title evaluation">참값 사후 평가</h3>
-          <dl class="metrics evaluation-metrics evaluation"><div><dt title="중앙 절대 오차 [m]">중앙 [m]</dt><dd id="medianValue">—</dd></div><div><dt>P95 [m]</dt><dd id="p95Value">—</dd></div><div><dt>off-wall [%]</dt><dd id="offwallValue">—</dd></div><div><dt title="Boundary F1 · 허용 거리 0.4 m">F1 · 0.4 m</dt><dd id="f1Value">—</dd></div><div><dt>CA-MSD [m]</dt><dd id="msdValue">—</dd></div><div><dt>CA-HD95 [m]</dt><dd id="hd95Value">—</dd></div></dl>
-          <p class="timing-label">계산 시간 · <span id="timingValue" class="timing">snapshot p50 / p95: —</span></p>
-        </section>
         <details class="sidebar-section display-settings" open><summary>표시 · 레이어</summary>
           <div class="view-settings input-pair"><label>조회 필드<select id="heatField"><option value="Dbar">D̄ [1/m²]</option><option value="betaHat">β̂ · 무차원</option></select></label><label>색 범위<select id="scaleMode"><option value="linear">선형</option><option value="log">log(1 + 값)</option></select></label></div>
           <div class="layer-groups">
@@ -59,15 +52,26 @@
       <div class="views">
         <section class="primary-workspace" aria-label="측정 지도와 DRF 대시보드">
           <div class="dashboard">
-            <figure class="view map-panel" id="viewMain">
-              <figcaption class="vlabel"><div><span class="tag">RAW</span><h2 id="mapTitle">측정 타원 · 차량 궤적</h2><span class="view-unit">x, y [m] · 1:1</span><span id="ellipseStats" class="view-unit"></span></div><div class="map-toolbar" role="group" aria-label="지도 조작"><button id="fitView" type="button">전체 보기</button><button id="zoomIn" type="button" aria-label="지도 확대">＋</button><button id="zoomOut" type="button" aria-label="지도 축소">−</button><button id="firstSnapshot" type="button" title="확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다.">처음으로</button><select id="aspectMode" aria-label="필드 축 비율" title="하단 D̄/β̂ 필드에 적용합니다. RAW 지도는 항상 x/y의 1 m 길이가 같습니다."><option value="fill">필드 채움</option><option value="equal" selected>필드 등척</option></select></div></figcaption>
-              <div class="plot-shell view-body"><canvas id="mapCanvas" class="dashboard-canvas" aria-label="측정 타원, 차량 궤적과 평가 레이어">Canvas를 지원하는 브라우저가 필요합니다.</canvas></div>
-            </figure>
-            <figure class="view" id="viewDensity"><figcaption class="vlabel field-label"><div><span class="tag">D̄</span><h2>누적 경로 평균</h2><span class="view-unit">[1/m²]</span></div><p class="view-hint">전체 0–60 m · x/y 등척 기본 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="densityCanvas" class="dashboard-canvas" aria-label="누적 Direct Residual Field Dbar"></canvas></div></figure>
-            <figure class="view" id="viewContrast"><figcaption class="vlabel field-label"><div><span class="tag">β̂</span><h2>필드 대비</h2><span class="view-unit">무차원</span></div><p class="view-hint">전체 0–60 m · x/y 등척 기본 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="contrastCanvas" class="dashboard-canvas" aria-label="필드 대비 지표 betaHat"></canvas></div></figure>
+            <div class="map-row">
+              <div class="map-slot">
+                <figure class="view map-panel" id="viewMain">
+                  <figcaption class="vlabel"><div><span class="tag">RAW</span><h2 id="mapTitle">측정 타원 · 차량 궤적</h2><span class="view-unit">x, y [m] · 1:1</span><span id="ellipseStats" class="view-unit"></span></div><div class="map-toolbar" role="group" aria-label="지도 조작"><button id="fitView" type="button">전체 보기</button><button id="zoomIn" type="button" aria-label="지도 확대">＋</button><button id="zoomOut" type="button" aria-label="지도 축소">−</button><button id="firstSnapshot" type="button" title="확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다.">처음으로</button><select id="aspectMode" aria-label="필드 축 비율" title="하단 D̄/β̂ 필드에 적용합니다. RAW 지도는 항상 x/y의 1 m 길이가 같습니다."><option value="fill">필드 채움</option><option value="equal" selected>필드 등척</option></select></div></figcaption>
+                  <div class="plot-shell view-body"><canvas id="mapCanvas" class="dashboard-canvas" aria-label="측정 타원, 차량 궤적과 평가 레이어">Canvas를 지원하는 브라우저가 필요합니다.</canvas></div>
+                </figure>
+              </div>
+              <section class="view results-panel performance-panel" aria-labelledby="resultsTitle">
+                <h2 id="resultsTitle" class="section-title">성능 · 사후 평가</h2>
+                <dl class="metrics path-metrics"><div><dt>누적 채택 Q_t</dt><dd id="qValue">0</dd></div><div><dt>채택 / 거부</dt><dd><span id="acceptedValue">0</span> / <span id="rejectedValue">0</span></dd></div><div class="path-composition evaluation"><dt>평가용 경로</dt><dd id="pathValue">—</dd></div></dl>
+                <h3 class="section-title evaluation">참값 사후 평가</h3>
+                <dl class="metrics evaluation-metrics evaluation"><div><dt title="중앙 절대 오차 [m]">중앙 [m]</dt><dd id="medianValue">—</dd></div><div><dt>P95 [m]</dt><dd id="p95Value">—</dd></div><div><dt>off-wall [%]</dt><dd id="offwallValue">—</dd></div><div><dt title="Boundary F1 · 허용 거리 0.4 m">F1 · 0.4 m</dt><dd id="f1Value">—</dd></div><div><dt>CA-MSD [m]</dt><dd id="msdValue">—</dd></div><div><dt>CA-HD95 [m]</dt><dd id="hd95Value">—</dd></div></dl>
+                <p class="timing-label">계산 시간 · <span id="timingValue" class="timing">snapshot p50 / p95: —</span></p>
+              </section>
+            </div>
+            <figure class="view" id="viewDensity"><figcaption class="vlabel field-label"><div class="field-heading"><div><span class="tag">D̄</span><h2>누적 경로 평균</h2><span class="view-unit">[1/m²]</span></div><div class="map-toolbar" role="group" aria-label="누적 경로 평균 지도 조작"><button id="densityZoomOut" type="button" aria-label="누적 경로 평균 지도 축소">−</button><button id="densityZoomIn" type="button" aria-label="누적 경로 평균 지도 확대">＋</button><button id="densityResetView" type="button" title="이 그래프의 확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다.">처음으로</button></div></div><p class="view-hint">전체 0–60 m · x/y 등척 기본 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="densityCanvas" class="dashboard-canvas" aria-label="누적 Direct Residual Field Dbar"></canvas></div></figure>
+            <figure class="view" id="viewContrast"><figcaption class="vlabel field-label"><div class="field-heading"><div><span class="tag">β̂</span><h2>필드 대비</h2><span class="view-unit">무차원</span></div><div class="map-toolbar" role="group" aria-label="필드 대비 지도 조작"><button id="contrastZoomOut" type="button" aria-label="필드 대비 지도 축소">−</button><button id="contrastZoomIn" type="button" aria-label="필드 대비 지도 확대">＋</button><button id="contrastResetView" type="button" title="이 그래프의 확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다.">처음으로</button></div></div><p class="view-hint">전체 0–60 m · x/y 등척 기본 · 휠/드래그 이동</p></figcaption><div class="view-body"><canvas id="contrastCanvas" class="dashboard-canvas" aria-label="필드 대비 지표 betaHat"></canvas></div></figure>
             <figure class="view" id="viewMetrics"><figcaption class="vlabel evaluation"><div><span class="tag">EVAL</span><h2>snapshot 평가</h2></div><select id="historyMetric" aria-label="시간별 평가 지표"><option value="p95" selected>P95 |오차| [m]</option><option value="offset">Signed offset [m]</option><option value="offwall">off-wall [%]</option></select></figcaption><div class="view-body"><canvas id="metricChart" class="dashboard-canvas compact-chart" aria-label="선택 지표의 시간별 사후 평가"></canvas></div></figure>
           </div>
-          <div class="playback-bar"><div class="timeline"><button id="replayButton" type="button" aria-label="계산된 snapshot 재생">재생</button><label class="time-label" for="timeSlider">snapshot <output id="snapshotLabel">0 / 60</output></label><input id="timeSlider" type="range" min="0" max="60" step="1" value="0" /><label class="speed-label">속도<select id="playbackSpeed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label></div><p class="note keyboard-note">Space 재생·정지 · ← / → 기록 이동</p></div>
+          <div class="playback-bar"><div class="timeline"><button id="replayButton" type="button" aria-label="계산된 snapshot 재생">재생</button><label class="time-label" for="timeSlider">snapshot <output id="snapshotLabel">0 / 80</output></label><input id="timeSlider" type="range" min="0" max="80" step="1" value="0" /><label class="speed-label">속도<select id="playbackSpeed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label></div><p class="note keyboard-note">Space 재생·정지 · ← / → 기록 이동</p></div>
           <p id="inspector" class="inspector" aria-live="polite">지도 위로 포인터를 이동하면 격자 값을 표시합니다.</p>
         </section>
         <details class="panel analysis-panel" id="analysisDetails"><summary>추가 실험 · Sweep / 진단 / 내보내기</summary>
@@ -85,8 +89,8 @@
     <dialog id="aboutDialog"><div class="dialog-title"><h2>방법과 검증 범위</h2><button id="closeAbout" type="button" aria-label="방법 설명 닫기">닫기</button></div><p>wall-shape-model-free Direct Residual Field. 현재 snapshot까지의 측정만 누적합니다.</p><div class="information-flow"><span>참 장면 → 측정 생성</span><span>측정 wire → F10–F40 → 필드</span><span class="evaluation">필드 + 참값 → 사후 평가</span></div><p>F10–11: 유효 경로 선택. F16–22: 타원 둘레. F24–33: 잔차와 위치·거리 불확실성. F36–40: 누적, 채택 경로 평균과 β̂.</p><p>β̂는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">Outer-Peak: corridor prior · 평가용 · 최종 extractor 아님. 벽 추출법은 미확정이며 검증 범위는 코리도 장면입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-viewreset14';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-viewreset14'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-endpass17';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-endpass17'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>
