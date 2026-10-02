@@ -14,7 +14,7 @@ test('vehicle limits and fixed trajectories support 2–20 vehicles without movi
   assert.equal(normalizeInput().snapshots,80);
   for (let snapshots=1;snapshots<=80;snapshots++) assert.equal(normalizeInput({snapshots}).snapshots,snapshots);
   for (const snapshots of [0,80.5,81,NaN,Infinity]) assert.throws(()=>normalizeInput({snapshots}),/snapshots/);
-  const spans=createWalls();
+  const spans=createWalls({ scene: 'reference' });
   for (let t=1;t<=60;t++) {
     const fleet=truePoses(t,20);
     assert.equal(fleet.length,20);
@@ -37,7 +37,7 @@ test('vehicle limits and fixed trajectories support 2–20 vehicles without movi
 });
 
 test('actual twenty-vehicle snapshot has 190 pairs, shares poses, preserves old pair measurements and reaches the field',async()=>{
-  const input={snapshots:1,grid:100,seed:1},fleet=await generateScenario({...input,vehicles:20});
+  const input={scene:'reference',snapshots:1,grid:100,seed:1},fleet=await generateScenario({...input,vehicles:20});
   const truth=fleet.truth[0],wire=fleet.wire[0],ids=new Set(),poses=new Map();
   assert.equal(truth.p.length,20);assert.equal(truth.poseNoise.length,20);
   assert.equal(truth.configs.length,190);assert.equal(wire.configs.length,190);
@@ -75,7 +75,7 @@ test('actual twenty-vehicle snapshot has 190 pairs, shares poses, preserves old 
 });
 
 test('eighty snapshots preserve the sixty-snapshot wire and continue through the finite open exit',async()=>{
-  const input={vehicles:3,grid:150,seed:1},short=await generateScenario({...input,snapshots:60}),long=await generateScenario({...input,snapshots:80});
+  const input={scene:'reference',vehicles:3,grid:150,seed:1},short=await generateScenario({...input,snapshots:60}),long=await generateScenario({...input,snapshots:80});
   assert.equal(long.truth.length,80);assert.equal(long.wire.length,80);
   assert.deepEqual(long.truth.slice(0,60),short.truth,'Extra observation time cannot rescale or alter the past truth');
   assert.deepEqual(long.wire.slice(0,60),short.wire,'Extra observation time cannot alter the causal measurement prefix');

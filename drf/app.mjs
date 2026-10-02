@@ -1,9 +1,8 @@
-import { DEFAULT_INPUT, normalizeInput } from './scenario.mjs?v=20261002-endpass17';
+import { DEFAULT_INPUT, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261002-layered28';
 import { createGrid } from './field.mjs';
 import { percentile, snapshotCsv } from './evaluate.mjs';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-endpass17';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-fixedview27';
-import { createWalls, sampleWalls } from './wall.mjs';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-layered28';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-layered28';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
@@ -25,7 +24,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-endpass17`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-layered28`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -77,18 +76,13 @@ function cancel(clear = false) {
 async function prepare(single = false) {
   try {
     const input = settings();
-    // A full drive must pass the finite wall exit, including restored shorter URLs.
-    if (!single && input.snapshots < DEFAULT_INPUT.snapshots) {
-      input.snapshots = DEFAULT_INPUT.snapshots;
-      fillSettings(input);
-    }
     cancel(true); state.mode = 'running'; const generation = state.generation; controls();
     location.hash = `v1=${encodeURIComponent(JSON.stringify(input))}`;
     notice('벽 모델과 측정 기록을 생성하는 중입니다.');
     const scenarioWorker = makeWorker('scenario', ({ t, total }) => { if (generation === state.generation) notice(`측정 생성 ${t} / ${total}`); });
     const { scenario } = await scenarioWorker.request({ type: 'generate', input });
     if (generation !== state.generation) return;
-    scenarioWorker.stop(); state.scenario = scenario; state.grid = createGrid(input.grid, input.grid); state.valid = true;
+    scenarioWorker.stop(); state.scenario = scenario; state.grid = createGrid(input.grid, input.grid, scenario.domain); state.valid = true;
     fieldWorker = makeWorker('field'); evalWorker = makeWorker('eval'); hoverWorker = makeWorker('field');
     await Promise.all([
       fieldWorker.request({ type: 'init', grid: state.grid, numerical: { band: input.band, perimeter: input.perimeter } }),
@@ -156,18 +150,20 @@ const inspect = point => {
 const map = new DrfMap($('mapCanvas'),inspect),densityMap=new DrfMap($('densityCanvas'),inspect),contrastMap=new DrfMap($('contrastCanvas'),inspect);
 let previewKey='',preview=[];
 function previewWalls() {
-  const scene=form.elements.namedItem('scene').value,seed=Number(form.elements.namedItem('seed').value),key=`${scene}:${seed}`;
-  if (!Number.isInteger(seed) || seed<0 || seed>0xffffffff) return [];
-  // Geometry preview belongs to display/evaluation only; no wire or inferred field is fabricated.
-  if (key!==previewKey) { preview=sampleWalls(createWalls({scene,seed}));previewKey=key; }
-  return preview;
+  // Static truth preview uses exactly the accepted geometry used by the worker.
+  try {
+    const input = normalizeInput(Object.fromEntries(new FormData(form))),
+      key = JSON.stringify([input.scene, input.seed, input.sigmaM, input.deltaM, input.sigmaDGeometry, input.deltaD]);
+    if (key !== previewKey) { preview = createSceneGeometry(input).walls; previewKey = key; }
+    return preview;
+  } catch (error) { notice(error.message); return []; }
 }
 function renderSelected() {
   hoverGeneration++;
   $('inspector').textContent = '지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동';
   const frame = state.frames[state.selected - 1], evaluation = state.evaluations[state.selected - 1], scenario = state.scenario;
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
-  const display={ grid: state.grid, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),
+  const display={ grid: state.grid, domain: state.scenario?.domain ?? [0,60,-20,50], frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),
     proxy: evaluation?.proxy, observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
     history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
   map.set({...display,mode:'geometry'});
@@ -263,7 +259,7 @@ for (const button of document.querySelectorAll('[data-tab]')) button.onclick = (
 };
 function renderSweep() {
   const aggregates = aggregateRuns(state.sweepRuns); if ($('sweepPanel').hidden) return;
-  drawSweep($('sweepChart'), aggregates, reference);
+  drawSweep($('sweepChart'), aggregates, state.sweepRuns[0]?.input.scene === 'reference' ? reference : []);
   const body = $('sweepTable').querySelector('tbody'); body.replaceChildren();
   const statistic = (metric, total, scale = 1, places = 3) => {
     const counts = `유효 ${metric.n}/${total}, 실패 ${metric.failed}, 미관측 ${metric.missing}`;
@@ -280,7 +276,7 @@ function renderSweep() {
 $('sweepButton').onclick = async () => {
   const generation = state.generation; let handle;
   try {
-    const base = settings(), values = Object.fromEntries(new FormData($('sweepSettings'))), jobs = sweepJobs(base, parseValues(values.sweepNoise), parseValues(values.sweepRoughness), parseValues(values.sweepSeeds, true));
+    const base = settings(), values = Object.fromEntries(new FormData($('sweepSettings'))), jobs = sweepJobs({ ...base, snapshots: 60 }, parseValues(values.sweepNoise), parseValues(values.sweepRoughness), parseValues(values.sweepSeeds, true));
     state.sweepRuns = []; $('sweepButton').disabled = true; $('sweepCancel').disabled = false;
     $('sweepStatus').textContent = `0 / ${jobs.length} · 완료된 seed만 기록합니다.`;
     handle = state.sweep = startSweep(jobs, ({ completed, total, results }) => {
@@ -299,10 +295,10 @@ $('sweepButton').onclick = async () => {
 $('sweepCancel').onclick = () => state.sweep?.cancel();
 const jsonValue = (_key, value) => ArrayBuffer.isView(value) ? Array.from(value) : typeof value === 'number' && !Number.isFinite(value) ? null : value;
 $('exportJson').onclick = () => {
-  const data = { schema: 'echomap-drf/1', provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
+  const data = { schema: 'echomap-drf/2', provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
     grid: state.grid ? { ...state.grid, arrayOrder: 'iy*nx+ix; ascending y; cell centers' } : null,
     input: state.scenario?.input ?? state.sweepRuns[0]?.input, measurement: state.scenario?.wire.slice(0, state.frames.length) ?? [], result: state.frames,
-    evaluation: state.evaluations, truth: { role: 'evaluation only', walls: state.scenario?.walls ?? [], snapshots: state.scenario?.truth.slice(0, state.frames.length) ?? [] },
+    evaluation: state.evaluations, truth: { role: 'evaluation only', wallModel: state.scenario?.wallModel, wallGeneration: state.scenario?.wallGeneration, walls: state.scenario?.walls ?? [], snapshots: state.scenario?.truth.slice(0, state.frames.length) ?? [] },
     sweep: { completeSeedResults: state.sweepRuns.map(({ final, ...run }) => run), aggregates: aggregateRuns(state.sweepRuns) } };
   download(new Blob([JSON.stringify(data, jsonValue)], { type: 'application/json' }), 'echomap-drf.json');
 };
@@ -315,7 +311,7 @@ window.addEventListener('resize', () => { renderSelected(); renderSweep(); });
 window.addEventListener('beforeunload', () => { for (const worker of state.workers) worker.stop(); state.sweep?.cancel(); });
 try {
   const raw = location.hash.startsWith('#v1=') ? JSON.parse(decodeURIComponent(location.hash.slice(4))) : DEFAULT_INPUT;
-  fillSettings(normalizeInput(raw));
+  fillSettings(normalizeInput({ ...raw, scene: 'layered' }));
 } catch (error) { fillSettings(DEFAULT_INPUT); notice(`URL 설정을 불러오지 못했습니다: ${error.message}`); }
 (globalThis.__drfOffline ? Promise.resolve(globalThis.__drfOffline.metadata) : Promise.all([fetch(new URL('./provenance.json', import.meta.url)).then(r => r.json()), fetch(new URL('./reference/octave/fixtures.json', import.meta.url)).then(r => r.json())]))
   .then(([p, f]) => { provenance = p; reference = f.statistics; $('provenanceCommit').textContent = `기준 commit ${p.baseCommit.slice(0, 8)}`;

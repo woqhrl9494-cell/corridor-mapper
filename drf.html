@@ -6,33 +6,41 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261002-sidebar26" />
+    <link rel="stylesheet" href="drf/style.css?v=20261002-layered28" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="drf.html"><span class="logo-dot" aria-hidden="true"></span><h1>EchoMap</h1><span class="brand-sub">DRF 시뮬레이터 · 한양대학교 WSL</span></a>
-      <span class="header-badge">참조 84/96 · 12 미충족</span>
+      <span class="header-badge">2층 B-spline · 위·아래 독립 요철</span>
       <div class="header-actions"><button id="aboutButton" type="button">방법과 범위</button><button id="themeButton" type="button">테마</button></div>
     </header>
     <main class="workspace">
       <aside class="sidebar settings-panel" aria-label="실험 설정">
         <section class="run-section" aria-label="실행 제어">
           <div class="sidebar-title"><h2>실험 설정</h2><button id="resetButton" class="ghost" type="button" title="모든 설정을 기본값으로 되돌리고 계산 결과를 지웁니다.">기본값 복원</button></div>
-          <div class="run-actions"><button id="cancelButton" class="danger" type="button" disabled>취소</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="stepButton" type="button" disabled>한 step</button><button id="runButton" class="primary run-button" type="button" disabled title="벽 끝을 통과하도록 최소 80 snapshot 전체 주행"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor" /></svg>실행</button></div>
+          <div class="run-actions"><button id="cancelButton" class="danger" type="button" disabled>취소</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="stepButton" type="button" disabled>한 step</button><button id="runButton" class="primary run-button" type="button" disabled title="기본 80회 주행 · 입력한 snapshot 수만큼 계산"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor" /></svg>실행</button></div>
           <p id="status" class="status" role="status" aria-live="polite">설정을 확인한 뒤 실행하세요.</p>
           <progress id="runProgress" max="80" value="0" aria-label="snapshot 계산 진행"></progress>
         </section>
         <form id="settings">
           <fieldset class="sidebar-section"><legend class="section-title"><span>장면과 측정</span></legend>
             <div class="prop-grid">
-              <label class="prop"><span class="prop-label">장면</span><select name="scene"><option value="reference" title="Reference corridor">Reference</option><option value="random" title="Random corridor">Random</option></select></label>
+              <label class="prop"><span class="prop-label">장면</span><select name="scene"><option value="layered">2층 B-spline</option></select></label>
               <label class="prop"><span class="prop-label">seed</span><input name="seed" type="number" min="0" max="4294967295" step="1" value="1" required /></label>
               <label class="prop" title="2–20대 · 모든 차량 쌍의 측정 생성"><span class="prop-label">차량 수</span><input name="vehicles" type="number" min="2" max="20" step="1" value="3" required /></label>
-              <label class="prop" title="전체 실행은 최소 80회 · 한 step은 입력한 횟수 사용"><span class="prop-label">snapshot 수</span><input name="snapshots" type="number" min="1" max="80" step="1" value="80" required /></label>
+              <label class="prop" title="기본 주행 80회 · 명세 비교 실험 60회"><span class="prop-label">snapshot 수</span><input name="snapshots" type="number" min="1" max="80" step="1" value="80" required /></label>
               <label class="prop" title="위치 오차 표준편차 σp [m]"><span class="prop-label">위치 <math><msub><mi>σ</mi><mi>p</mi></msub></math></span><input name="sigmaP" type="number" min="0" max="2" step="0.01" value="0.1" required /><span class="unit">m</span></label>
               <label class="prop" title="거리 오차 표준편차 σd [m]"><span class="prop-label">거리 <math><msub><mi>σ</mi><mi>d</mi></msub></math></span><input name="sigmaD" type="number" min="0" max="2" step="0.01" value="0.1" required /><span class="unit">m</span></label>
             </div>
           </fieldset>
+          <details class="sidebar-section display-settings geometry-settings"><summary class="section-title">벽 형상 · 기하 요철</summary>
+            <div class="prop-grid">
+              <label class="prop" title="중심선 계수 진폭 σm · 산란 거칠기와 별개"><span class="prop-label">중심선 진폭</span><input name="sigmaM" type="number" min="0" max="12" step="0.1" value="6" required /><span class="unit">m</span></label>
+              <label class="prop" title="중심선 basis 이음매 간격 Δξm"><span class="prop-label">중심선 간격</span><input name="deltaM" type="number" min="4" max="60" step="1" value="20" required /><span class="unit">m</span></label>
+              <label class="prop" title="위·아래 독립 요철 진폭 σd · 거리 잡음 sigmaD와 별개"><span class="prop-label">요철 진폭</span><input name="sigmaDGeometry" type="number" min="0" max="3" step="0.01" value="0.33" required /><span class="unit">m</span></label>
+              <label class="prop" title="요철 basis 이음매 간격 Δξd · 작을수록 더 짧은 굴곡"><span class="prop-label">요철 간격</span><input name="deltaD" type="number" min="1" max="20" step="1" value="4" required /><span class="unit">m</span></label>
+            </div>
+          </details>
           <fieldset class="sidebar-section"><legend class="section-title"><span>산란</span><label class="check"><input name="specular" type="checkbox" checked />정반사 경로 사용</label></legend>
             <div class="prop-grid">
               <label class="prop" title="표면 거칠기 σ [deg]"><span class="prop-label">거칠기 <math><mi>σ</mi></math></span><select name="roughness"><option value="0">0°</option><option value="2" selected>2°</option><option value="5">5°</option><option value="10">10°</option></select></label>
@@ -97,7 +105,7 @@
                   <div><dt>채택 / 거부</dt><dd><span id="acceptedValue">0</span><span class="dd-sep">/</span><span id="rejectedValue">0</span></dd></div>
                   <div class="path-composition evaluation"><dt>평가용 경로</dt><dd id="pathValue">—</dd></div>
                 </dl>
-                <h3 class="group-title evaluation">참값 사후 평가</h3>
+                <h3 class="group-title evaluation">참값 사후 평가</h3><p class="note evaluation" title="기존 평가 후보점 추출은 y=15 m를 기준으로 위·아래를 구분합니다. 크게 굽은 새 벽 모델의 정확도를 보장하지 않습니다.">기존 평가기 · y=15 m 분할 기준</p>
                 <dl class="metrics evaluation-metrics evaluation">
                   <div><dt title="중앙 절대 오차">중앙 <span class="unit">[m]</span></dt><dd id="medianValue">—</dd></div>
                   <div><dt>P95 <span class="unit">[m]</span></dt><dd id="p95Value">—</dd></div>
@@ -130,11 +138,11 @@
     </main>
     <dialog id="aboutDialog"><div class="dialog-title"><h2>방법과 검증 범위</h2><button id="closeAbout" type="button" aria-label="방법 설명 닫기">닫기</button></div><p>wall-shape-model-free Direct Residual Field. 현재 snapshot까지의 측정만 누적합니다.</p><div class="information-flow"><span>벽·차량 모델 → 측정 생성</span><span>측정 wire → F10–F40 → 필드</span><span class="evaluation">필드 + 참값 → 사후 평가</span></div><p>F10–11: 유효 경로 선택. F16–22: 타원 둘레. F24–33: 잔차와 위치·거리 불확실성. F36–40: 누적, 채택 경로 평균과 <math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>.</p>
       <div class="equation" role="math" aria-label="D bar t equals D t over max of Q t and 1, beta hat t equals D t over A t plus epsilon A"><math display="block"><msub><mover><mi>D</mi><mo>‾</mo></mover><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>D</mi><mi>t</mi></msub><mrow><mo lspace="0" rspace="0">max</mo><mo>(</mo><msub><mi>Q</mi><mi>t</mi></msub><mo>,</mo><mn>1</mn><mo>)</mo></mrow></mfrac><mo>,</mo><mspace width="2em"></mspace><msub><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>D</mi><mi>t</mi></msub><mrow><msub><mi>A</mi><mi>t</mi></msub><mo>+</mo><msub><mi>ε</mi><mi>A</mi></msub></mrow></mfrac></math></div>
-      <p><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">벽 후보점은 누적 필드의 바깥쪽 봉우리에서 선택한 벽 위치 후보입니다. corridor 형태를 가정하며 사후 평가에 사용합니다. 벽 추출법은 미확정입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
+      <p><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">벽 후보점은 누적 필드의 바깥쪽 봉우리에서 선택한 벽 위치 후보입니다. corridor 형태를 가정하며 사후 평가에 사용합니다. 벽 추출법은 미확정입니다.</p><p>벽은 공유 중심선과 위·아래 독립 요철의 uniform cubic B-spline입니다. 수직 방향으로 합성하며 대칭 복사를 사용하지 않습니다. 차량은 중심선 주변을 주행하고 출구 이후에는 중심선 끝의 접선 방향으로 나아갑니다. 계산 영역은 [0, 60] × [−20, 50] m, 최소 통로 폭은 4 m, 수직 차량 여유는 1 m입니다.</p><p>기존 평가기의 y=15 m 분할은 크게 굽은 벽에서 부정확할 수 있습니다. 이전 모델의 84/96 참조 통과 기록은 새 모델의 성능 검증이 아닙니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-fixedview27';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-fixedview27'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-layered28';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-layered28'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>

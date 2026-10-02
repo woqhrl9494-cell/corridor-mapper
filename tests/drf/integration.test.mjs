@@ -12,7 +12,7 @@ let cachedScenario;
 const scenario = () => cachedScenario ??= generateScenario(input);
 const sorted = values => values.slice().sort((a, b) => a - b);
 function calculate(scene, prefix = scene.wire.length) {
-  const grid = createGrid(scene.input.grid, scene.input.grid),
+  const grid = createGrid(scene.input.grid, scene.input.grid, scene.domain),
     field = createField(grid, { band: scene.input.band, perimeter: scene.input.perimeter }),
     evaluator = createEvaluator(scene, grid), frames = [], evaluations = [];
   for (const wire of scene.wire.slice(0, prefix)) {
@@ -169,7 +169,7 @@ test('snapshot CSV retains completed rows and leaves nonfinite/missing values em
 });
 
 test('actual JSON export handler separates truth, wire, and completed results without future snapshots', async () => {
-  const scene = await scenario(), manual = calculate(scene, 2), source = fs.readFileSync(new URL('../../drf/app.mjs', import.meta.url), 'utf8'),
+  const scene = await generateScenario({ ...input, scene: 'layered' }), manual = calculate(scene, 2), source = fs.readFileSync(new URL('../../drf/app.mjs', import.meta.url), 'utf8'),
     start = source.indexOf('const jsonValue ='), end = source.indexOf("$('exportCsv').onclick", start);
   assert.ok(start >= 0 && end > start, 'JSON handler bounds must be present');
   const button = {}, downloads = [], state = { scenario: scene, grid: manual.grid, frames: manual.frames,
@@ -183,7 +183,11 @@ test('actual JSON export handler separates truth, wire, and completed results wi
   assert.equal(output.units.roughnessInput, 'deg'); assert.equal(output.units.truthAngles, 'rad'); assert.equal(output.units.betaHat, 'dimensionless');
   assert.deepEqual(output.grid.x, Array.from(manual.grid.x)); assert.deepEqual(output.grid.y, Array.from(manual.grid.y));
   assert.equal(output.grid.arrayOrder, 'iy*nx+ix; ascending y; cell centers');
-  assert.equal(output.schema, 'echomap-drf/1'); assert.deepEqual(output.provenance, provenance);
+  assert.equal(output.schema, 'echomap-drf/2'); assert.deepEqual(output.provenance, provenance);
+  assert.deepEqual(output.truth.wallModel,scene.wallModel,'Preserve component coefficients and shifted knot origins in truth only');
+  assert.deepEqual(output.truth.wallGeneration,scene.wallGeneration,'Preserve rejection attempts and the accepted validation protocol');
+  assert.equal(output.truth.wallModel.kind,'two-layer-uniform-cubic');
+  assert.deepEqual(output.grid.domain,[0,60,-20,50]);
   assert.equal(output.truth.role, 'evaluation only'); assert.equal(output.measurement.length, 2);
   assert.equal(output.result.length, 2); assert.equal(output.evaluation.length, 2); assert.equal(output.truth.snapshots.length, 2);
   assert.deepEqual(output.measurement, scene.wire.slice(0, 2));

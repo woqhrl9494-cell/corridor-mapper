@@ -57,7 +57,7 @@ test('Bernstein roots include repeated and boundary roots and report degeneracy'
 });
 
 test('t=30 specular fixtures: four visible roots, geometry and signed curvature', () => {
-  const spans = createWalls(), pT = [26.5, 15.5276039972134], pR = [32.5, 14.2544345273238];
+  const spans = createWalls({ scene: 'reference' }), pT = [26.5, 15.5276039972134], pR = [32.5, 14.2544345273238];
   const points = specularPoints(spans, pT, pR);
   const expected = [
     [4, .0811873434988399, 30.811873434988, 7.568684880199, 15.947466042164, .931633800345, .026755440582],
@@ -117,7 +117,7 @@ test('flat-wall derivative and diffuse integrals match supplied fixtures', () =>
     close(Math.sqrt(2 * Math.PI) * radians(degrees) / point.dkap, prediction, 5e-7);
   }
   assert.deepEqual(diffuseProfile(spans, pT, pR, 0, 10, .02).cells, []);
-  const cells = wallCells(createWalls(), .02);
+  const cells = wallCells(createWalls({ scene: 'reference' }), .02);
   assert.ok(cells.every(c => c.ds > 0 && c.ds < .0201));
 });
 

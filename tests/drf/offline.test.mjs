@@ -72,12 +72,15 @@ test('offline bundle is current and its classic Blob workers preserve the field'
     postMessage: data => scenarioMessages.push(data) });
   scenarioContext.self = scenarioContext;
   vm.runInContext(await blobs.get(runtime.worker('scenario').url).text(), scenarioContext);
-  const input = { snapshots: 2, roughness: 20, seed: 42 };
+  const input = { scene: 'layered', snapshots: 2, roughness: 20, seed: 42 };
   await scenarioContext.onmessage({ data: { type: 'generate', requestId: 3, input } });
   const offline = scenarioMessages.at(-1), module = await generateScenario(input);
   assert.equal(offline.type, 'scenario');
   // Timings are transport-dependent; numerical truth and whitelist wire must match.
   assert.equal(JSON.stringify(offline.scenario.truth), JSON.stringify(module.truth));
   assert.equal(JSON.stringify(offline.scenario.wire), JSON.stringify(module.wire));
+  assert.equal(JSON.stringify(offline.scenario.wallModel), JSON.stringify(module.wallModel));
+  assert.equal(JSON.stringify(offline.scenario.wallGeneration), JSON.stringify(module.wallGeneration));
+  assert.equal(JSON.stringify(offline.scenario.domain), JSON.stringify([0, 60, -20, 50]));
   events.get('beforeunload')(); assert.deepEqual(revoked.sort(), [...blobs.keys()].sort());
 });

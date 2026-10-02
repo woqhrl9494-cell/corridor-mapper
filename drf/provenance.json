@@ -6,7 +6,7 @@
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
   },
-  "status": "research release; 84/96 reference criteria pass, original MATLAB/Octave parity unverified",
+  "status": "two-layer wall protocol; new geometry and runtime checks, estimator accuracy unvalidated",
   "referenceStatus": "Provided text fixtures only; original MATLAB/Octave files unavailable",
   "numericalConventions": [
     "numerical K may underflow to zero",
@@ -14,5 +14,25 @@
     "all-noise-zero configuration rejected",
     "identical sigmaD within each configuration"
   ],
-  "referenceQuadrature": "x=0.02 m; simulation uses approximate arc=0.02 m"
+  "referenceQuadrature": "x=0.02 m; simulation uses approximate arc=0.02 m",
+  "historicalReferenceStatus": "84/96 criteria passed only under legacy not-a-knot walls, 60 snapshots and [0,60]x[0,30] domain",
+  "wallProtocol": {
+    "kind": "two-layer-uniform-cubic",
+    "domain": [
+      0,
+      60,
+      -20,
+      50
+    ],
+    "minWidth": 4,
+    "vehicleClearance": 1,
+    "clearanceAxis": "y",
+    "defaultSnapshots": 80,
+    "comparisonSnapshots": 60,
+    "rejectionFleet": {
+      "vehicles": 20,
+      "snapshots": 80
+    },
+    "exit": "finite walls; tangent continuation of centreline only"
+  }
 }

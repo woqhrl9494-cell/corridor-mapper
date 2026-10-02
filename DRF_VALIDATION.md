@@ -1,6 +1,22 @@
 # EchoMap DRF 검증 기록
 
-상태: truth-side 진단과 근 보호, 캐시 URL 수정 후에도 Phase 3 통계 수용 기준 12개가 미충족이었다. 사용자는 이전의 같은 수용 실패 상태를 확인한 뒤 기존 GitHub Pages 배포를 승인했다. 현재 차량 2–20대, 기본/최대 80 snapshots를 지원하며 전체 실행은 저장된 짧은 설정도 80회로 연장한다. 자동 검사 119/119과 현재 수치 source SHA에 연결된 명시적 60 snapshot 조건의 160회 통계를 확인했다. 160회 결과와 기존 12개 수용 미충족은 유지한다. 끝단 관측 개선과 내부 오차 변화는 별도 60/80 paired 실험으로 기록한다. 원본 MATLAB/Octave 세 파일과 메인 알고리즘이 제공되지 않아 전체 구현 parity는 미검증이다.
+상태: 공개 기본 생성기를 중심선과 독립 상하 요철의 2층 uniform cubic B-spline으로 교체했다. 계산 영역 [0,60]×[−20,50] m, 최소 수직 폭 4 m, 수직 차량 여유 1 m를 사용한다. 기본 주행은 80회이고 명세 비교는 60회다. 아래 과거 160회 / 84/96 기록은 이전 not-a-knot 벽과 [0,60]×[0,30] m 조건의 역사적 검증이다. 새 벽 모델의 성능 검증으로 적용하지 않는다. 기존 평가기의 y=15 m 분할은 크게 굽은 새 벽에서 부정확할 수 있다. 원본 MATLAB/Octave 전체 구현 parity는 여전히 미검증이다.
+
+## 2026-10-02 독립 요철 2층 B-spline 검증
+
+재현 명령은 `node --test tests/drf/two-layer-wall.test.mjs tests/drf/layered-scenario.test.mjs`와 `node tests/drf/run-layered.mjs`이다. 결과는 [layered-validation.json](tests/drf/layered-validation.json)에 코드 SHA, 입력, 환경과 제한을 함께 기록했다. 과거 160회 JSON은 변경하지 않았다.
+
+- 자동 검사 130/130 통과, 실패 0, 6.726530459 s. 마지막 CSS 여백 조정은 별도 표시/배포 검사로 확인한다.
+- 기각 전 2,000 seed, 480,000 표본에서 std(y'')=0.0590893834 m⁻¹, 예측 0.0588960949와 0.328% 차이. 곡률 RMS=0.0516353493 m⁻¹. 독립 위/아래 요철, full support, C2 연속성, exact cubic extrema/최소 폭, 중심차분, RNG 주소를 검사했다.
+- 독립 SciPy 1.18.0 BSpline 비교는 363,852 scalar를 검사했다. 값 최대 차이 8.88e−15 m, 1차 8.88e−16, 2차 1.11e−16 m⁻¹, 3차 1.39e−17 m⁻². 이 결과는 벽 basis/합성/span parity이며 원본 전체 MATLAB 구현 parity가 아니다.
+- 승인 조건으로 채택한 seed 0–1999의 2,000개 벽은 2,000번 시도로 모두 통과했다. 범위 밖 seed나 변경한 기하 설정의 기각률까지 0이라고 주장하지 않는다. sigmaDGeometry=2 / seed1은 첫 3회가 폭/차량 여유 위반으로 기각되고 attempt3을 채택한다. sigmaM=12 / seed1은 영역 위반 attempt0을 기각하고 attempt1을 채택한다. 재시도는 최대 256회다.
+- 고정 20대/80회 내부 궤적 envelope, V/T/잡음/격자 변경에 대한 동일 벽, noisy wire 화이트리스트, 1/2 snapshot 측정의 반복/prefix/paired RNG, x>60 접선 연장을 검사했다.
+- 새 seed1/t1의 3개 차량 쌍에서 독립 unsquared Fermat bracket과 가시 근 수가 각각 2개로 같았다. 최대 abs(sin delta)=3.81e−16, unresolved/nearMultiple=0, 내부법선 곡률 부호가 일치했다. 임의 near-caustic 근의 개수/잔차를 이 값으로 보장하지 않는다. 기존 정반사/Poisson/visibility 회귀 검사도 보존한다.
+- 새 seed1 / 150×150의 전체 field 연결: 3대60회 Q=2348, 3대80회 Q=2798, 20대80회 Q=194540이며 최종 두 필드는 모두 유한했다. 20대80회 Node 실행은 48.614 s, 측정 생성 29.134 s, field p50/p95=222.552/288.432 ms였다. Node 측정이며 browser Worker 전체 RAM/실시간 장비 성능은 측정하지 않았다.
+
+기존 field/wire core SHA는 그대로다. 새 고정 domain은 [0,60,−20,50] m로 전달하며 실제 벽 bounds로 추정 격자를 조정하지 않는다. 기각 조건의 여유는 수직 y 방향이며 Euclidean 최단거리 보장이 아니다. 기존 평가기의 y=15 m 분할은 새 seed1의 크게 굽은 벽에서 누락 후보와 Infinity P95를 발생시킨다. 이를 제거하거나 성공 평균에서 빼지 않았다. 현재 지표를 새 모델의 정확도 검증으로 주장하지 않는다. 출구 밖 외면 반사의 곡률 진단은 기존 차량 쪽 법선 규약을 유지한다.
+
+HTTP 실제 화면에서 3대80회 Q=2798, Float32 SHA `c440d958289c1ffb54b7179df8c1d83b680159d1e8144f86f15cdc4262a15d14`가 Node와 같았다. 실행 전후와 실제 벽 표시 전환에서 세 camera가 같았고 확대 후 처음으로는 현재 시점/Q/field를 유지했다. 실제 file:// UI는 도구 접근 제한으로 미검증이며 classic bundle Worker의 module parity를 자동 검사했다.
 
 ## 변경과 재현 조건
 
@@ -39,7 +55,7 @@ HTTP(S)에서는 기존 module 앱과 module Worker를 사용하고, `file://`�
 
 ## 160회 통계 재현
 
-환경: v26.7.0, darwin arm64, 3 workers. 각 조건은 명시적 60 snapshots, 150 × 150 격자, seed 1–10이다. model8의 2026-10-02T02:14:22.179Z 실행은 완료 160/160, 실행 오류 0, 전체 48.057688 s이며 이전 실행과 수치가 같았다. 기본/최대 snapshot 수를 80으로 확장한 현재 source의 2026-10-02T05:39:32.596Z 재실행도 완료 160/160, 실행 오류 0, sourcesStable=true, 47.503462416 s이다. 이전 160개 input/summary/final, aggregate/comparisons/failures가 모두 정확히 같고 실행 전후 수치 source 11개의 SHA는 현재 파일과 일치한다. 아래 수치 표는 60 snapshot 조건을 유지하며 ±는 seed 간 표본 표준편차다. 이 결과를 80 snapshot 통계로 해석하지 않는다.
+환경: v26.7.0, darwin arm64, 3 workers. 각 조건은 명시적 60 snapshots, 150 × 150 격자, seed 1–10이다. model8의 2026-10-02T02:14:22.179Z 실행은 완료 160/160, 실행 오류 0, 전체 48.057688 s이며 이전 실행과 수치가 같았다. 기본/최대 snapshot 수를 80으로 확장한 현재 source의 2026-10-02T05:39:32.596Z 재실행도 완료 160/160, 실행 오류 0, sourcesStable=true, 47.503462416 s이다. 이전 160개 input/summary/final, aggregate/comparisons/failures가 모두 정확히 같고 실행 전후 수치 source 11개의 SHA는 현재 파일과 일치한다. 해당 실행의 wall/scenario/sweep 원본은 tests/drf/legacy-source에 정확한 바이트로 보존했다. 아래 수치 표는 이전 벽의 60 snapshot 조건을 유지하며 ±는 seed 간 표본 표준편차다. 이 결과를 80 snapshot 통계로 해석하지 않는다.
 
 중앙 절대오차 16조건, diffuse 수, 중복 비율, 관측 열 비율, 거칠기 2°의 Theorem 2 평균/중앙은 통과했다. **전체 판정 84/96 통과, 12개 실패**다. 참고 수치는 제공 문서의 3-seed 값이며 원본 집계 정의는 아직 확인하지 못했다.
 

@@ -19,7 +19,7 @@ const bitEqual=(actual,expected,message)=>{
   assert.deepEqual(actual,expected,message);
   assert.ok(numericBits(actual).equals(numericBits(expected)),`${message}: Float64 bits`);
 };
-const input={...DEFAULT_INPUT,snapshots:3,seed:73};
+const input={...DEFAULT_INPUT,scene:'reference',snapshots:3,seed:73};
 let baseline;
 const reference=()=>baseline ??= generateScenario(input);
 
@@ -41,7 +41,7 @@ test('fixed geometry midpoints approximate but do not move to a continuous refle
 test('actual flat and curved profiles have Poisson pre-thinning moments and the flat categorical CDF', () => {
   const flatSpans=[flat()],pT=[-3,4],pR=[5,3];
   const flatProfile=diffuseProfile(flatSpans,pT,pR,radians(5),30,.02);
-  const curvedSpans=createWalls(),poses=truePoses(30);
+  const curvedSpans=createWalls({ scene: 'reference' }),poses=truePoses(30);
   const curvedProfile=diffuseProfile(curvedSpans,poses[0],poses[2],radians(2),.3,.02);
   const cases=[{name:'flat',spans:flatSpans,pT,pR,profile:flatProfile,wall:0},
     ...[0,1].map(wall=>({name:`curved wall ${wall}`,spans:curvedSpans,pT:poses[0],pR:poses[2],profile:curvedProfile,wall}))];
@@ -130,7 +130,7 @@ test('standalone snapshots ignore call order and estimator-only settings', async
 });
 
 test('zero roughness and zero intensity create no diffuse path, pre-thinning draw, or RNG consumption', async () => {
-  const spans=createWalls(),poses=truePoses(1),noDraw={poisson(){assert.fail('zero intensity cannot draw a Poisson count');},uniform(){assert.fail('zero intensity cannot draw a location');}};
+  const spans=createWalls({ scene: 'reference' }),poses=truePoses(1),noDraw={poisson(){assert.fail('zero intensity cannot draw a Poisson count');},uniform(){assert.fail('zero intensity cannot draw a location');}};
   for (const [roughness,lambda0] of [[0,10],[2,0]]) {
     const profile=diffuseProfile(spans,poses[0],poses[1],radians(roughness),lambda0,.02),diagnostics={generated:99};
     assert.deepEqual(profile.cells,[]);assert.deepEqual(profile.lambdaTotal,[0,0]);

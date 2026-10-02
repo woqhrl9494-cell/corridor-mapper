@@ -1,4 +1,4 @@
-import { generateScenario } from './scenario.mjs?v=20261002-endpass17';
+import { generateScenario } from './scenario.mjs?v=20261002-layered28';
 self.onmessage = async ({ data }) => {
   if (data.type !== 'generate') return;
   try {

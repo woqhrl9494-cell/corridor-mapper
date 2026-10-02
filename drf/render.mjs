@@ -176,7 +176,7 @@ export class DrfMap {
     ctx.font=uiFont(14);
     // 52 px left margin keeps y tick labels clear of the rotated axis title.
     const geometry=this.state.mode === "geometry",box={ x:52,y:16,w:Math.max(1,width-(geometry ? 68 : 116)),h:Math.max(1,height-62) }, g=this.state.grid;
-    const domain=g?.domain ?? (g ? [g.xmin,g.xmax,g.ymin,g.ymax] : [0,60,0,30]);
+    const domain=g?.domain ?? this.state.domain ?? (g ? [g.xmin,g.xmax,g.ymin,g.ymax] : [0,60,0,30]);
     // Static scene bounds keep all spatial views fixed as vehicles leave the visible map.
     // Wall candidates and measured poses affect overlays only, never the camera or inference.
     const wallPoints=this.state.walls?.flat(),bounds=!this.fullDomain && wallPoints?.length

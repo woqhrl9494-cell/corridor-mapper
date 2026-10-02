@@ -1,4 +1,4 @@
-import { generateScenario, normalizeInput } from './scenario.mjs?v=20261002-layered28';
+import { generateScenario, normalizeInput } from './scenario.mjs?v=20261002-endpass17';
 import { createGrid, createField } from './field.mjs';
 import { createEvaluator, percentile } from './evaluate.mjs';
 
@@ -6,7 +6,7 @@ import { createEvaluator, percentile } from './evaluate.mjs';
  * stay outside the estimator wire. Memory O(G+truth), frames are not retained. */
 export async function runExperiment(raw, progress = () => {}) {
   const input = normalizeInput(raw), scenario = await generateScenario(input),
-    grid = createGrid(input.grid, input.grid, scenario.domain), field = createField(grid, { band: input.band, perimeter: input.perimeter }),
+    grid = createGrid(input.grid, input.grid), field = createField(grid, { band: input.band, perimeter: input.perimeter }),
     evaluator = createEvaluator(scenario, grid), timings = [];
   let frame, evaluation, fieldMs = 0, evaluationMs = 0;
   for (const wire of scenario.wire) {
@@ -14,7 +14,7 @@ export async function runExperiment(raw, progress = () => {}) {
     const start = performance.now(); evaluation = evaluator.step(frame); evaluationMs += performance.now() - start;
     progress(frame.t, input.snapshots);
   }
-  return { input, wallGeneration: scenario.wallGeneration, summary: { medianError: evaluation.medianError, p95: evaluation.p95, offwall: evaluation.offwall,
+  return { input, summary: { medianError: evaluation.medianError, p95: evaluation.p95, offwall: evaluation.offwall,
     offset: evaluation.offset, f1: evaluation.f1, caMsd: evaluation.caMsd, caHd95: evaluation.caHd95,
     observedFraction: evaluation.observedFraction, missing: evaluation.missing,
     diffusePerConfig: evaluation.diagnostics.diffusePerConfig, duplicateFraction: evaluation.diagnostics.duplicateFraction,
@@ -72,7 +72,7 @@ export function startSweep(jobs, onProgress, workerCount = Math.max(1, (navigato
   }
   const count = Math.min(jobs.length, workerCount);
   for (let k = 0; k < count; k++) {
-    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261002-layered28', import.meta.url), { type: 'module' }); workers.push(worker);
+    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261002-endpass17', import.meta.url), { type: 'module' }); workers.push(worker);
     worker.onmessage = ({ data }) => {
       if (cancelled || settled) return;
       if (data.type === 'error') { settled = true; stop(); fail(new Error(data.message)); return; }

@@ -157,6 +157,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .prop:focus-within { border-color: var(--color-focus); box-shadow: 0 0 0 3px #007aff2e; }
 .prop:has(:invalid) { border-color: var(--color-danger); }
 .prop:has(:disabled) { opacity: .55; }
+.geometry-settings:not([open]) { padding-top: 4px; padding-bottom: 4px; }
 .display-settings > summary.section-title { margin: 0; }
 .display-settings > summary::before { margin-right: 0; }
 .display-settings[open] > summary.section-title { margin-bottom: 10px; }

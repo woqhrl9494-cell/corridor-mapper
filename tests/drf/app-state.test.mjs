@@ -10,15 +10,15 @@ const section=(start,end)=>{
   return source.slice(a,b);
 };
 
-test('actual full run extends a restored 60-snapshot URL to the exit; single steps retain their experiment length',async()=>{
-  for (const [single,requested,expected] of [[false,60,80],[true,60,60],[false,80,80]]) {
-    const input={vehicles:10,snapshots:requested,grid:150,band:4,perimeter:'exact'},generated=[],filled=[],advanced=[];
+test('actual full run and single steps preserve the requested length and use the declared experiment domain',async()=>{
+  for (const [single,requested] of [[false,60],[true,60],[false,80]]) {
+    const expected=requested,input={scene:'layered',vehicles:10,snapshots:requested,grid:150,band:4,perimeter:'exact'},generated=[],filled=[],advanced=[];
     const state={generation:0,scenario:null,mode:'idle'},location={hash:'#v1=old'};
     const context=vm.createContext({state,location,DEFAULT_INPUT:{snapshots:80},
       settings:()=>({...input}),fillSettings:value=>filled.push({...value}),
-      cancel:()=>{state.generation++;},controls(){},notice(){},createGrid:(nx,ny)=>({nx,ny}),
+      cancel:()=>{state.generation++;},controls(){},notice(){},createGrid:(nx,ny,domain)=>({nx,ny,domain}),
       makeWorker:name=>({stop(){},async request(message){
-        if (name==='scenario') {generated.push({...message.input});return {scenario:{input:message.input}};}
+        if (name==='scenario') {generated.push({...message.input});return {scenario:{input:message.input,domain:[0,60,-20,50]}};}
         return {};
       }}),advance:value=>advanced.push(value??false),fail:error=>{throw error;},
     });
@@ -29,7 +29,8 @@ test('actual full run extends a restored 60-snapshot URL to the exit; single ste
     assert.equal(state.scenario.input.snapshots,expected);
     assert.equal(JSON.parse(decodeURIComponent(location.hash.slice(3))).snapshots,expected);
     assert.equal(generated[0].vehicles,10,'Preserve the restored vehicle count');
-    assert.deepEqual(filled,single || requested===expected ? [] : [{...input,snapshots:expected}],'Synchronize the visible settings when extending the drive');
+    assert.deepEqual(filled,[],'Respect the experiment length shown in the settings');
+    assert.deepEqual(state.grid.domain,[0,60,-20,50],'Pass the predeclared domain without consulting truth wall bounds');
     assert.deepEqual(advanced,[single]);
     assert.equal(state.mode,single ? 'paused' : 'running');
   }
@@ -48,15 +49,20 @@ test('actual lower-map buttons affect only their own camera',()=>{
 });
 
 test('actual preview geometry stays cached when the truth overlay is hidden',()=>{
-  const truth={checked:true},fields={scene:{value:'reference'},seed:{value:'1'}};
+  const truth={checked:true},input={scene:'layered',seed:1,sigmaM:6,deltaM:20,sigmaDGeometry:.33,deltaD:4};
+  const walls=[[[0,6],[60,7]],[[0,24],[60,23]]],domain=[0,60,-20,50];
   let generated=0;
-  const context=vm.createContext({$:()=>truth,form:{elements:{namedItem:name=>fields[name]}},
-    previewKey:'',preview:[],createWalls:()=>{generated++;return [[0,6],[60,24]];},sampleWalls:walls=>walls});
+  const context=vm.createContext({$:()=>truth,form:{},
+    FormData:class { *[Symbol.iterator]() { yield* Object.entries(input); } },
+    previewKey:'',preview:[],normalizeInput:value=>value,notice:message=>assert.fail(message),
+    createSceneGeometry:()=>{generated++;return {walls,domain};}});
   vm.runInContext(section('function previewWalls()','function renderSelected()'),context);
   const initial=context.previewWalls();
   truth.checked=false;assert.equal(context.previewWalls(),initial,'Hiding the preview must keep the scene extent');
   truth.checked=true;assert.equal(context.previewWalls(),initial);
   assert.equal(generated,1,'Layer toggles must reuse the scene, without regenerating it');
+  input.sigmaDGeometry=.66;context.previewWalls();
+  assert.equal(generated,2,'Changing geometry roughness must invalidate the preview');
 });
 
 test('actual view reset preserves simulation, selection and replay; experiment reset still clears them',async()=>{

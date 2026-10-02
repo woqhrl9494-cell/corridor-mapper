@@ -208,7 +208,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       vertical.forEach(([a],k)=>assert.ok(Math.abs((a[0]-x)/w*60-(k+1)*10)<1e-8));
     }
     for (const tick of ['0','10','20','30','40','50','60']) assert.ok(labels.filter(text=>text===tick).length>=3,`each profile must label ${tick} m`);
-    const spans=createWalls(),fleet=generateSnapshot(normalizeInput({vehicles:20,snapshots:1}),spans,1),wireBefore=JSON.stringify(fleet.wire),fleetCanvas=makeCanvas(),stats={textContent:''};
+    const spans=createWalls({ scene: 'reference' }),fleet=generateSnapshot(normalizeInput({scene:'reference',vehicles:20,snapshots:1}),spans,1),wireBefore=JSON.stringify(fleet.wire),fleetCanvas=makeCanvas(),stats={textContent:''};
     fleetCanvas.clientWidth=480;fleetCanvas.clientHeight=220;fleetCanvas.closest=()=>({querySelector:()=>stats});
     const fleetMap=new DrfMap(fleetCanvas),fleetState={grid:{nx:2,ny:2,domain:[0,60,0,30]},frame:{...frame,t:1},wire:fleet.wire,walls:sampleWalls(spans),history:[fleet.wire],aspectMode:'equal',layers:{showTruth:true,showVehicles:true,showEllipses:true}};
     labelPositions.length=0;dots.length=0;ellipseStarts.length=0;

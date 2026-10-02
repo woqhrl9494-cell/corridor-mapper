@@ -1,0 +1,370 @@
+{
+  "schema": "echomap-layered-validation/1",
+  "date": "2026-10-02T11:54:55.586Z",
+  "command": "node tests/drf/run-layered.mjs",
+  "runtime": {
+    "node": "v26.7.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "input": {
+    "scene": "layered",
+    "vehicles": 3,
+    "snapshots": 80,
+    "sigmaP": 0.1,
+    "sigmaD": 0.1,
+    "sigmaM": 6,
+    "deltaM": 20,
+    "sigmaDGeometry": 0.33,
+    "deltaD": 4,
+    "roughness": 2,
+    "lambda0": 10,
+    "cellStep": 0.02,
+    "resolution": 0,
+    "specular": true,
+    "grid": 150,
+    "band": 4,
+    "perimeter": "exact",
+    "seed": 1
+  },
+  "domain": [
+    0,
+    60,
+    -20,
+    50
+  ],
+  "clearanceAxis": "y",
+  "validationFleet": {
+    "vehicles": 20,
+    "snapshots": 80
+  },
+  "acceptedWallSample": {
+    "seeds": 2000,
+    "seedRange": [
+      0,
+      1999
+    ],
+    "totalAttempts": 2000,
+    "rejectedAttempts": 0,
+    "attemptRejectionRate": 0,
+    "seedsWithRejection": 0,
+    "reasons": {},
+    "rejectedSeeds": [],
+    "n": 480000,
+    "secondDerivativeStd": 0.0590893834058943,
+    "curvatureStd": 0.05163530988310967,
+    "geometryMs": 3353.9017499999995
+  },
+  "runs": [
+    {
+      "input": {
+        "scene": "layered",
+        "vehicles": 3,
+        "snapshots": 60,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 1
+      },
+      "wallGeneration": {
+        "attempt": 0,
+        "attempts": 1,
+        "rejections": [],
+        "bounds": {
+          "xmin": 0,
+          "xmax": 60,
+          "ymin": -6.960497659746041,
+          "ymax": 24.122270455077707,
+          "wallRanges": [
+            [
+              -6.960497659746041,
+              12.463788589637842
+            ],
+            [
+              4.161467383192983,
+              24.122270455077707
+            ]
+          ],
+          "minWidth": 10.95911937138999,
+          "maxWidth": 13.58083877802019
+        },
+        "minVehicleClearance": 3.231042903699036,
+        "minWidthRequired": 4,
+        "vehicleClearanceRequired": 1,
+        "clearanceAxis": "y",
+        "validationFleet": {
+          "vehicles": 20,
+          "snapshots": 80,
+          "wallInterval": [
+            0,
+            60
+          ]
+        }
+      },
+      "summary": {
+        "medianError": 0.3726620920716801,
+        "p95": "Infinity",
+        "offwall": 0.42346938775510207,
+        "offset": 0.23846632194454462,
+        "f1": 0.6398446026713789,
+        "caMsd": 1.3353425927959681,
+        "caHd95": 9.932667773304562,
+        "observedFraction": 0.98,
+        "missing": 62,
+        "diffusePerConfig": 11.033333333333333,
+        "duplicateFraction": 0.9884189325276939,
+        "theoremMean": 1.0334830692718708,
+        "theoremMedian": 0.4927295873255118,
+        "theoremN": 1963,
+        "theoremNegative": 0,
+        "Q": 2348,
+        "admitted": 2348,
+        "rejected": 0
+      },
+      "timing": {
+        "simulatorMs": 371.26229200000034,
+        "fieldMs": 231.36979499999597,
+        "evaluationMs": 119.37928899999861,
+        "frameP50": 3.624166999999943,
+        "frameP95": 4.418166000000383
+      },
+      "elapsedMs": 723.7175829999996,
+      "final": {
+        "t": 60,
+        "Q": 2348,
+        "admitted": 2348,
+        "rejected": 0,
+        "sha256": "dfd31fb8a44c9c7bdb220ab849ba7ba93594ae0616413ef66013116c861c4b6a"
+      }
+    },
+    {
+      "input": {
+        "scene": "layered",
+        "vehicles": 3,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 1
+      },
+      "wallGeneration": {
+        "attempt": 0,
+        "attempts": 1,
+        "rejections": [],
+        "bounds": {
+          "xmin": 0,
+          "xmax": 60,
+          "ymin": -6.960497659746041,
+          "ymax": 24.122270455077707,
+          "wallRanges": [
+            [
+              -6.960497659746041,
+              12.463788589637842
+            ],
+            [
+              4.161467383192983,
+              24.122270455077707
+            ]
+          ],
+          "minWidth": 10.95911937138999,
+          "maxWidth": 13.58083877802019
+        },
+        "minVehicleClearance": 3.231042903699036,
+        "minWidthRequired": 4,
+        "vehicleClearanceRequired": 1,
+        "clearanceAxis": "y",
+        "validationFleet": {
+          "vehicles": 20,
+          "snapshots": 80,
+          "wallInterval": [
+            0,
+            60
+          ]
+        }
+      },
+      "summary": {
+        "medianError": 0.37266208867843,
+        "p95": "Infinity",
+        "offwall": 0.42346938775510207,
+        "offset": 0.23846632194454462,
+        "f1": 0.662327339906769,
+        "caMsd": 1.269820620571278,
+        "caHd95": 9.873919931811924,
+        "observedFraction": 0.98,
+        "missing": 62,
+        "diffusePerConfig": 9.895833333333334,
+        "duplicateFraction": 0.9831578947368421,
+        "theoremMean": 1.0118434050352192,
+        "theoremMedian": 0.49124306421732666,
+        "theoremN": 2335,
+        "theoremNegative": 0,
+        "Q": 2798,
+        "admitted": 2798,
+        "rejected": 0
+      },
+      "timing": {
+        "simulatorMs": 489.9572500000004,
+        "fieldMs": 385.2933759999996,
+        "evaluationMs": 223.488749000001,
+        "frameP50": 4.04266699999971,
+        "frameP95": 8.236750000000029
+      },
+      "elapsedMs": 1100.3564580000002,
+      "final": {
+        "t": 80,
+        "Q": 2798,
+        "admitted": 2798,
+        "rejected": 0,
+        "sha256": "c440d958289c1ffb54b7179df8c1d83b680159d1e8144f86f15cdc4262a15d14"
+      }
+    },
+    {
+      "input": {
+        "scene": "layered",
+        "vehicles": 20,
+        "snapshots": 80,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 1
+      },
+      "wallGeneration": {
+        "attempt": 0,
+        "attempts": 1,
+        "rejections": [],
+        "bounds": {
+          "xmin": 0,
+          "xmax": 60,
+          "ymin": -6.960497659746041,
+          "ymax": 24.122270455077707,
+          "wallRanges": [
+            [
+              -6.960497659746041,
+              12.463788589637842
+            ],
+            [
+              4.161467383192983,
+              24.122270455077707
+            ]
+          ],
+          "minWidth": 10.95911937138999,
+          "maxWidth": 13.58083877802019
+        },
+        "minVehicleClearance": 3.231042903699036,
+        "minWidthRequired": 4,
+        "vehicleClearanceRequired": 1,
+        "clearanceAxis": "y",
+        "validationFleet": {
+          "vehicles": 20,
+          "snapshots": 80,
+          "wallInterval": [
+            0,
+            60
+          ]
+        }
+      },
+      "summary": {
+        "medianError": 0.29694933905385135,
+        "p95": "Infinity",
+        "offwall": 0.35,
+        "offset": 0.16868231530733746,
+        "f1": 0.7344943335082107,
+        "caMsd": 1.4865129012565403,
+        "caHd95": 10.095113513239564,
+        "observedFraction": 1,
+        "missing": 68,
+        "diffusePerConfig": 11.02861842105263,
+        "duplicateFraction": 0.9769618516419603,
+        "theoremMean": 1.0037740395163715,
+        "theoremMedian": 0.4458042412822131,
+        "theoremN": 164192,
+        "theoremNegative": 0,
+        "Q": 194540,
+        "admitted": 194540,
+        "rejected": 0
+      },
+      "timing": {
+        "simulatorMs": 29134.269500000002,
+        "fieldMs": 17181.011293000047,
+        "evaluationMs": 2296.941914999996,
+        "frameP50": 222.55204200000298,
+        "frameP95": 288.4322919999977
+      },
+      "elapsedMs": 48614.137875,
+      "final": {
+        "t": 80,
+        "Q": 194540,
+        "admitted": 194540,
+        "rejected": 0,
+        "sha256": "af58dbd81cec0cb45fb916ea472db186144343d5b1cf9131e8a4f586fc8f63ed"
+      }
+    }
+  ],
+  "integrity": {
+    "before": {
+      "wall": "a65e3315469f64e483dece37a767f5a7b062ea14d32db4cae0ebf5d137c7a2a6",
+      "scenario": "560aeec09d997ca46de25e136f5e0db687d11ca5e1308ea685c688074bc077de",
+      "rng": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
+      "poly": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
+      "specular": "4d9b42edcd25625078f8239813108ef08dbd5fb59da60ebc3ae4a90a853f2eb4",
+      "diffuse": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
+      "wire": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72",
+      "field": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+      "evaluate": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
+      "sweep": "7d89cdce1798aee59c4f858fe600fb28827c3dbd5755558bdf9dd149d29072f7"
+    },
+    "after": {
+      "wall": "a65e3315469f64e483dece37a767f5a7b062ea14d32db4cae0ebf5d137c7a2a6",
+      "scenario": "560aeec09d997ca46de25e136f5e0db687d11ca5e1308ea685c688074bc077de",
+      "rng": "b5be48effcf70dc4a86a19fc01d3a1e2ca5b80e1af5bea3a2b14f286704da6b0",
+      "poly": "b3284159beebcf135d70df9ba5601b6cbdfe5d0d1416a067ff6991a4d77e3fa2",
+      "specular": "4d9b42edcd25625078f8239813108ef08dbd5fb59da60ebc3ae4a90a853f2eb4",
+      "diffuse": "6a9f63bf383dd7cfb14cd2dab94ecc013f0ec551d1f036b12a8de33ca62b87de",
+      "wire": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72",
+      "field": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+      "evaluate": "26b7ee7de07883d189ab336a00a97053222884ec004542e72801feb486a6431c",
+      "sweep": "7d89cdce1798aee59c4f858fe600fb28827c3dbd5755558bdf9dd149d29072f7"
+    },
+    "stable": true
+  },
+  "limitations": [
+    "Accepted-wall statistics are rejection-conditioned; unconditioned scale has a separate 2000-seed test.",
+    "Legacy y=15 partition evaluator is unchanged; reported summary metrics do not validate accuracy for the curved model.",
+    "Vertical clearance does not guarantee Euclidean nearest-wall clearance or real vehicle width.",
+    "Outer-face outgoing reflections retain the existing vehicle-facing curvature diagnostic.",
+    "Browser engine and actual file:// UI checks are separate from this Node run."
+  ]
+}

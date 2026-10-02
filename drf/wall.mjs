@@ -1,4 +1,5 @@
 import { createRng } from './rng.mjs';
+import { realRoots } from './poly.mjs';
 
 /** Not-a-knot cubic spline. Input x,y: n scalars; output: n-1 local
  * [c3,c2,c1,c0] spans. O(n^3), n=7 in the reference scene. */
@@ -57,6 +58,121 @@ export function createWalls({ scene = 'reference', seed = 1 } = {}) {
     for (let i = 0; i < x.length; i++) { lower[i] += rng.uniform() - 0.5; upper[i] += rng.uniform() - 0.5; }
   } else if (scene !== 'reference') throw new RangeError('Unknown corridor scene');
   return [...graphSpans(x, lower, 0, 1), ...graphSpans(x, upper, 1, 7)];
+}
+
+/** Truth-only, data-only two-layer wall model. The legacy createWalls fixture
+ * remains separate. Coefficients are iid N(0,2*sigma^2), not interpolated data.
+ * N3 is the centered cardinal cubic basis with support [-2,2]. Its knot value
+ * is (c[j-1]+4*c[j]+c[j+1])/6. Storage/work: O(L/deltaM + L/deltaD).
+ * This function draws one attempt; the caller owns rejection thresholds. */
+export function createTwoLayerWallModel({ seed = 1, attempt = 0, L = 60, W = 12,
+  baseline = 15, sigmaM = 6, deltaM = 20, sigmaDGeometry = 0.33, deltaD = 4 } = {}) {
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('Seed must be a uint32');
+  if (!Number.isInteger(attempt) || attempt < 0) throw new RangeError('Wall attempt must be a nonnegative integer');
+  if (![L, W, deltaM, deltaD].every(value => Number.isFinite(value) && value > 0)
+    || ![sigmaM, sigmaDGeometry].every(value => Number.isFinite(value) && value >= 0)
+    || !Number.isFinite(baseline)) throw new RangeError('Wall lengths, amplitudes and baseline must be finite and valid');
+  const component = (spacing, sigma, ...address) => {
+    const rng = createRng(seed, 'wall', ...address, ...(attempt ? [attempt] : []));
+    const origin = rng.uniform() * spacing;
+    // x=0 starts in interval j=-1; its four active coefficients are j=-2..1.
+    // Padding supplies all four active basis functions throughout [0,L].
+    const coefficients = Array.from({ length: Math.ceil(L / spacing) + 4 }, () => Math.SQRT2 * sigma * rng.normal());
+    return { spacing, origin, start: -2, coefficients };
+  };
+  return { kind: 'two-layer-uniform-cubic', seed, attempt, L, W, baseline,
+    mu: component(deltaM, sigmaM, 'mu'),
+    d: [component(deltaD, sigmaDGeometry, 'd', 0), component(deltaD, sigmaDGeometry, 'd', 1)] };
+}
+
+/** Scalar value and x derivatives (m, dimensionless, 1/m, 1/m^2), O(1).
+ * The third derivative at a knot is right-sided; value/first/second are C2. */
+export function evaluateUniformCubic(component, x) {
+  if (!Number.isFinite(x)) throw new RangeError('Spline coordinate must be finite');
+  const { spacing, origin, start, coefficients } = component;
+  let coordinate = (x - origin) / spacing;
+  const knot = Math.round(coordinate);
+  // Arithmetic reconstruction of origin+j*spacing can land one ULP left.
+  if (Math.abs(coordinate - knot) <= 4 * Number.EPSILON * Math.max(1, Math.abs(coordinate))) coordinate = knot;
+  const j = Math.floor(coordinate), u = coordinate - j, index = j - 1 - start;
+  if (index < 0 || index + 3 >= coefficients.length) throw new RangeError('Spline coordinate is outside full coefficient support');
+  const [a, b, c, d] = coefficients.slice(index, index + 4);
+  const C0 = (a + 4 * b + c) / 6, C1 = (c - a) / 2,
+    C2 = (a - 2 * b + c) / 2, C3 = (-a + 3 * b - 3 * c + d) / 6;
+  return { value: ((C3 * u + C2) * u + C1) * u + C0,
+    first: ((3 * C3 * u + 2 * C2) * u + C1) / spacing,
+    second: (6 * C3 * u + 2 * C2) / spacing ** 2,
+    third: 6 * C3 / spacing ** 3 };
+}
+
+function checkWallX(model, x) {
+  if (!Number.isFinite(x) || x < 0 || x > model.L) throw new RangeError('Wall coordinate must lie in [0,L]');
+}
+export function evaluateCentre(model, x) {
+  checkWallX(model, x);
+  const value = evaluateUniformCubic(model.mu, x);
+  return { ...value, value: model.baseline + value.value };
+}
+export function evaluateWall(model, x, wall) {
+  if (wall !== 0 && wall !== 1) throw new RangeError('Wall ID must be 0 (lower) or 1 (upper)');
+  const mu = evaluateCentre(model, x), d = evaluateUniformCubic(model.d[wall], x), side = wall === 1 ? 1 : -1;
+  return { value: mu.value + side * (model.W / 2 + d.value),
+    first: mu.first + side * d.first, second: mu.second + side * d.second,
+    third: mu.third + side * d.third };
+}
+
+function componentKnots(component, L) {
+  const out = [];
+  for (let j = Math.ceil(-component.origin / component.spacing); ; j++) {
+    const x = component.origin + j * component.spacing;
+    if (x >= L) break;
+    if (x > 0) out.push(x);
+  }
+  return out;
+}
+const unionKnots = (L, components) => [...new Set([0, L, ...components.flatMap(component => componentKnots(component, L))])].sort((a, b) => a - b);
+function scalarPower(value, h) {
+  return [value.value, value.first * h, value.second * h * h / 2, value.third * h ** 3 / 6];
+}
+
+/** Sum the independent knot grids as exact local cubic power spans, O(S log S)
+ * for sorting the union, O(S) storage (S is the total knot count).
+ * makeSpan supplies the Bezier-control convex-hull AABB for visibility.
+ * Shared endpoints belong to the next span; only each wall's last has u=1. */
+export function twoLayerWallSpans(model) {
+  const spans = [];
+  for (let wall = 0; wall < 2; wall++) {
+    const knots = unionKnots(model.L, [model.mu, model.d[wall]]);
+    for (let k = 0; k < knots.length - 1; k++) {
+      const x = knots[k], h = knots[k + 1] - x, C = scalarPower(evaluateWall(model, x, wall), h);
+      spans.push({ ...makeSpan([[x, C[0]], [h, C[1]], [0, C[2]], [0, C[3]]], spans.length + 1, wall, k === knots.length - 2), h });
+    }
+  }
+  return spans;
+}
+
+/** Exact cubic extrema up to Float64/root-solver tolerance; not sampled bounds.
+ * No validity policy is imposed. minWidth tests passage opening; bounds tests
+ * a caller-selected world coordinate system domain. O(S log S) knot unions
+ * plus O(S) constant-degree root searches; O(S) storage. */
+export function twoLayerWallBounds(model) {
+  const extrema = C => [0, 1, ...realRoots([C[1], 2 * C[2], 3 * C[3]])]
+    .map(u => ((C[3] * u + C[2]) * u + C[1]) * u + C[0]);
+  const spans = twoLayerWallSpans(model), wallRanges = [0, 1].map(wall => {
+    const values = spans.filter(span => span.wall === wall).flatMap(span => extrema(span.C.map(row => row[1])));
+    return [Math.min(...values), Math.max(...values)];
+  });
+  const knots = unionKnots(model.L, model.d), widths = [];
+  for (let k = 0; k < knots.length - 1; k++) {
+    const x = knots[k], h = knots[k + 1] - x,
+      lower = evaluateUniformCubic(model.d[0], x), upper = evaluateUniformCubic(model.d[1], x);
+    // y_upper-y_lower = W+d_upper+d_lower: the shared centre cancels.
+    const sum = Object.fromEntries(['value', 'first', 'second', 'third'].map(key => [key, lower[key] + upper[key]]));
+    sum.value += model.W;
+    widths.push(...extrema(scalarPower(sum, h)));
+  }
+  return { xmin: 0, xmax: model.L, ymin: Math.min(...wallRanges.map(range => range[0])), ymax: Math.max(...wallRanges.map(range => range[1])),
+    wallRanges, minWidth: Math.min(...widths), maxWidth: Math.max(...widths) };
 }
 export function evaluate(span, u) {
   const { C } = span;

@@ -6,19 +6,26 @@ DRF 시뮬레이터는 simulator, estimator, evaluator를 분리한 브라우저
 
 ## Input, Output, 좌표와 배열
 
-기준 장면은 world coordinate system의 `[0,60] × [0,30]` m 영역이다. 아래 벽 knot 높이는 `[8,6,9,7.5,10,8,7]`, 위 벽은 `[22,24,21,23.5,20,22.5,23]`, knot x는 `0:10:60` m이다. `notAKnot`은 cubic interpolating spline이며 B-spline 근사가 아니다. 같은 길이의 x/y 입력에 not-a-knot 경계조건을 쓰는 [MATLAB spline 문서](https://www.mathworks.com/help/matlab/ref/spline.html)에 따른다. 랜덤 장면은 이 knot 높이를 seed로 ±0.5 m 이내에서 변경하는 탐색용 장면이며 참조 통계 비교 대상에서 제외한다.
+공개 기본 장면은 축 위 그래프 형태의 랜덤 corridor 벽이다. world coordinate system 계산 영역은 `[0,60] × [−20,50]` m로 고정하며, 벽 길이 L=60 m, 평균 수직 폭 W=12 m, 중심선 기준선 y=15 m를 사용한다. 추정기의 격자 영역은 이 공개 프로토콜 상수로 정하고 생성된 실제 벽 범위로 조정하지 않는다.
 
-차량 ID v=1,2,3의 참 위치는 x=4,7,10 m에서 출발해 snapshot마다 0.75 m씩 증가한다. y는 `15 + 2 sin(2πx/30 + v)` m이다. 새 명세의 0-based 궤적 인덱스에 1을 더한 ID이며 RNG와 wire에서도 이 ID를 유지한다. 기본 입력은 차량 3대, snapshot 80개, isotropic 위치 표준편차 0.1 m, range 표준편차 0.1 m, roughness 2°, intensity 10/m, 목표 cell 길이 0.02 m, resolution 0 m, specular true, seed 1이다. 기준 추정기 설정은 격자 150×150, band 4, exact perimeter이다. grid/band/perimeter는 입력 envelope에 보관하지만 벽과 측정 생성식에는 사용하지 않는다. UI가 허용하는 범위는 차량 2–20대, snapshot 1–80개, 격자 100/150/200이다. 전체 실행은 기존 링크의 짧은 설정도 최소 80회로 연장하고 폼·URL·생성 입력을 같은 값으로 저장한다. 한 step과 그 실행의 계속 실행은 지정한 횟수를 유지한다. 기존 160회 참조 통계는 비교 조건을 유지하기 위해 명시적으로 60 snapshots를 사용한다.
+벽은 `y_upper=mu+W/2+d_upper`, `y_lower=mu−W/2−d_lower`이다. 공통 중심선 mu와 위/아래 독립 요철 d는 uniform cubic B-spline으로 생성한다. 중심선 sigmaM=6 m / deltaM=20 m, 요철 sigmaDGeometry=0.33 m / deltaD=4 m가 기본값이다. 각 성분의 원점은 U(0,delta), 계수는 iid N(0,2 sigma²)이고 ceil(L/delta)+4개로 전체 support를 확보한다. centred cardinal cubic basis를 사용하며 보간하지 않는다. 두 벽은 중심선을 공유하지만 요철을 대칭 복사하지 않는다. 오프셋은 y 방향이며 기울어진 구간의 법선 폭은 더 좁다. 90° 이상의 꺾임, overhang, 분기는 모델 범위 밖이다.
 
-추가 차량 ID v=4,…,20은 x0=1+13(v−4)/16 m에서 출발하고 같은 0.75 m/snapshot 이동식과 y 식을 사용한다. 고정 슬롯을 쓰므로 차량 수나 전체 snapshot 수를 바꿔도 공통 차량의 궤적과 RNG 주소는 바뀌지 않는다. t=1,…,60에서 모든 참 위치가 corridor 내부에 머문다. 이후에는 x=60 m에서 끝나는 유한 벽의 열린 출구를 통과하며 닫힌 끝벽이나 벽 외삽은 추가하지 않는다. t=80의 기본 3대 x는 64/67/70 m, 20대 x 범위는 61–74 m이다. 기존 60개 시점의 truth/wire prefix와 필드는 유지한다. 이들은 점 차량이며 실제 차량의 차폭, 충돌 회피와 무선 접속 스케줄을 모사하지 않는다. 160회 참조 통계는 기본 3대 조건이며 20대 단일 실행을 그 통계와 혼용하지 않는다.
-입력 제한은 위치/range 표준편차 각각 0–2 m, roughness 0–20°, intensity 0–30/m, cell step 0.005–0.2 m, resolution ablation 0–2 m, seed uint32이다. 두 표준편차를 동시에 0으로 만들 수 없다. 실제 cell의 양의 residual variance 조건은 field가 추가로 검사한다.
+각 벽은 중심선과 해당 요철 이음매 합집합에서 정확한 cubic power span으로 변환한다. 공유 경계점은 다음 span의 u=0, 마지막 span만 u=1을 포함한다. Bézier control hull AABB와 기존 geometry-only Simpson cell 분할을 유지한다. 안쪽 법선 곡률은 `−side*y''/(1+y'²)^(3/2)`, side는 위 +1 / 아래 −1이다. sqrt(2) 계수 보정은 이음매의 표준편차를 sigma로 맞춘다. 랜덤 phase 평균은 sqrt(302/315)*sigma이므로 모든 x에서 표준편차가 정확히 sigma라고 주장하지 않는다. y'' 표준편차 예측 0.0588961 m⁻¹과 곡률 자체의 표준편차를 구분한다.
+
+벽 전체의 cubic extrema로 영역과 최소 수직 폭 >4 m를 검사한다. 차량 여유는 각 차량의 x에서 위/아래 벽까지의 **수직 y 간격 ≥1 m**로 정의한다. Euclidean 최단 거리나 실제 차폭 보장이 아니다. 재현성을 위해 요청한 V/T가 아니라 고정 20대/80회 궤적 중 x≤60 구간을 검사한다. 따라서 차량 수, 주행 길이, 잡음, 산란, 격자 설정을 바꿔도 동일 seed/기하 설정의 벽이 같다. 위반 시 wall stream 주소에 attempt를 추가하고 최대 256회까지 기각 재샘플링한다. 채택 attempt와 각 기각 사유, bounds, 최소 여유를 truth.wallGeneration으로 저장한다. 기각 이후의 벽 통계는 조건부 분포이며 기각 전 Gaussian 통계와 구분한다.
+
+차량 ID v=1,2,3은 x0=4,7,10 m, 추가 v=4,…,20은 x0=1+13(v−4)/16 m에서 출발한다. x=x0+0.75t, y=mu(x)+2 sin(2πx/30+v)이다. 기본 입력은 차량 3대, 80 snapshots, 위치/range 표준편차 각각 0.1 m, 산란 roughness 2°, intensity 10/m, cellStep 0.02 m, resolution 0, specular true, seed 1이다. 명세 비교 Sweep은 60 snapshots이며 전체 실행도 사용자가 입력한 횟수를 그대로 계산한다. 차량은 통로 중심선을 안다는 truth-side 실험 설정이며 추정기에는 noisy pHat만 전달한다. x>60의 열린 출구에서는 mu(60)+mu'(60)(x−60)로 중심선만 접선 연장한다. 벽 span과 산란 cell은 [0,60]에 남는다. t=80에서 기본 3대 x는 64/67/70 m, 20대 x는 61–74 m이다.
+
+격자는 100/150/200, 기본 150×150 / band 4 / exact perimeter이다. 새 기본 cell center는 x=(ix+0.5)*0.4 m, y=−20+(iy+0.5)*70/150 m이다. 기하 파라미터 UI 허용 범위는 중심선 진폭 0–12 m / 간격 4–60 m, 요철 진폭 0–3 m / 간격 1–20 m이다. 산란 거칠기 [deg], 기하 요철 [m], 거리 잡음 sigmaD [m]를 구분한다. 위치/range 잡음은 0–2 m이고 둘 다 0인 조건은 거부한다. roughness 0–20°, intensity 0–30/m, cellStep 0.005–0.2 m, resolution 0–2 m, seed uint32이다. 차량은 점 모델이며 차폭, 충돌 회피, 무선 프로토콜과 물리적 time step을 모사하지 않는다.
+
+과거 not-a-knot reference와 ±0.5 m knot perturbation은 기존 numeric fixture 재현용 API로만 보존한다. 과거 160회 참조 실험과 field hash는 scene=reference, 60 snapshots, [0,60]×[0,30] 조건이다. 새 B-spline 모델의 성능을 그 결과로 판정하지 않는다.
 
 - 위치와 산란점: 길이 2의 `[x,y]`, 단위 m.
 - Pose covariance: `[xx,xy,yy]`, 대칭 2×2 행렬 `[[xx,xy],[xy,yy]]`의 압축 표현, 단위 m², positive semidefinite 조건.
 - Range와 표준편차: `dHat`, `sigmaD`, 단위 m. Roughness는 계산 시 rad, UI 입력과 표시는 deg.
 - 곡률 κell, κΓ, Δκ는 1/m, Theorem 2 scale varsigma는 m, ratio z는 무차원.
 - Spline span: `C`는 4×2 power basis 계수이며 `s(u)=[1,u,u²,u³] C`. u는 무차원이다. `evaluate`는 `s`, `t=s′(u)`, `dd=s″(u)`를 반환한다. Span 번호는 1부터, 벽 번호는 아래 0과 위 1부터 시작한다.
-- Grid: x/y는 길이 nx/ny의 Float64Array, flattened index는 `iy*nx+ix`, y 증가 순서. 기준 cell center는 x=`(ix+0.5)*0.4`, y=`(iy+0.5)*0.2` m.
+- Grid: x/y는 길이 nx/ny의 Float64Array, flattened index는 `iy*nx+ix`, y 증가 순서. 새 기본 격자 cell center는 위의 고정 영역을 따른다. 이전 reference 격자만 y=`(iy+0.5)*0.2` m이다.
 - 누적 D/A는 길이 G=`nx*ny`의 Float64Array. 화면 전송 Dbar/β̂는 같은 길이의 Float32Array. D, A, Dbar와 prefactor α의 단위는 1/m²이며 β̂는 무차원 비율이다. β̂를 확률, posterior, occupancy로 해석하지 않는다.
 - Field 출력: `{t,Dbar,betaHat,Q,admitted,rejected,epsilonA,ms}`. `Q`, 채택 수, 거부 수는 실행 시작 이후 누적 정수이다. 시간 측정 `ms`는 실행 시간이며 물리적 snapshot 간격이 아니다.
 
@@ -90,7 +97,7 @@ $$
 
 ## Spline, 정반사와 가시성
 
-`notAKnot`/`graphSpans`가 기준 graph wall을 만들고 `bsplineSpans`는 uniform cubic B-spline의 `C=M Q`를 제공한다. 일반 닫힌 동굴 UI와 그 장면의 extractor 검증은 구현 범위에 포함되지 않는다. Span AABB는 Bezier control point convex hull로 계산한다.
+`twoLayerWallSpans`가 공개 graph wall을 만들고 이전 reference에만 `notAKnot`/`graphSpans`를 사용한다. `bsplineSpans`는 uniform cubic B-spline의 `C=M Q`를 제공한다. 일반 닫힌 동굴 UI와 그 장면의 extractor 검증은 구현 범위에 포함되지 않는다. Span AABB는 Bezier control point convex hull로 계산한다.
 
 `specularPolynomial`은 참 위치 pT,pR와 span 접선 v로 `a=s−pT`, `b=s−pR`를 정의하고 다음 Fermat's principle 조건의 다항식을 만든다.
 
@@ -102,7 +109,7 @@ $$
 
 중근은 derivative stationary point와 Float64 roundoff에 따른 불확실성 구간을 사용해 처리한다. `nearMultiple`, `unresolved`, `degenerateSpans`를 보고하며 near-multiple cluster도 unresolved 진단에 더한다. 이 진단을 정확한 누락근 개수로 해석하지 않는다. 기준 장면 regular root에서 측정한 1e−15 수준 잔차를 임의 장면과 ill-conditioned root의 보편적 정확도로 주장하지 않는다. 공유 경계점은 중복 제거하고 마지막 열린 graph span의 u=1 끝점은 포함한다. 이는 첨부의 모든 span `[0,1)` 표기와 마지막 `[50,60]` 표기를 일관되게 처리하기 위한 endpoint convention이다.
 
-`specularPoints`는 `(v×a)(v×b)>0`인 same-side 근만 남기고 두 차량 leg 모두의 visibility를 검사한다. `visible`은 line/span 교차의 cubic 근을 구하고 leg parameter `λ∈(1e−9,1−1e−7)`에 교차가 있으면 차단한다. Collinear overlap도 차단한다. 진단의 `cosθ=norm(a/ra+b/rb)/2`, `κell=cosθ(1/ra+1/rb)/2`, `Δκ=κell−κΓ`에서 κΓ는 벽이 차량 쪽으로 휠 때 양수이다. Δκ의 부호를 보존한다.
+`specularPoints`는 `(v×a)(v×b)>0`인 same-side 근만 남기고 두 차량 leg 모두의 visibility를 검사한다. `visible`은 line/span 교차의 cubic 근을 구하고 leg parameter `λ∈(1e−9,1−1e−7)`에 교차가 있으면 차단한다. Collinear overlap도 차단한다. 진단의 `cosθ=norm(a/ra+b/rb)/2`, `κell=cosθ(1/ra+1/rb)/2`, `Δκ=κell−κΓ`에서 κΓ는 벽이 차량 쪽으로 휠 때 양수이다. Δκ의 부호를 보존한다. 내부 관측에서는 차량 쪽 법선과 corridor 안쪽 법선이 일치한다. 열린 출구 밖에서 외면을 관측하면 기존 4절의 차량 쪽 법선 진단을 유지한다. 이때 고정 안쪽 법선 곡률과 혼용하지 않는다.
 
 Visibility는 Float64 판정이며 임의로 작은 gap을 정확히 구분하지 못한다. 특정 1e−15 m gap 검사에서는 다항식 근의 roundoff 불확실성으로 실제 교차 없이 보수적으로 차단했다. 이 범위의 visibility를 exact geometry 보장으로 표시하지 않는다.
 
@@ -131,7 +138,10 @@ $$
 - Diffuse 생성: `(seed,'diffuse',t,i,j,wall)`, 벽마다 독립.
 - Diffuse range 표준잡음: `(seed,'diffNoise',t,i,j)`.
 - Wire 순서 섞기: `(seed,'shuffle',t,i,j)`.
-- 탐색용 랜덤 벽: `(seed,'wall')`.
+- 중심선: `(seed,'wall','mu')`.
+- 아래/위 독립 요철: `(seed,'wall','d',wall)`, wall=0/1.
+- 기각 재시도: 위 벽 주소 끝에 attempt=1,2,… 추가. 최초 attempt=0은 주소를 추가하지 않는다.
+- 과거 탐색 fixture에만 `(seed,'wall')`를 사용한다.
 
 Configuration은 `1≤i<j≤V`를 i, j 오름차순으로 순회한다. 기본 3대에서는 `(1,2),(1,3),(2,3)` 순서이고 monostatic은 없다. 20대에서는 snapshot마다 190쌍이다. 정반사점은 span 순회와 근의 u 순서, diffuse 점은 아래 벽에서 위 벽 순서이며 각 벽 내부에서는 Poisson draw의 생성 순서를 유지한다. 정반사와 diffuse를 이 순서로 연결하고 각 유형의 noise stream에서 z를 배정한다. Range는 모두 참 위치로 계산하고 σd는 모든 path 유형에 동일하게 적용한다. 랜덤 벽 stream은 각 knot에서 아래/위 높이 잡음을 번갈아 소비한다.
 
@@ -143,7 +153,7 @@ Bit 단위 재실행은 같은 코드와 설정, 같은 JS engine/libm 조건에
 
 ## 평가용 proxy와 진단
 
-`outerPeak`는 y<15 / y≥15의 각 반쪽 열에서 최대값의 0.5 이상인 local maximum 중 가장 바깥 것을 고른다. 인접한 두 값보다 크거나 같고, 적어도 하나보다 엄격히 커야 한다. 3점 포물선 보간 displacement를 ±0.5 cell로 제한한다. 이는 **corridor prior를 사용하는 평가용 proxy이며 최종 extractor는 미확정**이다. 이 prior는 estimator 누적식에는 들어가지 않는다.
+`outerPeak`는 y<15 / y≥15의 각 반쪽 열에서 최대값의 0.5 이상인 local maximum 중 가장 바깥 것을 고른다. 인접한 두 값보다 크거나 같고, 적어도 하나보다 엄격히 커야 한다. 3점 포물선 보간 displacement를 ±0.5 cell로 제한한다. 이는 **corridor prior를 사용하는 평가용 proxy이며 최종 extractor는 미확정**이다. 이 prior는 estimator 누적식에는 들어가지 않는다. 새 중심선이 크게 굽으면 두 벽이 모두 y<15 또는 y≥15에 놓일 수 있으므로 이 추출기의 오차 지표는 부정확할 수 있다. 평가기는 첨부의 변경 범위 밖으로 동결했으며 truth 중심선을 사용해 prior를 보정하지 않는다. UI에도 기존 y=15 분할 기준을 표시한다.
 
 평가 열은 x∈[10,50] m이고, t까지 같은 벽의 정반사점 x가 ±0.4 m 이내에 생긴 열이다. 아래/위 벽을 별도로 집계한다. Proxy 절대 y 오차의 중앙값, 정렬 후 `ceil(0.95*n)`번째 P95, 오차>0.5 m 비율을 계산한다. 관측된 열에 proxy가 없으면 Infinity 오차와 failure로 기록해 성공 표본에서 제외하는 방식으로 성능을 높이지 않는다.
 
@@ -176,7 +186,7 @@ Snapshot index와 0.75 m/snapshot은 물리적 Δt를 지정하지 않는다. �
 
 ## 화면과 기본 보기
 
-데스크톱 사이드바는 342 px로 설정만 표시한다. 상단 행은 RAW와 우측 성능창으로 구성하고, 성능창은 화면 폭에 따라 240–300 px이다. 현재 Q, 채택/거부 수, path 구성, 평가 6지표와 계산 시간을 성능창에서 함께 표시한다. 하단 Dbar, β̂와 시간별 평가 그래프는 그 아래 전체 폭에 맞추며 상하 행 비율은 1.9:1이다. RAW의 x/y 1 m는 같은 화면 길이이다. 하단 두 필드도 기본 등척이며 전체 x=0–60 m를 표시한다. 평가용 참벽 표시를 켜면 그 벽 범위, 끄면 공개 계산 영역 [0,60] × [0,30] m를 자동 보기의 시작 범위로 사용한다. 차량 표시를 켠 RAW는 선택 시점까지의 측정 pHat 범위를 합쳐 출구를 지난 차량도 표시한다. 미래 관측이나 숨겨진 truth 위치는 이 범위 확장에 사용하지 않는다. 표시용 참벽과 camera는 추정기 입력에 연결되지 않는다. 선택 가능한 `필드 채움`은 하단 필드의 x/y 화면 배율을 독립적으로 사용한다. 거리 지도 x/y 격자와 profile x 격자는 10 m 간격이며 휠 확대에도 물리 간격은 유지한다.
+상단 RAW 옆의 성능창에서 Q, 채택/거부 수, path 구성, 평가 지표와 계산 시간을 표시한다. 하단 Dbar, betaHat와 평가 이력은 같은 전체 폭과 일정 간격으로 배치한다. RAW x/y 1 m는 같은 화면 길이이며 하단 필드도 기본 등척이다. 정적 벽 범위 또는 명시적 고정 계산 영역만 camera에 사용하고 레이어 체크, 차량, 후보점과 snapshot 변화는 camera를 바꾸지 않는다. 확대/이동 후 처음으로는 현재 snapshot과 계산 기록을 유지하며 배율/시점만 복원한다. 거리 grid는 10 m 간격이다. 벽 형상 설정은 접힌 기하 설정에서 변경한다.
 
 최초 CSS 크기와 RAW의 최종 등척 크기 사이에서 작은 그래프 틀이 잠깐 보이는 것을 막기 위해 `#mapCanvas[data-view]`가 준비될 때까지 dashboard의 그래프 틀을 숨긴다. 우측 성능창의 실행 상태와 측정 생성 시간은 로딩/오류 안내를 위해 계속 표시한다. 첫 camera와 표시 크기를 계산한 뒤 그래프 행을 공개하며 초기화 중 가짜 필드나 관측은 만들지 않는다.
 
@@ -251,4 +261,4 @@ RAW가 물리적 종횡비에 맞춰 바깥 카드까지 줄이던 크기 조정
 
 화면의 벽 후보점은 누적 필드의 바깥쪽 봉우리에서 선택한 벽 위치 후보이며 corridor 가정을 사용한다. 사후 평가용 Outer-Peak의 JSON 키 proxy와 수치 처리는 유지한다.
 화면의 실제 벽은 시뮬레이션 생성기가 만든 벽의 실제 위치이며 사후 평가/표시용이다. 벽 후보점과 구분한다.
-장면 선택칸은 Reference / Random으로 표기하고 전체 이름은 Reference corridor / Random corridor이다. 일반 한글 문장은 단어 단위로 줄바꿈한다.
+공개 장면 선택칸은 2층 B-spline이며 이전 Reference / Random URL도 공개 앱에서 layered로 이전한다. 일반 한글 문장은 단어 단위로 줄바꿈한다.

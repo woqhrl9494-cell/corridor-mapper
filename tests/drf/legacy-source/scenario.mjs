@@ -3,29 +3,27 @@
  * C = V(V-1)/2 unordered Tx/Rx pairs, V in [2,20].
  * Work per snapshot: O(C * (wall cells + emitted paths * visibility cost)).
  */
-import { createWalls, sampleWalls, createTwoLayerWallModel, evaluateCentre, evaluateWall,
-  twoLayerWallSpans, twoLayerWallBounds } from './wall.mjs?v=20261002-layered28';
+import { createWalls, sampleWalls } from './wall.mjs';
 import { specularPoints } from './specular.mjs?v=20261002-model8';
 import { diffuseProfile, sampleDiffuse } from './diffuse.mjs?v=20261002-model8';
 import { createRng } from './rng.mjs';
 import { makeWire } from './wire.mjs';
 
 export const DEFAULT_INPUT = Object.freeze({
-  scene: 'layered', vehicles: 3, snapshots: 80, sigmaP: 0.1, sigmaD: 0.1,
-  sigmaM: 6, deltaM: 20, sigmaDGeometry: 0.33, deltaD: 4,
+  scene: 'reference', vehicles: 3, snapshots: 80, sigmaP: 0.1, sigmaD: 0.1,
   roughness: 2, lambda0: 10, cellStep: 0.02, resolution: 0, specular: true,
   grid: 150, band: 4, perimeter: 'exact', seed: 1,
 });
 export function normalizeInput(raw = {}) {
   const p = {};
   for (const key of Object.keys(DEFAULT_INPUT)) p[key] = raw[key] ?? DEFAULT_INPUT[key];
-  for (const key of ['vehicles', 'snapshots', 'sigmaP', 'sigmaD', 'sigmaM', 'deltaM', 'sigmaDGeometry', 'deltaD', 'roughness', 'lambda0', 'cellStep', 'resolution', 'grid', 'seed']) {
+  for (const key of ['vehicles', 'snapshots', 'sigmaP', 'sigmaD', 'roughness', 'lambda0', 'cellStep', 'resolution', 'grid', 'seed']) {
     p[key] = Number(p[key]);
     if (!Number.isFinite(p[key])) throw new Error(`${key}: finite number required`);
   }
   p.band = p.band === 'full' ? 'full' : Number(p.band);
   p.specular = p.specular === true || p.specular === 'true';
-  if (!['layered', 'reference', 'random'].includes(p.scene)) throw new Error('Unknown corridor scene');
+  if (!['reference', 'random'].includes(p.scene)) throw new Error('Unknown corridor scene');
   if (!Number.isInteger(p.vehicles) || p.vehicles < 2 || p.vehicles > 20 || !Number.isInteger(p.snapshots) || p.snapshots < 1 || p.snapshots > 80)
     throw new Error('Reference trajectories support 2–20 vehicles and 1–80 snapshots');
   if (![100, 150, 200].includes(p.grid) || ![3, 4, 5, 'full'].includes(p.band) || !['exact', 'ramanujan'].includes(p.perimeter))
@@ -35,58 +33,22 @@ export function normalizeInput(raw = {}) {
   if (p.roughness < 0 || p.roughness > 20 || p.lambda0 < 0 || p.lambda0 > 30 || p.cellStep < 0.005 || p.cellStep > 0.2 || p.resolution < 0 || p.resolution > 2)
     throw new Error('Scattering settings are outside the supported range');
   if (!Number.isInteger(p.seed) || p.seed < 0 || p.seed > 0xffffffff) throw new Error('Seed must be a uint32');
-  if (p.sigmaM < 0 || p.sigmaM > 12 || p.sigmaDGeometry < 0 || p.sigmaDGeometry > 3
-    || p.deltaM < 4 || p.deltaM > 60 || p.deltaD < 1 || p.deltaD > 20)
-    throw new Error('기하 설정 범위: 중심선 진폭 0–12 m / 간격 4–60 m, 요철 진폭 0–3 m / 간격 1–20 m');
   return p;
 }
-export const LAYERED_DOMAIN = Object.freeze([0, 60, -20, 50]);
-/** Truth-only rejection against the fixed supported fleet, independent of V/T,
- * noise and estimator settings. Clearance is vertical at each pose's x, like W.
- * Work O(attempts*(spans + 20*80)); attempts bounded to prevent a stuck worker.
- * Accepted statistics are conditional on this protocol, not iid Gaussian walls. */
-export function createSceneGeometry(input) {
-  if (input.scene !== 'layered') {
-    const spans = createWalls(input);
-    return { spans, walls: sampleWalls(spans, 0.1), wallModel: null, domain: [0, 60, 0, 30], wallGeneration: null };
-  }
-  const rejections = [];
-  for (let attempt = 0; attempt < 256; attempt++) {
-    const wallModel = createTwoLayerWallModel({ ...input, attempt }), bounds = twoLayerWallBounds(wallModel), reasons = [];
-    if (!(bounds.minWidth > 4)) reasons.push('passage-width');
-    if (bounds.ymin < LAYERED_DOMAIN[2] || bounds.ymax > LAYERED_DOMAIN[3]) reasons.push('domain');
-    let minVehicleClearance = Infinity;
-    for (let t = 1; t <= 80; t++) for (const [x, y] of truePoses(t, 20, wallModel)) {
-      if (x > wallModel.L) continue; // Open exit: poses continue, finite walls do not.
-      minVehicleClearance = Math.min(minVehicleClearance,
-        y - evaluateWall(wallModel, x, 0).value, evaluateWall(wallModel, x, 1).value - y);
-    }
-    if (minVehicleClearance < 1) reasons.push('vehicle-clearance');
-    if (reasons.length) { rejections.push({ attempt, reasons }); continue; }
-    const spans = twoLayerWallSpans(wallModel);
-    return { spans, walls: sampleWalls(spans, 0.1), wallModel, domain: [...LAYERED_DOMAIN],
-      wallGeneration: { attempt, attempts: attempt + 1, rejections, bounds, minVehicleClearance,
-        minWidthRequired: 4, vehicleClearanceRequired: 1, clearanceAxis: 'y',
-        validationFleet: { vehicles: 20, snapshots: 80, wallInterval: [0, 60] } } };
-  }
-  throw new Error('256회 벽 생성이 모두 기각되었습니다. 기하 진폭을 줄이거나 seed를 변경하세요.');
-}
-export function truePoses(t, vehicles = 3, wallModel = null) {
+export function truePoses(t, vehicles = 3) {
   return Array.from({ length: vehicles }, (_, v) => {
     // Preserve V1–V3 and all shared RNG addresses. Fixed extra slots keep fleet prefixes equal.
     // Point vehicles retain 0.75 m/snapshot independently of the requested duration.
     // x0 in [1,14]: t=1..60 stays inside; by t=80 all exit the open wall end x=60.
-    // Only the centreline is tangent-continued beyond the finite open exit.
+    // Walls remain finite [0,60] spans; outgoing poses are neither clipped nor extrapolated.
     const x0 = v < 3 ? 4 + 3 * v : 1 + 13 * (v - 3) / 16;
     const x = x0 + 0.75 * t;
-    const centre = wallModel ? evaluateCentre(wallModel, Math.min(x, wallModel.L)) : { value: 15, first: 0 };
-    return [x, centre.value + centre.first * Math.max(0, x - (wallModel?.L ?? 60)) + 2 * Math.sin(2 * Math.PI * x / 30 + v + 1)];
+    return [x, 15 + 2 * Math.sin(2 * Math.PI * x / 30 + v + 1)];
   });
 }
 /** Independent streams preserve standard pose/specular noise across paired sweeps. */
-export function generateSnapshot(input, spans, t, wallModel = null) {
-  if (input.scene === 'layered' && !wallModel) throw new Error('Layered snapshots require their accepted truth wall model');
-  const p = truePoses(t, input.vehicles, wallModel), sigma2 = input.sigmaP ** 2;
+export function generateSnapshot(input, spans, t) {
+  const p = truePoses(t, input.vehicles), sigma2 = input.sigmaP ** 2;
   const poseNoise = p.map((_, v) => {
     // Stream addresses use the same 1-based vehicle IDs as the wire.
     const r = createRng(input.seed, 'pose', t, v + 1);
@@ -138,13 +100,13 @@ export function generateSnapshot(input, spans, t, wallModel = null) {
   return { truth, wire: makeWire(measured) };
 }
 export async function generateScenario(raw, progress = () => {}) {
-  const started = performance.now(), input = normalizeInput(raw), geometry = createSceneGeometry(input);
-  const truth = [], wire = [];
+  const input = normalizeInput(raw), spans = createWalls(input), walls = sampleWalls(spans, 0.1);
+  const truth = [], wire = [], started = performance.now();
   for (let t = 1; t <= input.snapshots; t++) {
-    const result = generateSnapshot(input, geometry.spans, t, geometry.wallModel);
+    const result = generateSnapshot(input, spans, t);
     truth.push(result.truth); wire.push(result.wire); progress(t, input.snapshots);
     // Yield only on the truth side; the estimator still receives one causal snapshot at a time.
     await new Promise(resolve => setTimeout(resolve, 0));
   }
-  return { input, ...geometry, truth, wire, simulatorMs: performance.now() - started };
+  return { input, spans, walls, truth, wire, simulatorMs: performance.now() - started };
 }

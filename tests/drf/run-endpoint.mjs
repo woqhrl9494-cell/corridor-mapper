@@ -23,7 +23,7 @@ assert.equal(DEFAULT_INPUT.snapshots, 80, 'Run after the 80-snapshot extension h
 const beforeSources = await sourceHashes(), runs = [];
 let prefixEqual = false;
 for (const vehicles of [2, 3]) for (const seed of [1, 2, 3, 4, 5]) {
-  const scenario = await generateScenario({ vehicles, seed, snapshots: 80, grid: 150 });
+  const scenario = await generateScenario({ scene: 'reference', vehicles, seed, snapshots: 80, grid: 150 });
   const grid = createGrid(150, 150), field = createField(grid), evaluator = createEvaluator(scenario, grid);
   const samples = [0, 1].map(wall => Array.from({ length: 51 }, (_, k) => {
     const x = 55 + k * 0.1, span = scenario.spans.find(s => s.wall === wall && x >= s.C[0][0] && x <= s.C[0][0] + s.h);
@@ -58,7 +58,7 @@ for (const vehicles of [2, 3]) for (const seed of [1, 2, 3, 4, 5]) {
   for (const e of row.checkpoints[0].endpoint) assert.equal(e.coverage1m, 0, 'The old route does not observe the final 5 m');
   for (const e of row.checkpoints[1].endpoint) assert.equal(e.coverage1m, 1, 'The extended route observes the final 5 m');
   if (vehicles === 3 && seed === 1) {
-    const old = await generateScenario({ vehicles, seed, snapshots: 60, grid: 150 });
+    const old = await generateScenario({ scene: 'reference', vehicles, seed, snapshots: 60, grid: 150 });
     assert.deepEqual(scenario.truth.slice(0, 60), old.truth); assert.deepEqual(scenario.wire.slice(0, 60), old.wire);
     assert.equal(row.checkpoints[0].fieldHash, frozenHash, 'The original 60-snapshot numerical result must remain identical');
     assert.deepEqual(createEvaluator(old, grid).step(prefixFrame), createEvaluator(scenario, grid).step(prefixFrame),
@@ -70,7 +70,7 @@ for (const vehicles of [2, 3]) for (const seed of [1, 2, 3, 4, 5]) {
 assert.deepEqual(await sourceHashes(), beforeSources, 'Scientific sources changed during validation');
 const report = { schema: 'echomap-drf-endpoint-validation/1', date: new Date().toISOString(), command: 'node tests/drf/run-endpoint.mjs',
   sourceSHA256: beforeSources, byteOrder: endianness(), dtype: 'Float32Array', original60PrefixEqual: prefixEqual, original60FieldHash: frozenHash,
-  protocol: { vehicles: [2, 3], seeds: [1, 2, 3, 4, 5], snapshots: [60, 80], grid: [150, 150], gridDomainM: [0, 60, 0, 30],
+  protocol: { scene: 'reference', vehicles: [2, 3], seeds: [1, 2, 3, 4, 5], snapshots: [60, 80], grid: [150, 150], gridDomainM: [0, 60, 0, 30],
     routeStepMPerSnapshot: 0.75, endpointXM: [55, 60], samplesPerWall: 51, sampleStepXM: 0.1, observedHitRadiusM: 1,
     proxyToleranceM: 0.4, missingProxyError: 'Infinity', standardErrorXM: [10, 50] },
   limitations: ['Ground truth and endpoint diagnostics are evaluation-only.', 'The outer-peak proxy uses a corridor prior; observed coverage does not guarantee extraction accuracy.',
