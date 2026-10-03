@@ -228,7 +228,7 @@ export class DrfMap {
       return point;
     };
     const square=(p,size,color,lineWidth=1.5) => { if (!p) return; const [x,y]=screen(p);ctx.beginPath();ctx.rect(x-size/2,y-size/2,size,size);ctx.fillStyle=background;ctx.fill();ctx.lineWidth=lineWidth;ctx.strokeStyle=color;ctx.stroke(); };
-    const {layers={},wire,truth,walls=[],proxy=[],observed=[],history=[]}=this.state;
+    const {layers={},wire,truth,walls=[],proxy=[],candidates=[],observed=[],history=[]}=this.state;
     // Layer order, back to front: measurement ellipses (thin, translucent) → evaluation mask →
     // wall candidates (filled dots) → true wall (dashed) → scattering points → tracks → vehicles.
     // Drawing budget only: the estimator still receives every measured path.
@@ -249,7 +249,20 @@ export class DrfMap {
       if (stats) stats.textContent=layers.showEllipses ? `타원 표시 ${ellipseShown}개 · 측정 ${ellipseTotal}개` : '타원 숨김';
     }
     if (layers.showObserved) for (const p of observed) square(p,9,evalColor);
-    if (layers.showProxy) for (const p of proxy) marker(p,{r:2.75,fill:proxyColor,ring:1.25});
+    if (layers.showProxy) {
+      for (const p of proxy) marker(p,{r:2.75,fill:proxyColor,ring:1.25});
+      for (const c of candidates) {
+        const supported=c.status==='supported',pending=c.status==='pending',color=supported?'#009e73':pending?'#777777':'#c54b28';
+        if (supported) {
+          const points=[],tx=Math.cos(c.phi),ty=Math.sin(c.phi);
+          for (let k=0;k<=20;k++) { const u=-c.ell+2*c.ell*k/20,b=.5*c.kappa*u*u*c.sg;
+            points.push([c.center[0]+u*tx-b*ty,c.center[1]+u*ty+b*tx]); }
+          path(points,color,2.5);
+          marker(c.center,{r:3,fill:color,ring:1});
+        } else if (pending) marker(c.center,{r:2.5,stroke:color,lineWidth:1.25});
+        else { const [x,y]=screen(c.center);ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.moveTo(x-2.5,y-2.5);ctx.lineTo(x+2.5,y+2.5);ctx.moveTo(x-2.5,y+2.5);ctx.lineTo(x+2.5,y-2.5);ctx.stroke(); }
+      }
+    }
     if (layers.showTruth) for (const wall of walls) path(wall,truthColor,geometry ? 1.75 : 2,[7,5]);
     if (layers.showSpecular || layers.showDiffuse) for (const config of truth?.configs ?? []) {
       if (layers.showSpecular) for (const q of config.specular ?? []) marker(q.s,{r:4.5,stroke:evalColor,lineWidth:1.75});
@@ -392,9 +405,9 @@ function extent(points,includeZero=true) {
 }
 export function drawMetricHistory(canvas,evaluations,selection='all',snapshots=evaluations.at(-1)?.t ?? 60) {
   const surface=chartSurface(canvas);if (!surface) return;
-  const metrics=[["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
+  const metrics=[["precision","지지 정확도 [%]","%"],["recall","관측 벽 복원 [%]","%"],["firstSupportPrecision","최초 지지 [%]","%"],["holdRate","보류율 [%]","%"],["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
   metrics.forEach(([key,title,unit],k) => {
-    const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(key==="offwall" ? 100 : 1)})),[ymin,ymax]=extent(points);
+    const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(unit==="%" ? 100 : 1)})),[ymin,ymax]=unit==="%" ? [0,100] : extent(points);
     // A single selected metric is already named by the card's selector.
     const axes=chartAxes(surface,{title:metrics.length>1 ? title : '',xLabel:"snapshot",yLabel:unit,xmin:0,xmax:Math.max(1,snapshots),ymin,ymax,top:k*surface.height/metrics.length,height:surface.height/metrics.length,compact:surface.height<420});
     chartLine(surface,axes,points,surface.color("eval"),[],false,false,true);

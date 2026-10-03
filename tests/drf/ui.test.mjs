@@ -8,8 +8,13 @@ import { createWalls, sampleWalls } from '../../drf/wall.mjs';
 
 test('DRF DOM contract and readable stylesheet', () => {
   const html=readFileSync(new URL('../../drf.html',import.meta.url),'utf8');
-  const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas densityZoomOut densityZoomIn densityResetView contrastCanvas contrastZoomOut contrastZoomIn contrastResetView historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue medianValue p95Value offwallValue f1Value msdValue hd95Value timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
+  const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas densityZoomOut densityZoomIn densityResetView contrastCanvas contrastZoomOut contrastZoomIn contrastResetView historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue precisionValue recallValue firstPrecisionValue p95Value offwallValue f1Value supportedValue pendingValue contradictedValue timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
   for (const id of ids) assert.equal([...html.matchAll(new RegExp(`id="${id}"`,'g'))].length,1,id);
+  for (const removed of ['medianValue','msdValue','hd95Value']) assert.ok(!html.includes(`id="${removed}"`),'Legacy-only metric removed: '+removed);
+  assert.match(html,/최초 지지/);assert.match(html,/지지 후보가 없으면 미정/);
+  const historySelect=html.match(/<select id="historyMetric"[\s\S]*?<\/select>/)[0];
+  for (const metric of ['precision','recall','firstSupportPrecision','holdRate','p95','offwall']) assert.ok(historySelect.includes(`value="${metric}"`));
+  assert.ok(!historySelect.includes('value="all"'),'The compact dashboard renders one metric at a time');
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   assert.ok(!html.includes('장면'));
   assert.match(html,/벽 모델 · 2층 B-spline/);
@@ -96,13 +101,13 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     gridSegments.length=0;map.set({...map.state,heatField:'betaHat'});map.paint(canvas,1);
     assertGrid(map.box,'contrast');
     assertMetreGrid(map,'contrast');
-    rectangles.length=0;gridSegments.length=0;
-    drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
-    assert.equal(rectangles.length,3);assert.ok(rectangles.every(([, , ,height])=>height>=117),'history compactness follows each subplot height');
+    rectangles.length=0;gridSegments.length=0;canvas.clientHeight=7*180;
+    drawMetricHistory(canvas,[{t:1,precision:.9,recall:.7,firstSupportPrecision:.8,holdRate:.5,offset:.1,p95:.3,offwall:.05}]);
+    assert.equal(rectangles.length,7);assert.ok(rectangles.every(([, , ,height])=>height>=117),'history compactness follows each subplot height');
     assertChartGrids('history');
-    rectangles.length=0;gridSegments.length=0;canvas.clientHeight=360;
-    drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}]);
-    assert.equal(rectangles.length,3);assert.ok(rectangles.every(([, , ,height])=>height>=50),'compact history plots must retain usable vertical space');
+    rectangles.length=0;gridSegments.length=0;canvas.clientHeight=7*120;
+    drawMetricHistory(canvas,[{t:1,precision:.9,recall:.7,firstSupportPrecision:.8,holdRate:.5,offset:.1,p95:.3,offwall:.05}]);
+    assert.equal(rectangles.length,7);assert.ok(rectangles.every(([, , ,height])=>height>=50),'compact history plots must retain usable vertical space');
     assertChartGrids('compact history');
     rectangles.length=0;gridSegments.length=0;canvas.clientHeight=240;
     drawMetricHistory(canvas,[{t:1,offset:.1,p95:.3,offwall:.05}],'p95');

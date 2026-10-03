@@ -102,7 +102,7 @@ test('actual view reset preserves simulation, selection and replay; experiment r
     scenario:{input:{snapshots:3},truth:[{configs:[]},{configs:[]},{configs:[]}],wire:[],walls:[]},
     workers:[{stop(){stoppedWorkers++;}}],sweep:{cancel(){cancelledSweeps++;}},sweepRuns:[{}]};
   const context=vm.createContext({state,$,form,hoverGeneration:0,hoverTimer:0,replayFrame:0,
-    fieldWorker:{},evalWorker:{},hoverWorker:{},DEFAULT_INPUT:{snapshots:60},LAYERED_DOMAIN,location:{hash:'#old'},
+    fieldWorker:{},evalWorker:{},hoverWorker:{},psptWorker:{},DEFAULT_INPUT:{snapshots:60},LAYERED_DOMAIN,location:{hash:'#old'},
     document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){fitCalls++;}},densityMap:{set(){},fit(){fitCalls++;}},contrastMap:{set(){},fit(){fitCalls++;}},previewWalls:()=>[],previewBounds:undefined,
     fmt:v=>Number.isFinite(v) ? String(v) : '—',percentile:values=>values[0]??null,
     requestAnimationFrame:fn=>{const id=++nextFrame;pending.set(id,fn);return id;},cancelAnimationFrame:id=>pending.delete(id),clearTimeout(){},
@@ -159,11 +159,14 @@ test('actual view reset preserves simulation, selection and replay; experiment r
   vm.runInContext('stopReplay();',context);state.mode='running';state.selected=3;state.followLive=true;
   state.scenario.wire=Array.from({length:5},()=>({}));
   context.fieldWorker={request:()=>new Promise(resolve=>{releaseField=resolve;})};context.evalWorker={request:async()=>({evaluation:{}})};
+  const predictedCandidates=[{id:'1:h',center:[10,20],status:'pending'}];
+  context.psptWorker={request:async message=>{assert.deepEqual(Object.keys(message).sort(),['snapshot','type']);assert.equal(message.snapshot,state.scenario.wire[state.next]);return {candidates:predictedCandidates,psptMs:2};}};
   const inFlight=context.advance();assert.equal(state.busy,true);
   const beforeFit=fitCalls;assertViewOnly();assert.equal(state.selected,3);assert.equal(state.mode,'running');assert.equal(state.followLive,true);
   assert.equal(state.frames.length,3,'View reset must preserve completed records');assert.equal(fitCalls-beforeFit,3);assert.equal(pending.size,0);
   releaseField({type:'frame',requestId:1,t:4,Q:4,admitted:4,rejected:0,ms:1});await inFlight;
-  assert.equal(state.frames.length,4,'An in-flight completed result must be retained');assert.equal(state.selected,4,'Live following must continue after a view reset');
+  assert.equal(state.frames.length,4,'An in-flight completed result must be retained');
+  assert.equal(state.frames.at(-1).candidates,predictedCandidates);assert.equal(state.frames.at(-1).psptMs,2);assert.equal(state.frames.at(-1).method,'guarded45');assert.equal(state.selected,4,'Live following must continue after a view reset');
   assert.equal(state.mode,'running');assert.equal(state.followLive,true);assert.equal(pending.size,1,'Keep advancing after the current frame');
   state.workers=[{stop(){stoppedWorkers++;}}];
   $('inspector').textContent='old D/A/Q';$('diagnosticSummary').textContent='old Theorem 2';
@@ -178,5 +181,30 @@ test('actual view reset preserves simulation, selection and replay; experiment r
   assert.match($('inspector').textContent,/포인터/);assert.ok(!$('inspector').textContent.includes('old D/A/Q'));
   assert.equal(charts.get('diagnosticChart').length,0);assert.equal(charts.get('profileChart').length,0);
   assert.equal(charts.get('countChart')[0].length,0);assert.equal(charts.get('countChart')[1].length,0);
-  assert.equal(context.fieldWorker,null);assert.equal(context.evalWorker,null);assert.equal(context.hoverWorker,null);
+  assert.equal(context.fieldWorker,null);assert.equal(context.evalWorker,null);assert.equal(context.hoverWorker,null);assert.equal(context.psptWorker,null);
+});
+
+test('cancellation ignores late PSPT or evaluator responses without retaining a partial snapshot',async()=>{
+  for (const delayed of ['pspt','evaluation']) {
+    let release,waiting=false,evaluationCalls=0,scheduled=0;
+    const wire={t:1,configs:[]},state={generation:1,busy:false,mode:'running',scenario:{wire:[wire],input:{snapshots:1}},next:0,
+      frames:[],evaluations:[],selected:0,followLive:true};
+    const pause=()=>new Promise(resolve=>{release=resolve;waiting=true;});
+    const context=vm.createContext({state,controls(){},renderSelected(){},notice(){},$:()=>({}),
+      fieldWorker:{request:async message=>{assert.equal(message.snapshot,wire);return {type:'frame',requestId:1,t:1,Dbar:[],betaHat:[]};}},
+      psptWorker:{request:async message=>{assert.deepEqual(Object.keys(message).sort(),['snapshot','type']);return delayed==='pspt' ? pause() : {candidates:[],psptMs:1};}},
+      evalWorker:{request:async()=>{evaluationCalls++;return pause();}},
+      requestAnimationFrame:()=>{scheduled++;},fail:error=>{throw error;},
+    });
+    vm.runInContext(section('async function advance(','async function hashField('),context);
+    const run=context.advance();
+    for (let k=0;k<10&&!waiting;k++) await Promise.resolve();
+    assert.ok(waiting,'Reach the requested worker response boundary');
+    state.generation++;state.mode='cancelled';state.busy=false;
+    release(delayed==='pspt' ? {candidates:[{id:'late',status:'supported'}],psptMs:1} : {evaluation:{precision:1}});
+    await run;
+    assert.equal(evaluationCalls,delayed==='pspt' ? 0 : 1);
+    assert.deepEqual(state.frames,[]);assert.deepEqual(state.evaluations,[]);
+    assert.equal(state.next,0);assert.equal(state.selected,0);assert.equal(state.mode,'cancelled');assert.equal(scheduled,0);
+  }
 });

@@ -1,9 +1,9 @@
-import { createEvaluator } from './evaluate.mjs?v=20261002-layered29';
+import { createPSPTEvaluator } from './pspt-evaluate.mjs';
 import { diffuseProfile } from './diffuse.mjs';
 let evaluator, scenario;
 self.onmessage = ({ data }) => {
   try {
-    if (data.type === 'init') { scenario = data.scenario; evaluator = createEvaluator(scenario, data.grid); self.postMessage({ type: 'initialized', requestId: data.requestId }); }
+    if (data.type === 'init') { scenario = data.scenario; evaluator = createPSPTEvaluator(scenario, data.grid); self.postMessage({ type: 'initialized', requestId: data.requestId }); }
     if (data.type === 'evaluate') self.postMessage({ type: 'evaluation', requestId: data.requestId, evaluation: evaluator.step(data.frame) });
     if (data.type === 'profile') {
       const snapshot = scenario.truth[data.t - 1], config = snapshot.configs[data.configIndex];

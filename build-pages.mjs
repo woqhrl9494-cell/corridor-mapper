@@ -6,7 +6,7 @@ const files = [
   'drf.html', 'wall_metrics.js', 'surf/map.mjs', 'surf/exports.mjs',
   ...[
     'app.mjs', 'diffuse.mjs', 'eval.worker.mjs', 'evaluate.mjs', 'field.mjs',
-    'field.worker.mjs', 'offline.bundle.js', 'poly.mjs', 'provenance.json',
+    'field.worker.mjs', 'pspt.worker.mjs', 'pspt.mjs', 'pspt-math.mjs', 'pspt-ridges.mjs', 'pspt-evaluate.mjs', 'offline.bundle.js', 'poly.mjs', 'provenance.json',
     'reference/octave/fixtures.json', 'render.mjs', 'rng.mjs', 'scenario.mjs',
     'scenario.worker.mjs', 'specular.mjs', 'style.css', 'sweep.mjs',
     'sweep.worker.mjs', 'wall.mjs', 'wire.mjs',

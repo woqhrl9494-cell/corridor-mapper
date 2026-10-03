@@ -1,0 +1,61 @@
+{
+  "createdAt": "2026-10-03T10:04:12.411Z",
+  "node": "v26.7.0",
+  "sourceHashes": {
+    "drf/pspt.mjs": "d34f93d222aaa0d85a5f484c46bacdbfac3ca3cd772521b095b0db64920362fd",
+    "drf/pspt-math.mjs": "cac63ced44912a125b3434deee5421abe9f44671b433eb2e697ca1ab0ff30f99",
+    "drf/pspt-ridges.mjs": "29c7e73664e18af0a7a04a8a46a2373cc8a6267a2ea2bc3ef6e831407b3279b2",
+    "drf/scenario.mjs": "254acadbeaf7c7055779fa6e698aa569849656b69c3a6b5da611d79142c93df3",
+    "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+    "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
+  },
+  "complete": true,
+  "results": [
+    {
+      "name": "20vehicles-zero-range-noise",
+      "input": {
+        "scene": "layered",
+        "wallSide": "both",
+        "vehicles": 20,
+        "snapshots": 40,
+        "sigmaP": 0.1,
+        "sigmaD": 0,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 811
+      },
+      "completedSnapshots": 40,
+      "reportRowsChecked": 11920,
+      "finite": true,
+      "minCovEigenvalue": -7.888967907853154e-10,
+      "scoreMin": 0,
+      "scoreMax": 0.999999999760556,
+      "geometryMs": 22.53595800000039,
+      "pass": false,
+      "generatorTiming": {
+        "count": 40,
+        "sumMs": 18144.940042999948,
+        "p50Ms": 385.4742089999927,
+        "p95Ms": 786.934709000001,
+        "maxMs": 1037.4049169999998
+      },
+      "estimatorTiming": {
+        "count": 40,
+        "sumMs": 100214.58287299996,
+        "p50Ms": 2236.3346249999995,
+        "p95Ms": 3938.3816670000015,
+        "maxMs": 5616.175916
+      }
+    }
+  ]
+}

@@ -1,0 +1,391 @@
+{
+  "scope": "Actual JS PSPT and bundled worker callable boundaries; finite exercised paths",
+  "failures": [],
+  "startSourceHashes": {
+    "drf/pspt.mjs": "41cde370201f33aa0d06181b6e73c56b5157b680311c9b92d83a414775a5354a",
+    "drf/pspt.worker.mjs": "515b9e6def3644a7a24eec7e5572f0197181ffc95e858da1a40180173e4cc5fe",
+    "drf/pspt-math.mjs": "cac63ced44912a125b3434deee5421abe9f44671b433eb2e697ca1ab0ff30f99",
+    "drf/pspt-ridges.mjs": "29c7e73664e18af0a7a04a8a46a2373cc8a6267a2ea2bc3ef6e831407b3279b2",
+    "drf/app.mjs": "17e3115dcf225c11dd0949adbc6541695b4390ca03b77718725e56495f128dd2",
+    "drf/pspt-evaluate.mjs": "9dd15a19d9dad77adc5413bed696de4241cdb59219365967f5352bb76f33cf5d",
+    "build-drf-offline.mjs": "6a9c824f76e8e8e716a1c414ed0cf4a974e856fca710357a033d99676bc1a8f8"
+  },
+  "causality": {
+    "cutoff": 24,
+    "rows": 76,
+    "prefix_equal": true,
+    "future_poison_equal": true,
+    "changed_after_cutoff": [
+      true,
+      true
+    ],
+    "relabel_equal": true,
+    "max_permutation_delta": 1.4210854715202004e-14,
+    "birth_window_and_postbirth_score_assertions": true
+  },
+  "forbidden": [
+    {
+      "scope": "snapshot",
+      "key": "wallSide",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key wallSide"
+    },
+    {
+      "scope": "snapshot",
+      "key": "truth",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key truth"
+    },
+    {
+      "scope": "snapshot",
+      "key": "walls",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key walls"
+    },
+    {
+      "scope": "snapshot",
+      "key": "cameraBounds",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key cameraBounds"
+    },
+    {
+      "scope": "snapshot",
+      "key": "pTrue",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key pTrue"
+    },
+    {
+      "scope": "snapshot",
+      "key": "pathKind",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key pathKind"
+    },
+    {
+      "scope": "snapshot",
+      "key": "evaluation",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key evaluation"
+    },
+    {
+      "scope": "snapshot",
+      "key": "seed",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key seed"
+    },
+    {
+      "scope": "snapshot",
+      "key": "futureSnapshots",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "snapshot: non-wire/non-model key futureSnapshots"
+    },
+    {
+      "scope": "config",
+      "key": "wallSide",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key wallSide"
+    },
+    {
+      "scope": "config",
+      "key": "truth",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key truth"
+    },
+    {
+      "scope": "config",
+      "key": "walls",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key walls"
+    },
+    {
+      "scope": "config",
+      "key": "cameraBounds",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key cameraBounds"
+    },
+    {
+      "scope": "config",
+      "key": "pTrue",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key pTrue"
+    },
+    {
+      "scope": "config",
+      "key": "pathKind",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key pathKind"
+    },
+    {
+      "scope": "config",
+      "key": "evaluation",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key evaluation"
+    },
+    {
+      "scope": "config",
+      "key": "seed",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key seed"
+    },
+    {
+      "scope": "config",
+      "key": "futureSnapshots",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "configuration: non-wire/non-model key futureSnapshots"
+    },
+    {
+      "scope": "path",
+      "key": "wallSide",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key wallSide"
+    },
+    {
+      "scope": "path",
+      "key": "truth",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key truth"
+    },
+    {
+      "scope": "path",
+      "key": "walls",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key walls"
+    },
+    {
+      "scope": "path",
+      "key": "cameraBounds",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key cameraBounds"
+    },
+    {
+      "scope": "path",
+      "key": "pTrue",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key pTrue"
+    },
+    {
+      "scope": "path",
+      "key": "pathKind",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key pathKind"
+    },
+    {
+      "scope": "path",
+      "key": "evaluation",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key evaluation"
+    },
+    {
+      "scope": "path",
+      "key": "seed",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key seed"
+    },
+    {
+      "scope": "path",
+      "key": "futureSnapshots",
+      "rejected": true,
+      "state_unchanged": true,
+      "error": "path: non-wire/non-model key futureSnapshots"
+    }
+  ],
+  "options": [
+    {
+      "key": "wallSide",
+      "rejected": true
+    },
+    {
+      "key": "truth",
+      "rejected": true
+    },
+    {
+      "key": "walls",
+      "rejected": true
+    },
+    {
+      "key": "cameraBounds",
+      "rejected": true
+    },
+    {
+      "key": "pTrue",
+      "rejected": true
+    },
+    {
+      "key": "pathKind",
+      "rejected": true
+    },
+    {
+      "key": "evaluation",
+      "rejected": true
+    },
+    {
+      "key": "seed",
+      "rejected": true
+    },
+    {
+      "key": "futureSnapshots",
+      "rejected": true
+    }
+  ],
+  "accessors": [
+    {
+      "scope": "snapshot",
+      "rejected": true,
+      "reads": 0,
+      "value_never_read": true,
+      "state_unchanged": true
+    },
+    {
+      "scope": "config",
+      "rejected": true,
+      "reads": 0,
+      "value_never_read": true,
+      "state_unchanged": true
+    },
+    {
+      "scope": "path",
+      "rejected": true,
+      "reads": 0,
+      "value_never_read": true,
+      "state_unchanged": true
+    }
+  ],
+  "time_rejections": [
+    {
+      "t": 24,
+      "error": "snapshots must be processed once in causal t=1,2,... order",
+      "state_unchanged": true,
+      "rejected": true
+    },
+    {
+      "t": 23,
+      "error": "snapshots must be processed once in causal t=1,2,... order",
+      "state_unchanged": true,
+      "rejected": true
+    }
+  ],
+  "robustness": [
+    {
+      "kind": "skipped_t",
+      "error": "snapshots must be processed once in causal t=1,2,... order",
+      "rejected": true,
+      "state_unchanged": true
+    },
+    {
+      "kind": "zero_uncertainty",
+      "error": "PSPT requires sigmaD > 0 for every measured path",
+      "rejected": true,
+      "state_unchanged": true
+    },
+    {
+      "kind": "zero_range_positive_pose_20vehicles",
+      "error": "PSPT requires sigmaD > 0 for every measured path",
+      "rejected": true,
+      "state_unchanged": true
+    }
+  ],
+  "worker": {
+    "isolated_no_external_apis": true,
+    "bundled_inputs": [
+      "corridor-mapper-surf-web/drf/wire.mjs",
+      "corridor-mapper-surf-web/drf/field.mjs",
+      "corridor-mapper-surf-web/drf/pspt-ridges.mjs",
+      "corridor-mapper-surf-web/drf/pspt-math.mjs",
+      "corridor-mapper-surf-web/drf/pspt.mjs",
+      "corridor-mapper-surf-web/drf/pspt.worker.mjs"
+    ],
+    "prefix_matches_direct": true,
+    "forbidden": [
+      {
+        "key": "wallSide",
+        "rejected": true
+      },
+      {
+        "key": "truth",
+        "rejected": true
+      },
+      {
+        "key": "walls",
+        "rejected": true
+      },
+      {
+        "key": "cameraBounds",
+        "rejected": true
+      },
+      {
+        "key": "pTrue",
+        "rejected": true
+      },
+      {
+        "key": "pathKind",
+        "rejected": true
+      },
+      {
+        "key": "evaluation",
+        "rejected": true
+      },
+      {
+        "key": "seed",
+        "rejected": true
+      },
+      {
+        "key": "futureSnapshots",
+        "rejected": true
+      },
+      {
+        "key": "grid",
+        "rejected": true
+      },
+      {
+        "key": "options",
+        "rejected": true
+      }
+    ],
+    "rejected_messages_preserved_state": true
+  },
+  "offline": {
+    "artifactSha256": "d31d68a96be4e110e2eb34b12dbbc35c1e058ae948dc106bd10243e031e4d26b",
+    "workerSha256": "581166fc2d59ff38bbceb3cf72cf83842e5a6a6f17bc5b32d7bfa3cac1465441",
+    "prefix_matches_direct": true,
+    "future_poison_prefix_equal": true,
+    "forbidden_truth_rejected": true,
+    "rejected_message_state_unchanged": true,
+    "recorded_source_mismatches": []
+  },
+  "sourceHashes": {
+    "drf/pspt.mjs": "41cde370201f33aa0d06181b6e73c56b5157b680311c9b92d83a414775a5354a",
+    "drf/pspt.worker.mjs": "515b9e6def3644a7a24eec7e5572f0197181ffc95e858da1a40180173e4cc5fe",
+    "drf/pspt-math.mjs": "cac63ced44912a125b3434deee5421abe9f44671b433eb2e697ca1ab0ff30f99",
+    "drf/pspt-ridges.mjs": "29c7e73664e18af0a7a04a8a46a2373cc8a6267a2ea2bc3ef6e831407b3279b2",
+    "drf/app.mjs": "17e3115dcf225c11dd0949adbc6541695b4390ca03b77718725e56495f128dd2",
+    "drf/pspt-evaluate.mjs": "9dd15a19d9dad77adc5413bed696de4241cdb59219365967f5352bb76f33cf5d",
+    "build-drf-offline.mjs": "6a9c824f76e8e8e716a1c414ed0cf4a974e856fca710357a033d99676bc1a8f8"
+  },
+  "core_sources_unchanged": true,
+  "seconds": 17.464958167
+}

@@ -6,7 +6,7 @@
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
   },
-  "status": "two-layer wall protocol; new geometry and runtime checks, estimator accuracy unvalidated",
+  "status": "guarded PSPT online candidates; fixed-domain measured-only estimation, Python checkpoint parity and boundary checks; synthetic research validation only",
   "referenceStatus": "Provided text fixtures only; original MATLAB/Octave files unavailable",
   "numericalConventions": [
     "numerical K may underflow to zero",
@@ -20,19 +20,39 @@
     "kind": "two-layer-uniform-cubic",
     "domain": [
       0,
-      60,
+      80,
       -20,
       50
     ],
     "minWidth": 4,
     "vehicleClearance": 1,
     "clearanceAxis": "y",
-    "defaultSnapshots": 80,
+    "defaultSnapshots": 120,
     "comparisonSnapshots": 60,
     "rejectionFleet": {
       "vehicles": 20,
-      "snapshots": 80
+      "snapshots": 120
     },
     "exit": "finite walls; tangent continuation of centreline only"
+  },
+  "pspt": {
+    "method": "guarded45",
+    "implementation": "drf/pspt.mjs",
+    "domain": [
+      0,
+      80,
+      -20,
+      50
+    ],
+    "grid": [
+      100,
+      100
+    ],
+    "scoreKind": "uncalibrated composite weight",
+    "geometryGuardAlpha": 0.001,
+    "maxIncidenceDeg": 45,
+    "minimumEvidenceSnapshots": 2,
+    "referenceGuardSha256": "5e30bb7c381232016c316f72f77636f86052970e54dc6628ea45c99f2b6b6bec",
+    "validation": "PSPT_VALIDATION.md"
   }
 }

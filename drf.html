@@ -6,12 +6,12 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261002-layered29" />
+    <link rel="stylesheet" href="drf/style.css?v=20261003-pspt1" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="drf.html"><span class="logo-dot" aria-hidden="true"></span><h1>EchoMap</h1><span class="brand-sub">DRF 시뮬레이터 · 한양대학교 WSL</span></a>
-      <span class="header-badge">2층 B-spline · 위·아래 독립 요철</span>
+      <span class="header-badge">DRF + PSPT · 온라인 후보 판정</span>
       <div class="header-actions"><button id="aboutButton" type="button">방법과 범위</button><button id="themeButton" type="button">테마</button></div>
     </header>
     <main class="workspace">
@@ -31,7 +31,7 @@
               <label class="prop" title="2–20대 · 모든 차량 쌍의 측정 생성"><span class="prop-label">차량 수</span><input name="vehicles" type="number" min="2" max="20" step="1" value="3" required /></label>
               <label class="prop" title="기본 주행 120회 · 명세 비교 실험 60회"><span class="prop-label">snapshot 수</span><input name="snapshots" type="number" min="1" max="120" step="1" value="120" required /></label>
               <label class="prop" title="위치 오차 표준편차 σp [m]"><span class="prop-label">위치 <math><msub><mi>σ</mi><mi>p</mi></msub></math></span><input name="sigmaP" type="number" min="0" max="2" step="0.01" value="0.1" required /><span class="unit">m</span></label>
-              <label class="prop" title="거리 오차 표준편차 σd [m]"><span class="prop-label">거리 <math><msub><mi>σ</mi><mi>d</mi></msub></math></span><input name="sigmaD" type="number" min="0" max="2" step="0.01" value="0.1" required /><span class="unit">m</span></label>
+              <label class="prop" title="거리 오차 표준편차 σd [m] · 현재 PSPT는 0 초과만 지원"><span class="prop-label">거리 <math><msub><mi>σ</mi><mi>d</mi></msub></math></span><input name="sigmaD" type="number" min="0.01" max="2" step="0.01" value="0.1" required /><span class="unit">m</span></label>
             </div>
           </fieldset>
           <details class="sidebar-section display-settings geometry-settings"><summary class="section-title">벽 형상 · 기하 요철</summary>
@@ -64,7 +64,7 @@
             <fieldset><legend>추정기가 보는 정보</legend><div class="toggle-list">
               <label class="toggle"><input id="showEllipses" type="checkbox" checked /><span class="swatch swatch-ellipse" aria-hidden="true"></span>측정 타원</label>
               <label class="toggle"><input id="showVehicles" type="checkbox" checked /><span class="swatch swatch-track" aria-hidden="true"></span>차량·궤적</label>
-              <label class="toggle" title="누적 필드의 봉우리에서 선택한 벽 위치 후보 · 사후 평가에 사용"><input id="showProxy" type="checkbox" checked /><span class="swatch swatch-proxy" aria-hidden="true"></span>벽 후보점</label>
+              <label class="toggle" title="측정만으로 만든 표면 후보 · 지지·보류·기각을 표시"><input id="showProxy" type="checkbox" checked /><span class="swatch swatch-proxy" aria-hidden="true"></span>후보 판정</label>
             </div></fieldset>
             <fieldset class="evaluation"><legend>평가 전용</legend><div class="toggle-list">
               <label class="toggle" title="시뮬레이션에서 생성한 벽의 실제 위치 · 사후 평가용"><input id="showTruth" type="checkbox" checked /><span class="swatch swatch-truth" aria-hidden="true"></span>실제 벽</label>
@@ -73,7 +73,7 @@
               <label class="toggle" title="관측 벽 마스크 · 1 m"><input id="showObserved" type="checkbox" /><span class="swatch swatch-observed" aria-hidden="true"></span>관측 마스크</label>
             </div></fieldset>
           </div>
-          <p class="prior-note" title="벽 후보점은 누적 필드의 바깥쪽 봉우리에서 고른 평가용 후보입니다. corridor 형태를 가정하며 벽 추출법은 미확정입니다.">corridor 가정 · 평가용 후보 · 추출법 미확정</p>
+          <p class="prior-note" title="PSPT 판정은 고정 100×100 격자, 잔차 4σ, 정확 타원 둘레를 사용합니다. 위의 격자·잔차·둘레 설정은 하단 표시 필드에 적용됩니다. 점수는 보정된 진위 확률이 아닙니다.">PSPT · 정보가 부족하면 보류<br>판정 격자 100×100 · 고정 설정</p>
         </details>
       </aside>
       <div class="views">
@@ -89,7 +89,7 @@
                       <li data-layer="vehicles"><span class="swatch swatch-track" aria-hidden="true"></span>차량 궤적</li>
                       <li data-layer="vehicles"><span class="swatch swatch-vehicle" aria-hidden="true"></span>현재 위치</li>
                       <li data-layer="ellipses"><span class="swatch swatch-ellipse" aria-hidden="true"></span>측정 타원</li>
-                      <li data-layer="proxy"><span class="swatch swatch-proxy" aria-hidden="true"></span>벽 후보점</li>
+                      <li data-layer="proxy"><span class="swatch swatch-supported" aria-hidden="true"></span>지지 ● <span class="swatch swatch-pending" aria-hidden="true"></span>보류 ○ <span class="swatch swatch-contradicted" aria-hidden="true"></span>기각 ×</li>
                       <li data-layer="truth" class="evaluation"><span class="swatch swatch-truth" aria-hidden="true"></span>실제 벽 · 평가</li>
                       <li data-layer="specular" class="evaluation"><span class="swatch swatch-specular" aria-hidden="true"></span>정반사점</li>
                       <li data-layer="diffuse" class="evaluation"><span class="swatch swatch-diffuse" aria-hidden="true"></span>diffuse점</li>
@@ -104,23 +104,26 @@
                 <dl class="metrics path-metrics">
                   <div><dt>누적 채택 <math><msub><mi>Q</mi><mi>t</mi></msub></math></dt><dd id="qValue">0</dd></div>
                   <div><dt>채택 / 거부</dt><dd><span id="acceptedValue">0</span><span class="dd-sep">/</span><span id="rejectedValue">0</span></dd></div>
-                  <div class="path-composition evaluation"><dt>평가용 경로</dt><dd id="pathValue">—</dd></div>
+                  <div class="path-composition evaluation"><dt>생성 경로</dt><dd id="pathValue">—</dd></div>
                 </dl>
-                <h3 class="group-title evaluation">참값 사후 평가</h3><p id="evaluationNote" class="note evaluation" title="기존 평가 후보점 추출은 y=15 m를 기준으로 위·아래를 구분합니다. 크게 굽은 새 벽 모델의 정확도를 보장하지 않습니다.">기존 평가기 · y=15 m 분할 기준</p>
+                <div class="candidate-counts" aria-label="온라인 후보 판정 수">
+                  <span class="supported">지지 <b id="supportedValue">0</b></span><span class="pending">보류 <b id="pendingValue">0</b></span><span class="contradicted">기각 <b id="contradictedValue">0</b></span>
+                </div>
+                <h3 class="group-title evaluation">실제 벽과 사후 비교</h3><p id="evaluationNote" class="note evaluation">지지 후보 · 허용 거리 0.4 m</p>
                 <dl class="metrics evaluation-metrics evaluation">
-                  <div><dt title="중앙 절대 오차">중앙 <span class="unit">[m]</span></dt><dd id="medianValue">—</dd></div>
-                  <div><dt>P95 <span class="unit">[m]</span></dt><dd id="p95Value">—</dd></div>
-                  <div><dt>off-wall <span class="unit">[%]</span></dt><dd id="offwallValue">—</dd></div>
-                  <div><dt title="Boundary F1 · 허용 거리 0.4 m"><math><msub><mi mathvariant="normal">F</mi><mn>1</mn></msub></math> <span class="unit">· 0.4 m</span></dt><dd id="f1Value">—</dd></div>
-                  <div><dt>CA-MSD <span class="unit">[m]</span></dt><dd id="msdValue">—</dd></div>
-                  <div><dt>CA-HD95 <span class="unit">[m]</span></dt><dd id="hd95Value">—</dd></div>
+                  <div><dt title="현재 지지한 후보 중심 중 실제 벽 0.4 m 이내 비율. 지지 후보가 없으면 미정.">지지 정확도 [%]</dt><dd id="precisionValue">—</dd></div>
+                  <div><dt title="과거 반사점 1 m 이내의 관측 벽 중 지지 표면조각 0.4 m 이내 비율">관측 벽 복원 [%]</dt><dd id="recallValue">—</dd></div>
+                  <div><dt title="후보가 처음 지지된 당시의 정확도. 나중에 수정된 오판도 포함.">최초 지지 [%]</dt><dd id="firstPrecisionValue">—</dd></div>
+                  <div><dt title="현재 지지 후보 중심의 실제 벽까지 거리">P95 <span class="unit">[m]</span></dt><dd id="p95Value">—</dd></div>
+                  <div><dt title="현재 지지 후보 중심 중 실제 벽에서 0.4 m 초과한 비율">off-wall <span class="unit">[%]</span></dt><dd id="offwallValue">—</dd></div>
+                  <div><dt title="지지 표면조각 precision과 관측 벽 recall의 조화평균"><math><msub><mi mathvariant="normal">F</mi><mn>1</mn></msub></math> <span class="unit">· 0.4 m</span></dt><dd id="f1Value">—</dd></div>
                 </dl>
-                <p class="timing-label" title="snapshot 하나의 필드 계산 시간"><span>계산 시간</span><span id="timingValue" class="timing">—</span></p>
+                <p class="timing-label" title="snapshot 하나의 필드 + PSPT 계산 시간의 합. 생성·평가·렌더링 시간 제외"><span>계산 시간</span><span id="timingValue" class="timing">—</span></p>
               </section>
             </div>
             <figure class="view field-view" id="viewDensity"><figcaption class="vlabel"><div class="vtitle"><span class="tag"><math><mover><mi>D</mi><mo>‾</mo></mover></math></span><h2>누적 경로 평균</h2><span class="view-unit optional-unit">[m<sup>−2</sup>]</span></div><div class="map-toolbar" role="group" aria-label="누적 경로 평균 지도 조작"><button id="densityZoomOut" class="icon" type="button" aria-label="누적 경로 평균 지도 축소">−</button><button id="densityZoomIn" class="icon" type="button" aria-label="누적 경로 평균 지도 확대">＋</button><button id="densityResetView" class="reset" type="button" aria-label="처음으로" title="처음으로 · 이 그래프의 확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다."><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3.2 6.2A5 5 0 1 1 3 9.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2.6 2.8v3.6h3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-text">처음으로</span></button></div></figcaption><div class="view-body"><canvas id="densityCanvas" class="dashboard-canvas" aria-label="누적 Direct Residual Field Dbar"></canvas></div></figure>
             <figure class="view field-view" id="viewContrast"><figcaption class="vlabel"><div class="vtitle"><span class="tag"><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math></span><h2>필드 대비</h2><span class="view-unit optional-unit">무차원</span></div><div class="map-toolbar" role="group" aria-label="필드 대비 지도 조작"><button id="contrastZoomOut" class="icon" type="button" aria-label="필드 대비 지도 축소">−</button><button id="contrastZoomIn" class="icon" type="button" aria-label="필드 대비 지도 확대">＋</button><button id="contrastResetView" class="reset" type="button" aria-label="처음으로" title="처음으로 · 이 그래프의 확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다."><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3.2 6.2A5 5 0 1 1 3 9.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2.6 2.8v3.6h3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="btn-text">처음으로</span></button></div></figcaption><div class="view-body"><canvas id="contrastCanvas" class="dashboard-canvas" aria-label="필드 대비 지표 betaHat"></canvas></div></figure>
-            <figure class="view" id="viewMetrics"><figcaption class="vlabel evaluation"><div class="vtitle"><span class="tag">EVAL</span><h2 class="optional-title">snapshot 평가</h2></div><select id="historyMetric" aria-label="시간별 평가 지표"><option value="p95" selected>P95 |오차| [m]</option><option value="offset">Signed offset [m]</option><option value="offwall">off-wall [%]</option></select></figcaption><div class="view-body"><canvas id="metricChart" class="dashboard-canvas compact-chart" aria-label="선택 지표의 시간별 사후 평가"></canvas></div></figure>
+            <figure class="view" id="viewMetrics"><figcaption class="vlabel evaluation"><div class="vtitle"><span class="tag">EVAL</span><h2 class="optional-title">snapshot 평가</h2></div><select id="historyMetric" aria-label="시간별 평가 지표"><option value="precision" selected>지지 정확도 [%]</option><option value="recall">관측 벽 복원 [%]</option><option value="firstSupportPrecision">최초 지지 [%]</option><option value="holdRate">보류율 [%]</option><option value="p95">P95 |오차| [m]</option><option value="offwall">off-wall [%]</option></select></figcaption><div class="view-body"><canvas id="metricChart" class="dashboard-canvas compact-chart" aria-label="선택 지표의 시간별 사후 평가"></canvas></div></figure>
           </div>
           <div class="playback-bar"><div class="timeline"><button id="replayButton" type="button" aria-label="계산된 snapshot 재생">재생</button><label class="time-label" for="timeSlider">snapshot <output id="snapshotLabel">0 / 120</output></label><input id="timeSlider" type="range" min="0" max="120" step="1" value="0" /><label class="speed-label">속도<select id="playbackSpeed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label></div><p class="note keyboard-note"><kbd>Space</kbd> 재생·정지 <span aria-hidden="true">·</span> <kbd>←</kbd> <kbd>→</kbd> 기록 이동</p></div>
           <p id="inspector" class="inspector" aria-live="polite">지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동</p>
@@ -128,7 +131,7 @@
         <details class="panel analysis-panel" id="analysisDetails"><summary>추가 실험 · Sweep / 진단 / 내보내기</summary>
           <div class="analysis-content" id="analysis-panel">
             <div class="tabs" role="tablist" aria-label="추가 실험"><button id="sweepTab" data-tab="sweepPanel" role="tab" aria-controls="sweepPanel" aria-selected="true" type="button">Sweep</button><button id="diagnosticTab" data-tab="diagnosticPanel" role="tab" aria-controls="diagnosticPanel" aria-selected="false" type="button">진단</button><button id="exportTab" data-tab="exportPanel" role="tab" aria-controls="exportTab" aria-selected="false" type="button">내보내기</button></div>
-            <section id="sweepPanel" role="tabpanel" aria-labelledby="sweepTab"><h2>거리 오차 × 거칠기 실험</h2><p class="note">같은 seed를 모든 조건에 사용합니다. 곡선은 평균 ± 1 표준편차, 점선은 Octave 참조입니다.</p><form id="sweepSettings" class="sweep-settings"><label class="field"><span class="field-label"><math><msub><mi>σ</mi><mi>d</mi></msub></math> <span class="unit">[m] · 쉼표로 구분</span></span><input name="sweepNoise" value="0.05,0.1,0.2,0.3" required /></label><label class="field"><span class="field-label"><math><mi>σ</mi></math> <span class="unit">[deg] · 쉼표로 구분</span></span><input name="sweepRoughness" value="0,2,5,10" required /></label><label class="field"><span class="field-label">seeds <span class="unit">· 쉼표로 구분</span></span><input name="sweepSeeds" value="1,2,3,4,5,6,7,8,9,10" required /></label></form><div class="action-row"><button id="sweepButton" class="primary" type="button">Sweep 실행</button><button id="sweepCancel" type="button" disabled>Sweep 취소</button></div><p id="sweepStatus" class="status" role="status">실행 결과가 없습니다.</p><canvas id="sweepChart" class="chart" aria-label="거리 오차별 평가 곡선과 표준편차"></canvas><div class="table-scroll"><table id="sweepTable"><caption>Sweep 수치 결과</caption><thead><tr><th><math><mi>σ</mi></math> [deg]</th><th><math><msub><mi>σ</mi><mi>d</mi></msub></math> [m]</th><th>seeds</th><th>중앙 |오차| [m]</th><th>P95 [m]</th><th>off-wall [%]</th></tr></thead><tbody><tr><td colspan="6">Sweep 실행 후 표시됩니다.</td></tr></tbody></table></div></section>
+            <section id="sweepPanel" role="tabpanel" aria-labelledby="sweepTab"><h2>거리 오차 × 거칠기 실험</h2><p class="note">같은 seed를 모든 조건에 사용합니다. PSPT 지지 후보를 평가합니다. 곡선은 평균 ± 1 표준편차입니다.</p><form id="sweepSettings" class="sweep-settings"><label class="field"><span class="field-label"><math><msub><mi>σ</mi><mi>d</mi></msub></math> <span class="unit">[m] · 쉼표로 구분</span></span><input name="sweepNoise" value="0.05,0.1,0.2,0.3" required /></label><label class="field"><span class="field-label"><math><mi>σ</mi></math> <span class="unit">[deg] · 쉼표로 구분</span></span><input name="sweepRoughness" value="0,2,5,10" required /></label><label class="field"><span class="field-label">seeds <span class="unit">· 쉼표로 구분</span></span><input name="sweepSeeds" value="1,2,3,4,5,6,7,8,9,10" required /></label></form><div class="action-row"><button id="sweepButton" class="primary" type="button">Sweep 실행</button><button id="sweepCancel" type="button" disabled>Sweep 취소</button></div><p id="sweepStatus" class="status" role="status">실행 결과가 없습니다.</p><canvas id="sweepChart" class="chart" aria-label="거리 오차별 평가 곡선과 표준편차"></canvas><div class="table-scroll"><table id="sweepTable"><caption>Sweep 수치 결과</caption><thead><tr><th><math><mi>σ</mi></math> [deg]</th><th><math><msub><mi>σ</mi><mi>d</mi></msub></math> [m]</th><th>seeds</th><th>중앙 |오차| [m]</th><th>P95 [m]</th><th>off-wall [%]</th></tr></thead><tbody><tr><td colspan="6">Sweep 실행 후 표시됩니다.</td></tr></tbody></table></div></section>
             <section id="diagnosticPanel" role="tabpanel" aria-labelledby="diagnosticTab" hidden><h2>산란 모델 진단 · 평가 전용</h2><p class="note">정반사점과 diffuse 산란점의 관계를 사후 확인합니다.</p><label class="field config-select"><span class="field-label">configuration 선택</span><select id="configSelect"><option value="0">실행 후 선택</option></select></label><p id="diagnosticSummary" class="status">실행 결과가 없습니다.</p><div class="diagnostic-grid"><figure><figcaption>Theorem 2 비율 <math><mi>z</mi></math>와 <math><msubsup><mi>χ</mi><mn>1</mn><mn>2</mn></msubsup></math> 밀도</figcaption><canvas id="diagnosticChart" class="chart" aria-label="Theorem 2 비율의 히스토그램"></canvas></figure><figure><figcaption><math><mi>δ</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>,</mo><mspace width="0.3em"></mspace><mi>w</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>,</mo><mspace width="0.3em"></mspace><mi mathvariant="normal">Λ</mi><mo>(</mo><mi>s</mi><mo>)</mo></math> 단면</figcaption><canvas id="profileChart" class="chart" aria-label="선택 configuration의 산란 단면"></canvas></figure><figure><figcaption>diffuse 수와 국소 예측</figcaption><canvas id="countChart" class="chart" aria-label="diffuse 개수와 예측 개수 산점도"></canvas></figure></div></section>
             <section id="exportPanel" role="tabpanel" aria-labelledby="exportTab" hidden><h2>실험 기록 저장</h2><p>JSON은 input, measurement, result, evaluation, truth를 분리합니다. CSV는 snapshot별 지표, PNG는 실제 300 dpi 격자 렌더입니다.</p><div class="export-actions"><button id="exportJson" type="button" disabled>JSON 저장</button><button id="exportCsv" type="button" disabled>CSV 저장</button><button id="exportPng" type="button" disabled>PNG · 300 dpi</button></div></section>
           </div>
@@ -137,13 +140,13 @@
         <footer>한양대학교 WSL · EchoMap DRF 시뮬레이터 · 현재 snapshot까지 누적 · 참값은 사후 평가에만 사용</footer>
       </div>
     </main>
-    <dialog id="aboutDialog"><div class="dialog-title"><h2>방법과 검증 범위</h2><button id="closeAbout" type="button" aria-label="방법 설명 닫기">닫기</button></div><p>wall-shape-model-free Direct Residual Field. 현재 snapshot까지의 측정만 누적합니다.</p><div class="information-flow"><span>벽·차량 모델 → 측정 생성</span><span>측정 wire → F10–F40 → 필드</span><span class="evaluation">필드 + 참값 → 사후 평가</span></div><p>F10–11: 유효 경로 선택. F16–22: 타원 둘레. F24–33: 잔차와 위치·거리 불확실성. F36–40: 누적, 채택 경로 평균과 <math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>.</p>
+    <dialog id="aboutDialog"><div class="dialog-title"><h2>방법과 검증 범위</h2><button id="closeAbout" type="button" aria-label="방법 설명 닫기">닫기</button></div><p>wall-shape-model-free Direct Residual Field. 현재 snapshot까지의 측정만 누적합니다.</p><div class="information-flow"><span>벽·차량 모델 → 측정 생성</span><span>측정 wire → DRF → PSPT 지지·보류·기각</span><span class="evaluation">후보 판정 + 실제 벽 → 사후 평가</span></div><p>F10–11: 유효 경로 선택. F16–22: 타원 둘레. F24–33: 잔차와 위치·거리 불확실성. F36–40: 누적, 채택 경로 평균과 <math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>.</p>
       <div class="equation" role="math" aria-label="D bar t equals D t over max of Q t and 1, beta hat t equals D t over A t plus epsilon A"><math display="block"><msub><mover><mi>D</mi><mo>‾</mo></mover><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>D</mi><mi>t</mi></msub><mrow><mo lspace="0" rspace="0">max</mo><mo>(</mo><msub><mi>Q</mi><mi>t</mi></msub><mo>,</mo><mn>1</mn><mo>)</mo></mrow></mfrac><mo>,</mo><mspace width="2em"></mspace><msub><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>D</mi><mi>t</mi></msub><mrow><msub><mi>A</mi><mi>t</mi></msub><mo>+</mo><msub><mi>ε</mi><mi>A</mi></msub></mrow></mfrac></math></div>
-      <p><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">벽 후보점은 누적 필드의 바깥쪽 봉우리에서 선택한 벽 위치 후보입니다. corridor 형태를 가정하며 사후 평가에 사용합니다. 벽 추출법은 미확정입니다.</p><p>벽은 공유 중심선과 위·아래 독립 요철의 uniform cubic B-spline입니다. 수직 방향으로 합성하며 대칭 복사를 사용하지 않습니다. 차량은 중심선 주변을 주행하고 출구 이후에는 중심선 끝의 접선 방향으로 나아갑니다. 계산 영역은 [0, 80] × [−20, 50] m, 양쪽 벽의 최소 통로 폭은 4 m, 선택한 벽과의 수직 차량 여유는 1 m입니다.</p><p>기존 평가기의 y=15 m 분할은 크게 굽은 벽에서 부정확할 수 있습니다. 이전 모델의 84/96 참조 통과 기록은 새 모델의 성능 검증이 아닙니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
+      <p><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">DRF의 ridge에서 국소 표면 후보를 만들고, PSPT가 이후 측정 거리의 예측 일치와 경쟁 가설을 검사합니다. 실제 벽 방향·개수는 판정기에 전달하지 않습니다. 상태는 지지·보류·기각이며 점수는 보정된 존재 확률이 아닙니다.</p><p>벽은 공유 중심선과 위·아래 독립 요철의 uniform cubic B-spline입니다. 수직 방향으로 합성하며 대칭 복사를 사용하지 않습니다. 차량은 중심선 주변을 주행하고 출구 이후에는 중심선 끝의 접선 방향으로 나아갑니다. 계산 영역은 [0, 80] × [−20, 50] m, 양쪽 벽의 최소 통로 폭은 4 m, 선택한 벽과의 수직 차량 여유는 1 m입니다.</p><p>PSPT 판정은 100×100 격자·잔차 4σ·정확 둘레·입사각 45°·p_miss=0.05의 고정 설정입니다. 표시 필드의 수치 설정과 구분됩니다. 공선 대칭에서는 보류하며 비공선·큰 잡음에서도 오판이 남는 연구용 방법입니다. 지지 후보가 없으면 정확도는 미정, 관측 벽 복원율은 0입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261002-layered29';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261002-layered29'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261003-pspt1';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261003-pspt1'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>

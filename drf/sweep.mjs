@@ -1,27 +1,33 @@
-import { generateScenario, normalizeInput } from './scenario.mjs?v=20261002-layered29';
+import { generateScenario, normalizeInput } from './scenario.mjs?v=20261003-pspt1';
 import { createGrid, createField } from './field.mjs';
-import { createEvaluator, percentile } from './evaluate.mjs?v=20261002-layered29';
+import { percentile } from './evaluate.mjs?v=20261003-pspt1';
+import { createPSPTEvaluator } from './pspt-evaluate.mjs';
+import { PSPT } from './pspt.mjs';
 
 /** Same engine for Node validation and browser sweep; seeds, truth and evaluation
  * stay outside the estimator wire. Memory O(G+truth), frames are not retained. */
 export async function runExperiment(raw, progress = () => {}) {
-  const input = normalizeInput(raw), scenario = await generateScenario(input),
+  const input = normalizeInput(raw);
+  if (input.sigmaD === 0) throw new Error('현재 PSPT는 거리 오차 σd > 0이 필요합니다. σd = 0의 특이 공분산은 지원하지 않습니다.');
+  const scenario = await generateScenario(input),
     grid = createGrid(input.grid, input.grid, scenario.domain), field = createField(grid, { band: input.band, perimeter: input.perimeter }),
-    evaluator = createEvaluator(scenario, grid), timings = [];
-  let frame, evaluation, fieldMs = 0, evaluationMs = 0;
+    evaluator = createPSPTEvaluator(scenario, grid), estimator = new PSPT(), timings = [];
+  let frame, evaluation, fieldMs = 0, evaluationMs = 0, psptMs = 0;
   for (const wire of scenario.wire) {
-    frame = field.step(wire); timings.push(frame.ms); fieldMs += frame.ms;
+    frame = field.step(wire); fieldMs += frame.ms;
+    const psptStart = performance.now(); frame.candidates = estimator.step(wire); frame.psptMs = performance.now() - psptStart;
+    frame.method = 'guarded45'; psptMs += frame.psptMs; timings.push(frame.ms + frame.psptMs);
     const start = performance.now(); evaluation = evaluator.step(frame); evaluationMs += performance.now() - start;
     progress(frame.t, input.snapshots);
   }
-  return { input, wallGeneration: scenario.wallGeneration, summary: { medianError: evaluation.medianError, p95: evaluation.p95, offwall: evaluation.offwall,
+  return { input, wallGeneration: scenario.wallGeneration, method: 'guarded45', summary: { precision: evaluation.precision, recall: evaluation.recall, holdRate: evaluation.holdRate, firstSupportPrecision: evaluation.firstSupportPrecision, medianError: evaluation.medianError, p95: evaluation.p95, offwall: evaluation.offwall,
     offset: evaluation.offset, f1: evaluation.f1, caMsd: evaluation.caMsd, caHd95: evaluation.caHd95,
     observedFraction: evaluation.observedFraction, missing: evaluation.missing,
     diffusePerConfig: evaluation.diagnostics.diffusePerConfig, duplicateFraction: evaluation.diagnostics.duplicateFraction,
     theoremMean: evaluation.diagnostics.theoremMean, theoremMedian: evaluation.diagnostics.theoremMedian,
     theoremN: evaluation.diagnostics.ratios.length, theoremNegative: evaluation.diagnostics.theoremNegative,
     Q: frame.Q, admitted: frame.admitted, rejected: frame.rejected },
-    timing: { simulatorMs: scenario.simulatorMs, fieldMs, evaluationMs, frameP50: percentile(timings, 0.5), frameP95: percentile(timings, 0.95) },
+    timing: { simulatorMs: scenario.simulatorMs, fieldMs, psptMs, evaluationMs, frameP50: percentile(timings, 0.5), frameP95: percentile(timings, 0.95) },
     final: { t: frame.t, Dbar: frame.Dbar, betaHat: frame.betaHat, Q: frame.Q, admitted: frame.admitted, rejected: frame.rejected },
   };
 }
@@ -42,7 +48,7 @@ export function aggregateRuns(runs) {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(run);
   }
-  const fields = ['medianError', 'p95', 'offwall', 'offset', 'f1', 'caMsd', 'caHd95', 'observedFraction', 'diffusePerConfig', 'duplicateFraction', 'theoremMean', 'theoremMedian'];
+  const fields = ['precision', 'recall', 'holdRate', 'firstSupportPrecision', 'medianError', 'p95', 'offwall', 'offset', 'f1', 'caMsd', 'caHd95', 'observedFraction', 'diffusePerConfig', 'duplicateFraction', 'theoremMean', 'theoremMedian'];
   return [...groups.values()].map(group => {
     const row = { roughness: group[0].input.roughness, sigmaD: group[0].input.sigmaD, n: group.length };
     for (const key of fields) {
@@ -59,9 +65,9 @@ export function aggregateRuns(runs) {
     return row;
   }).sort((a, b) => a.roughness - b.roughness || a.sigmaD - b.sigmaD);
 }
-/** Bounded pool: at most hardwareConcurrency-1 active jobs, no frame history.
+/** Bounded pool: at most four default jobs, no frame history.
  * Cancellation terminates workers and keeps only fully completed seed results. */
-export function startSweep(jobs, onProgress, workerCount = Math.max(1, (navigator.hardwareConcurrency || 2) - 1)) {
+export function startSweep(jobs, onProgress, workerCount = Math.min(4, Math.max(1, (navigator.hardwareConcurrency || 2) - 1))) {
   const results = [], workers = []; let next = 0, completed = 0, cancelled = false, settled = false;
   let finish, fail;
   const promise = new Promise((resolve, reject) => { finish = resolve; fail = reject; });
@@ -72,7 +78,7 @@ export function startSweep(jobs, onProgress, workerCount = Math.max(1, (navigato
   }
   const count = Math.min(jobs.length, workerCount);
   for (let k = 0; k < count; k++) {
-    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261002-layered29', import.meta.url), { type: 'module' }); workers.push(worker);
+    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261003-pspt1', import.meta.url), { type: 'module' }); workers.push(worker);
     worker.onmessage = ({ data }) => {
       if (cancelled || settled) return;
       if (data.type === 'error') { settled = true; stop(); fail(new Error(data.message)); return; }

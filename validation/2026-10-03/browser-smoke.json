@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-03",
+  "browser": "Codex in-app browser",
+  "http": "http://127.0.0.1:8871/drf.html",
+  "viewport": [
+    1920,
+    980
+  ],
+  "seed": 501,
+  "vehicles": 3,
+  "snapshots": 120,
+  "casesCompleted": [
+    "upper",
+    "lower",
+    "both"
+  ],
+  "latestCase": "both",
+  "latestSupported": 27,
+  "latestPending": 217,
+  "latestContradicted": 90,
+  "latestConsoleErrors": 0,
+  "defaultSidebar": {
+    "clientHeight": 924,
+    "scrollHeight": 924
+  },
+  "viewResetPreservedSnapshot": 120,
+  "zeroRangeNoiseRejectedBeforeRun": true,
+  "localFileVisualCheck": "not performed: browser URL policy prohibits file:// navigation",
+  "offlineCheck": "committed bundle workers executed in isolated VM and source hashes checked",
+  "automatedTests": {
+    "command": "PSPT_FULL_PARITY=1 npm test",
+    "passed": 161,
+    "failed": 0
+  },
+  "sourceHashes": {
+    "drf/app.mjs": "17e3115dcf225c11dd0949adbc6541695b4390ca03b77718725e56495f128dd2",
+    "drf/pspt.mjs": "41cde370201f33aa0d06181b6e73c56b5157b680311c9b92d83a414775a5354a",
+    "drf/pspt-evaluate.mjs": "9dd15a19d9dad77adc5413bed696de4241cdb59219365967f5352bb76f33cf5d",
+    "drf/offline.bundle.js": "d31d68a96be4e110e2eb34b12dbbc35c1e058ae948dc106bd10243e031e4d26b",
+    "drf/style.css": "a9cfcfce1c2b74dca1bc46cdb59ecb9a65bf6d371983070f402fb53980bc4f94",
+    "drf.html": "3649f977e3bf2cdf4f3e36e113ece5ce429698d66aad0a2e03c202ae13703660"
+  }
+}

@@ -330,7 +330,7 @@ dialog p + p { margin-top: 14px; }
   .legend { column-gap: 14px; }
   .keyboard-note { display: none; }
 }
-@media (min-width: 1000px) and (max-height: 940px) {
+@media (min-width: 1000px) and (max-height: 1000px) {
   /* Short screens: the group headings carry the panel; its title stays for assistive tech only. */
   .panel-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .performance-panel { padding-top: 12px; padding-bottom: 10px; }
@@ -447,3 +447,13 @@ dialog p + p { margin-top: 14px; }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+/* Online decisions are distinct from the orange truth-only evaluation layer. */
+.swatch-supported { background: #009e73; width: 9px; height: 9px; border-radius: 50%; }
+.swatch-pending { border: 1.5px solid #777; width: 9px; height: 9px; border-radius: 50%; }
+.swatch-contradicted { background: linear-gradient(45deg, transparent 43%, #c54b28 44% 56%, transparent 57%), linear-gradient(-45deg, transparent 43%, #c54b28 44% 56%, transparent 57%); width: 10px; height: 10px; }
+.candidate-counts { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0 12px; padding: 8px 10px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-surface-2); font-variant-numeric: tabular-nums; }
+.candidate-counts span { white-space: nowrap; }
+.candidate-counts b { margin-left: 3px; }
+.supported { color: #007b5b; } .pending { color: var(--color-muted); } .contradicted { color: #b34423; }
+@media (min-width: 1000px) and (max-height: 860px) { .candidate-counts { margin-bottom: 6px; padding: 5px 8px; } }

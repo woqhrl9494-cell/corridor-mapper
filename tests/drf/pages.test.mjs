@@ -8,8 +8,8 @@ test('Pages contains only the DRF page and its complete runtime dependencies', (
   execFileSync(process.execPath, ['build-pages.mjs'], { cwd: root });
   const files = readdirSync(output, { recursive: true }).filter(path => existsSync(new URL(path, output)) && /\.[a-z]+$/.test(path));
   assert.deepEqual(files.filter(path => path.endsWith('.html')), ['drf.html']);
-  assert.equal(files.length, 24);
-  for (const path of ['scenario.worker.mjs', 'field.worker.mjs', 'eval.worker.mjs', 'sweep.worker.mjs',
+  assert.equal(files.length, 29);
+  for (const path of ['scenario.worker.mjs', 'field.worker.mjs', 'eval.worker.mjs', 'sweep.worker.mjs', 'pspt.worker.mjs', 'pspt.mjs', 'pspt-math.mjs', 'pspt-ridges.mjs', 'pspt-evaluate.mjs',
     'provenance.json', 'reference/octave/fixtures.json', 'offline.bundle.js', 'style.css'])
     assert.ok(existsSync(new URL(`drf/${path}`, output)), `Dynamic runtime asset: ${path}`);
   for (const path of ['index.html', 'legacy.html', 'surf/app.mjs', 'surf/engine.worker.mjs', 'tests', 'README.md'])

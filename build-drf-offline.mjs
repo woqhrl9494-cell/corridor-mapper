@@ -11,7 +11,7 @@ function read(path) {
   return inputs.get(key);
 }
 read('build-drf-offline.mjs');
-const workerConstructor = "new Worker(new URL('./sweep.worker.mjs?v=20261002-layered29', import.meta.url), { type: 'module' })";
+const workerConstructor = "new Worker(new URL('./sweep.worker.mjs?v=20261003-pspt1', import.meta.url), { type: 'module' })";
 const options = {
   absWorkingDir: root, bundle: true, platform: 'browser', format: 'iife', target: 'es2022',
   write: false, minify: true, define: { 'import.meta.url': 'globalThis.__drfOffline.moduleUrl' },
@@ -27,7 +27,7 @@ const options = {
     });
   } }],
 };
-const names = ['scenario', 'field', 'eval', 'sweep'];
+const names = ['scenario', 'field', 'eval', 'sweep', 'pspt'];
 const bundles = await Promise.all([...names.map(name => `drf/${name}.worker.mjs`), 'drf/app.mjs']
   .map(entry => build({ ...options, entryPoints: [entry] })));
 const sources = Object.fromEntries(names.map((name, i) => [name, bundles[i].outputFiles[0].text]));

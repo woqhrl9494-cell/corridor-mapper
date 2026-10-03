@@ -1,7 +1,7 @@
 {
   "name": "corridor-mapper-surf-web",
   "version": "1.0.0",
-  "description": "Frozen SURF with CROSS baseline and a browser-only scientific map",
+  "description": "EchoMap: online wall mapping and paired surface hypothesis testing from collaborative bistatic range measurements",
   "main": "benchmark_tsri.js",
   "directories": {
     "doc": "docs",
@@ -12,7 +12,8 @@
     "build:drf-offline": "node build-drf-offline.mjs",
     "test": "node --test tests/*.test.js tests/surf/*.test.mjs tests/drf/*.test.mjs",
     "test:legacy-dom": "node tests/jsdom_smoke.js",
-    "validate:drf": "node tests/drf/run-reference.mjs --seed-count 10 --workers 3"
+    "validate:drf": "node tests/drf/run-reference.mjs --seed-count 10 --workers 3",
+    "test:pspt": "node --test tests/drf/pspt*.test.mjs"
   },
   "repository": {
     "type": "git",

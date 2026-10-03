@@ -1,0 +1,237 @@
+{
+  "createdAt": "2026-10-03T10:00:44.222Z",
+  "node": "v26.7.0",
+  "sourceHashes": {
+    "drf/pspt.mjs": "19ac8faf20299d79bdc583c15469387c49b459449a02ba9f8c57f1718217d2ff",
+    "drf/pspt-math.mjs": "cac63ced44912a125b3434deee5421abe9f44671b433eb2e697ca1ab0ff30f99",
+    "drf/pspt-ridges.mjs": "29c7e73664e18af0a7a04a8a46a2373cc8a6267a2ea2bc3ef6e831407b3279b2",
+    "drf/scenario.mjs": "254acadbeaf7c7055779fa6e698aa569849656b69c3a6b5da611d79142c93df3",
+    "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
+    "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
+  },
+  "complete": true,
+  "results": [
+    {
+      "name": "20vehicles-40snapshots",
+      "input": {
+        "scene": "layered",
+        "wallSide": "both",
+        "vehicles": 20,
+        "snapshots": 40,
+        "sigmaP": 0.1,
+        "sigmaD": 0.1,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 811
+      },
+      "completedSnapshots": 40,
+      "reportRowsChecked": 5810,
+      "finite": true,
+      "minCovEigenvalue": 0.000006234597850021416,
+      "scoreMin": 0,
+      "scoreMax": 1,
+      "geometryMs": 5.812041999999565,
+      "pass": true,
+      "generatorTiming": {
+        "count": 40,
+        "sumMs": 15961.059459000011,
+        "p50Ms": 379.0169999999998,
+        "p95Ms": 536.4551660000034,
+        "maxMs": 555.3252500000017
+      },
+      "estimatorTiming": {
+        "count": 40,
+        "sumMs": 47930.572419,
+        "p50Ms": 987.9389589999992,
+        "p95Ms": 2321.645792000003,
+        "maxMs": 3168.7968750000036
+      }
+    },
+    {
+      "name": "zero-pose-noise",
+      "input": {
+        "scene": "layered",
+        "wallSide": "both",
+        "vehicles": 3,
+        "snapshots": 40,
+        "sigmaP": 0,
+        "sigmaD": 0.1,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 811
+      },
+      "completedSnapshots": 40,
+      "reportRowsChecked": 2538,
+      "finite": true,
+      "minCovEigenvalue": 0.000019039625964940464,
+      "scoreMin": 4.953908863872642e-28,
+      "scoreMax": 0.9999999999998109,
+      "geometryMs": 6.5208330000023125,
+      "pass": true,
+      "generatorTiming": {
+        "count": 40,
+        "sumMs": 271.00062599999364,
+        "p50Ms": 6.318125000005239,
+        "p95Ms": 7.351082999986829,
+        "maxMs": 18.419083000000683
+      },
+      "estimatorTiming": {
+        "count": 40,
+        "sumMs": 2401.8063739999925,
+        "p50Ms": 63.11250000000291,
+        "p95Ms": 78.42887500001234,
+        "maxMs": 92.05820899999526
+      }
+    },
+    {
+      "name": "zero-range-noise",
+      "input": {
+        "scene": "layered",
+        "wallSide": "both",
+        "vehicles": 3,
+        "snapshots": 40,
+        "sigmaP": 0.1,
+        "sigmaD": 0,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 811
+      },
+      "completedSnapshots": 40,
+      "reportRowsChecked": 2752,
+      "finite": true,
+      "minCovEigenvalue": 0.0004514502155761064,
+      "scoreMin": 5.530139830363527e-17,
+      "scoreMax": 0.9999976315467568,
+      "geometryMs": 4.000291999996989,
+      "pass": true,
+      "generatorTiming": {
+        "count": 40,
+        "sumMs": 311.2160409999633,
+        "p50Ms": 7.63420899999619,
+        "p95Ms": 10.082540999996127,
+        "maxMs": 13.850332999994862
+      },
+      "estimatorTiming": {
+        "count": 40,
+        "sumMs": 2692.063040000008,
+        "p50Ms": 63.83208300000115,
+        "p95Ms": 96.56650000000081,
+        "maxMs": 141.77033300000767
+      }
+    },
+    {
+      "name": "20vehicles-zero-range-noise",
+      "input": {
+        "scene": "layered",
+        "wallSide": "both",
+        "vehicles": 20,
+        "snapshots": 10,
+        "sigmaP": 0.1,
+        "sigmaD": 0,
+        "sigmaM": 6,
+        "deltaM": 20,
+        "sigmaDGeometry": 0.33,
+        "deltaD": 4,
+        "roughness": 2,
+        "lambda0": 10,
+        "cellStep": 0.02,
+        "resolution": 0,
+        "specular": true,
+        "grid": 150,
+        "band": 4,
+        "perimeter": "exact",
+        "seed": 811
+      },
+      "completedSnapshots": 10,
+      "reportRowsChecked": 1282,
+      "finite": true,
+      "minCovEigenvalue": -3.0705370293896903e-12,
+      "scoreMin": 1.2708480657310766e-97,
+      "scoreMax": 0.9999984821529567,
+      "geometryMs": 2.8027920000022277,
+      "pass": true,
+      "generatorTiming": {
+        "count": 10,
+        "sumMs": 3950.6658740000275,
+        "p50Ms": 377.3127499999973,
+        "p95Ms": 395.44866600001114,
+        "maxMs": 552.152792000008
+      },
+      "estimatorTiming": {
+        "count": 10,
+        "sumMs": 16287.766957000014,
+        "p50Ms": 1450.5224999999919,
+        "p95Ms": 2379.1507500000007,
+        "maxMs": 2381.722167
+      }
+    },
+    {
+      "name": "both-zero-public-input",
+      "input": {
+        "vehicles": 3,
+        "snapshots": 5,
+        "sigmaP": 0,
+        "sigmaD": 0,
+        "seed": 811,
+        "wallSide": "both"
+      },
+      "completedSnapshots": 0,
+      "reportRowsChecked": 0,
+      "finite": true,
+      "minCovEigenvalue": null,
+      "scoreMin": null,
+      "scoreMax": null,
+      "error": {
+        "stage": "normalizeInput",
+        "name": "Error",
+        "message": "위치·거리 잡음 중 하나는 0보다 커야 합니다. 허용 범위는 0–2 m입니다."
+      },
+      "expectedRejection": true,
+      "pass": true,
+      "generatorTiming": {
+        "count": 0,
+        "sumMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": null
+      },
+      "estimatorTiming": {
+        "count": 0,
+        "sumMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": null
+      }
+    }
+  ]
+}

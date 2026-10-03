@@ -1,14 +1,15 @@
-import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261002-layered29';
+import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261003-pspt1';
 import { createGrid } from './field.mjs';
-import { percentile, snapshotCsv } from './evaluate.mjs?v=20261002-layered29';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261002-layered29';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261002-layered29';
+import { percentile } from './evaluate.mjs?v=20261003-pspt1';
+import { psptSnapshotCsv } from './pspt-evaluate.mjs';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261003-pspt1';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261003-pspt1';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
 const state = { mode: 'idle', scenario: null, grid: null, frames: [], evaluations: [], selected: 0, next: 0,
   busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false, followLive: true };
-let fieldWorker, evalWorker, hoverWorker, hoverTimer, hoverGeneration = 0, replayFrame = 0, reference = [], provenance = {};
+let fieldWorker, evalWorker, hoverWorker, psptWorker, hoverTimer, hoverGeneration = 0, replayFrame = 0, reference = [], provenance = {};
 const fmt = (v, places = 3) => typeof v !== 'number' ? '—' : Number.isFinite(v) ? v.toFixed(places) : v === Infinity ? '실패 (∞)' : v === -Infinity ? '실패 (−∞)' : '실패 (NaN)';
 // The title keeps the full message when a short screen clamps the status to one line.
 const notice = text => { $('status').textContent = text; $('status').title = text; };
@@ -19,12 +20,13 @@ function fillSettings(input) {
   }
 }
 function settings() {
+  if (Number(form.elements.namedItem('sigmaD').value) === 0) throw new Error('현재 PSPT는 거리 오차 σd > 0이 필요합니다. 0에서는 공유 위치 오차 공분산이 특이해질 수 있습니다.');
   if (!form.reportValidity()) throw new Error('입력값과 허용 범위를 확인하세요.');
   const values = Object.fromEntries(new FormData(form)); values.specular = form.elements.namedItem('specular').checked;
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261002-layered29`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261003-pspt1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -59,7 +61,7 @@ function controls() {
 function cancel(clear = false) {
   state.generation++; hoverGeneration++; clearTimeout(hoverTimer); stopReplay();
   for (const worker of state.workers) worker.stop(); state.workers = [];
-  fieldWorker = null; evalWorker = null; hoverWorker = null;
+  fieldWorker = null; evalWorker = null; hoverWorker = null; psptWorker = null;
   state.busy = false; state.mode = clear ? 'idle' : 'cancelled';
   if (clear) {
     state.scenario = null; state.grid = null; state.frames = []; state.evaluations = []; state.selected = 0; state.next = 0; state.valid = false;
@@ -83,9 +85,10 @@ async function prepare(single = false) {
     const { scenario } = await scenarioWorker.request({ type: 'generate', input });
     if (generation !== state.generation) return;
     scenarioWorker.stop(); state.scenario = scenario; state.grid = createGrid(input.grid, input.grid, scenario.domain); state.valid = true;
-    fieldWorker = makeWorker('field'); evalWorker = makeWorker('eval'); hoverWorker = makeWorker('field');
+    fieldWorker = makeWorker('field'); evalWorker = makeWorker('eval'); hoverWorker = makeWorker('field'); psptWorker = makeWorker('pspt');
     await Promise.all([
       fieldWorker.request({ type: 'init', grid: state.grid, numerical: { band: input.band, perimeter: input.perimeter } }),
+      psptWorker.request({ type: 'init' }),
       evalWorker.request({ type: 'init', scenario, grid: state.grid }),
     ]);
     if (generation !== state.generation) return;
@@ -101,20 +104,24 @@ async function advance(single = false) {
   const generation = state.generation; state.busy = true; controls();
   try {
     const wire = state.scenario.wire[state.next];
-    const data = await fieldWorker.request({ type: 'step', snapshot: wire });
+    const [data, prediction] = await Promise.all([
+      fieldWorker.request({ type: 'step', snapshot: wire }),
+      psptWorker.request({ type: 'step', snapshot: wire }),
+    ]);
     if (generation !== state.generation) return;
     const { type, requestId, ...frame } = data;
+    frame.candidates = prediction.candidates; frame.psptMs = prediction.psptMs; frame.method = 'guarded45';
     const { evaluation } = await evalWorker.request({ type: 'evaluate', frame });
     if (generation !== state.generation) return;
     state.frames.push(frame); state.evaluations.push(evaluation); state.next++;
     if (state.followLive || !state.selected) state.selected = state.frames.length;
     $('timeSlider').value = state.selected; state.busy = false;
-    renderSelected(); notice(`필드 계산 ${frame.t} / ${state.scenario.input.snapshots}`);
+    renderSelected(); notice(`필드 · 벽 후보 판정 ${frame.t} / ${state.scenario.input.snapshots}`);
     if (state.next === state.scenario.wire.length) {
       state.mode = 'done'; controls(); const hash = await hashField(frame);
       if (generation !== state.generation) return;
       $('mapCanvas').dataset.fieldHash = hash;
-      notice(`계산 완료 · 측정 생성 ${(state.scenario.simulatorMs / 1000).toFixed(2)} s · 참조 .m 원본 대조 미완료`);
+      notice(`계산 완료 · 측정 생성 ${(state.scenario.simulatorMs / 1000).toFixed(2)} s · PSPT 지지·보류·기각`);
     } else if (single) state.mode = 'paused';
     controls();
     if (state.mode === 'running') requestAnimationFrame(() => advance());
@@ -164,23 +171,28 @@ function renderSelected() {
   const frame = state.frames[state.selected - 1], evaluation = state.evaluations[state.selected - 1], scenario = state.scenario;
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
   const display={ grid: state.grid, domain: state.scenario?.domain ?? LAYERED_DOMAIN, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),cameraBounds:scenario?.cameraBounds ?? previewBounds,
-    proxy: evaluation?.proxy, observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
+    candidates: frame?.candidates ?? [], observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
     history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
   map.set({...display,mode:'geometry',xRange:[-10,90]});
   const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
   densityMap.set({...display,layers:fieldLayers,heatField:'Dbar'});
   contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat'});
   $('snapshotLabel').textContent = `${frame?.t ?? 0} / ${scenario?.input.snapshots ?? form.elements.namedItem('snapshots').value}`;
-  const singleWall=(scenario?.input.wallSide ?? form.elements.namedItem('wallSide').value)!=='both';
-  $('evaluationNote').textContent=singleWall ? '한쪽 벽 · 후보점의 최근접 벽 거리' : '기존 평가기 · y=15 m 분할 기준';
-  $('evaluationNote').title=singleWall ? '모든 후보점의 실제 벽 최근접 거리를 평가합니다. 반대쪽 후보점도 포함하고 관측 지점의 누락은 실패로 셉니다. 양쪽 벽의 열별 오차와 정의가 다릅니다. 후보 추출은 기존 y=15 m 분할을 유지합니다.' : '기존 평가 후보점 추출은 y=15 m를 기준으로 위·아래를 구분합니다. 크게 굽은 벽의 정확도를 보장하지 않습니다. 중앙/P95는 기존 x=10–50 m 관측 열에서 평가합니다.';
+  $('evaluationNote').textContent = '지지 후보 · 허용 거리 0.4 m';
+  $('evaluationNote').title = '진위 판정 후에만 실제 벽과 비교합니다. 관측 벽 복원율은 과거 반사점 1 m 이내의 벽에 대해 지지 표면조각으로 평가합니다. 지지점이 없으면 정확도는 미정입니다.';
+  const candidates = frame?.candidates ?? [];
+  for (const [id, status] of [['supportedValue','supported'],['pendingValue','pending'],['contradictedValue','contradicted']])
+    $(id).textContent = candidates.filter(c => c.status === status).length;
   $('qValue').textContent = frame?.Q ?? 0; $('acceptedValue').textContent = frame?.admitted ?? 0; $('rejectedValue').textContent = frame?.rejected ?? 0;
-  const metricIds = { medianValue: 'medianError', p95Value: 'p95', f1Value: 'f1', msdValue: 'caMsd', hd95Value: 'caHd95' };
+  const metricIds = { p95Value: 'p95', f1Value: 'f1' };
   for (const [id, key] of Object.entries(metricIds)) $(id).textContent = fmt(evaluation?.[key]);
+  for (const [id, key] of [['precisionValue','precision'],['recallValue','recall'],['firstPrecisionValue','firstSupportPrecision']])
+    $(id).textContent = evaluation?.[key] == null ? '—' : fmt(100 * evaluation[key], 1);
+  $('firstPrecisionValue').title = evaluation ? `최초 지지 오류 ${evaluation.firstSupportErrors} / ${evaluation.firstSupportCount}` : '';
   $('offwallValue').textContent = evaluation?.offwall == null ? '—' : fmt(100 * evaluation.offwall, 1);
   const diag = evaluation?.diagnostics;
   $('pathValue').textContent = diag ? `정반사 ${diag.specularCount} / diffuse ${diag.diffuseCount}` : '—';
-  const times = state.frames.slice(0, state.selected).map(f => f.ms);
+  const times = state.frames.slice(0, state.selected).map(f => (f.psptMs ?? 0) + f.ms);
   $('timingValue').textContent = times.length ? `p50 ${fmt(percentile(times, .5), 1)} ms · p95 ${fmt(percentile(times, .95), 1)} ms` : '—';
   drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected),$('historyMetric').value,scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value));
   if (diag) {
@@ -298,14 +310,14 @@ $('sweepButton').onclick = async () => {
 $('sweepCancel').onclick = () => state.sweep?.cancel();
 const jsonValue = (_key, value) => ArrayBuffer.isView(value) ? Array.from(value) : typeof value === 'number' && !Number.isFinite(value) ? null : value;
 $('exportJson').onclick = () => {
-  const data = { schema: 'echomap-drf/2', provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
+  const data = { schema: 'echomap-drf/3', estimator: { method: 'guarded45', grid: [100,100], toleranceM: 0.4, scoreKind: 'uncalibrated composite weight' }, provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
     grid: state.grid ? { ...state.grid, arrayOrder: 'iy*nx+ix; ascending y; cell centers' } : null,
     input: state.scenario?.input ?? state.sweepRuns[0]?.input, measurement: state.scenario?.wire.slice(0, state.frames.length) ?? [], result: state.frames,
     evaluation: state.evaluations, truth: { role: 'evaluation only', wallModel: state.scenario?.wallModel, wallGeneration: state.scenario?.wallGeneration, walls: state.scenario?.walls ?? [], snapshots: state.scenario?.truth.slice(0, state.frames.length) ?? [] },
     sweep: { completeSeedResults: state.sweepRuns.map(({ final, ...run }) => run), aggregates: aggregateRuns(state.sweepRuns) } };
   download(new Blob([JSON.stringify(data, jsonValue)], { type: 'application/json' }), 'echomap-drf.json');
 };
-$('exportCsv').onclick = () => download(new Blob([snapshotCsv(state.frames, state.evaluations)], { type: 'text/csv;charset=utf-8' }), 'echomap-drf-snapshots.csv');
+$('exportCsv').onclick = () => download(new Blob([psptSnapshotCsv(state.frames, state.evaluations)], { type: 'text/csv;charset=utf-8' }), 'echomap-drf-snapshots.csv');
 $('exportPng').onclick = async () => { try { const field=$('heatField').value;download(await png300dpi(await (field==='betaHat' ? contrastMap : densityMap).png()), `echomap-drf-${field}-300dpi.png`); } catch (error) { notice(`PNG 저장 중단: ${error.message}`); } };
 const chartResize = new ResizeObserver(() => { renderSelected(); renderSweep(); });
 chartResize.observe($('analysis-panel') ?? $('sweepPanel'));

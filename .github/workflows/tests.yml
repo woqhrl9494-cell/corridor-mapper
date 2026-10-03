@@ -1,0 +1,27 @@
+name: Numerical tests
+on:
+  workflow_call:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Test committed sources and offline bundle
+        run: npm test
+        env:
+          PSPT_FULL_PARITY: '1'
+      - name: Verify reproducible offline build
+        run: |
+          npm run build:drf-offline
+          git diff --exit-code -- drf/offline.bundle.js

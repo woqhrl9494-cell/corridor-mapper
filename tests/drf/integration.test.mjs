@@ -6,17 +6,22 @@ import { makeWire } from '../../drf/wire.mjs';
 import { createGrid, createField } from '../../drf/field.mjs';
 import { outerPeak, createEvaluator, snapshotCsv } from '../../drf/evaluate.mjs';
 import { runExperiment, aggregateRuns } from '../../drf/sweep.mjs';
+import { PSPT } from '../../drf/pspt.mjs';
+import { createPSPTEvaluator, psptSnapshotCsv } from '../../drf/pspt-evaluate.mjs';
 
 const input = { scene: 'reference', snapshots: 3, grid: 100, seed: 42, roughness: 2, sigmaD: .1 };
 let cachedScenario;
 const scenario = () => cachedScenario ??= generateScenario(input);
 const sorted = values => values.slice().sort((a, b) => a - b);
-function calculate(scene, prefix = scene.wire.length) {
+function calculate(scene, prefix = scene.wire.length, pspt = false) {
   const grid = createGrid(scene.input.grid, scene.input.grid, scene.domain),
     field = createField(grid, { band: scene.input.band, perimeter: scene.input.perimeter }),
-    evaluator = createEvaluator(scene, grid), frames = [], evaluations = [];
+    evaluator = pspt ? createPSPTEvaluator(scene, grid) : createEvaluator(scene, grid),
+    estimator = pspt ? new PSPT() : null, frames = [], evaluations = [];
   for (const wire of scene.wire.slice(0, prefix)) {
-    const frame = field.step(wire); frames.push(frame); evaluations.push(evaluator.step(frame));
+    const frame = field.step(wire);
+    if (estimator) { frame.candidates = estimator.step(wire); frame.method = 'guarded45'; }
+    frames.push(frame); evaluations.push(evaluator.step(frame));
   }
   return { grid, field, frames, evaluations };
 }
@@ -148,13 +153,20 @@ test('sweep aggregation retains failed seeds separately from genuinely unobserve
   assert.ok(Number.isNaN(aggregateRuns([run(.1), run(NaN)])[0].medianError.mean));
 });
 
-test('shared sweep engine final arrays and metrics exactly match manual scenario/field/evaluator execution', async () => {
-  const scene = await scenario(), manual = calculate(scene), run = await runExperiment(input),
+test('shared PSPT sweep matches manual measurement-only estimator and post-hoc evaluation', async () => {
+  const scene = await scenario(), manual = calculate(scene, scene.wire.length, true), run = await runExperiment(input),
     last = manual.frames.at(-1), evaluation = manual.evaluations.at(-1);
   assert.deepEqual(run.input, scene.input);
   assert.deepEqual(run.final, { t: last.t, Dbar: last.Dbar, betaHat: last.betaHat,
     Q: last.Q, admitted: last.admitted, rejected: last.rejected });
-  assert.deepEqual(run.summary, summary(last, evaluation));
+  assert.equal(run.method, 'guarded45');
+  assert.deepEqual(run.summary, { precision: evaluation.precision, recall: evaluation.recall,
+    holdRate: evaluation.holdRate, firstSupportPrecision: evaluation.firstSupportPrecision,
+    ...summary(last, evaluation) });
+  assert.ok(Number.isFinite(run.timing.psptMs) && run.timing.psptMs >= 0);
+  const baseline = calculate(scene);
+  assert.deepEqual(last.Dbar, baseline.frames.at(-1).Dbar, 'Candidate classification must not overwrite the display field');
+  assert.deepEqual(last.betaHat, baseline.frames.at(-1).betaHat);
 });
 
 test('snapshot CSV retains completed rows and leaves nonfinite/missing values empty', async () => {
@@ -169,7 +181,7 @@ test('snapshot CSV retains completed rows and leaves nonfinite/missing values em
 });
 
 test('actual JSON export handler separates truth, wire, and completed results without future snapshots', async () => {
-  const scene = await generateScenario({ ...input, scene: 'layered' }), manual = calculate(scene, 2), source = fs.readFileSync(new URL('../../drf/app.mjs', import.meta.url), 'utf8'),
+  const scene = await generateScenario({ ...input, scene: 'layered' }), manual = calculate(scene, 2, true), source = fs.readFileSync(new URL('../../drf/app.mjs', import.meta.url), 'utf8'),
     start = source.indexOf('const jsonValue ='), end = source.indexOf("$('exportCsv').onclick", start);
   assert.ok(start >= 0 && end > start, 'JSON handler bounds must be present');
   const button = {}, downloads = [], state = { scenario: scene, grid: manual.grid, frames: manual.frames,
@@ -183,7 +195,10 @@ test('actual JSON export handler separates truth, wire, and completed results wi
   assert.equal(output.units.roughnessInput, 'deg'); assert.equal(output.units.truthAngles, 'rad'); assert.equal(output.units.betaHat, 'dimensionless');
   assert.deepEqual(output.grid.x, Array.from(manual.grid.x)); assert.deepEqual(output.grid.y, Array.from(manual.grid.y));
   assert.equal(output.grid.arrayOrder, 'iy*nx+ix; ascending y; cell centers');
-  assert.equal(output.schema, 'echomap-drf/2'); assert.deepEqual(output.provenance, provenance);
+  assert.equal(output.schema, 'echomap-drf/3'); assert.deepEqual(output.provenance, provenance);
+  assert.deepEqual(output.estimator,{method:'guarded45',grid:[100,100],toleranceM:.4,scoreKind:'uncalibrated composite weight'});
+  assert.deepEqual(output.result.map(f=>f.candidates),manual.frames.map(f=>f.candidates));
+  assert.ok(output.result.every(f=>f.method==='guarded45'));
   assert.deepEqual(output.truth.wallModel,scene.wallModel,'Preserve component coefficients and shifted knot origins in truth only');
   assert.deepEqual(output.truth.wallGeneration,scene.wallGeneration,'Preserve rejection attempts and the accepted validation protocol');
   assert.equal(output.truth.wallModel.kind,'two-layer-uniform-cubic');
@@ -194,4 +209,26 @@ test('actual JSON export handler separates truth, wire, and completed results wi
   assert.ok(Array.isArray(output.result[0].Dbar)); assert.ok(Array.isArray(output.result[0].betaHat));
   for (const wire of output.measurement) assert.deepEqual(Object.keys(wire).sort(), ['configs', 't']);
   assert.ok(!/\b(?:NaN|Infinity)\b/.test(await downloads[0].blob.text()));
+});
+
+
+test('actual CSV download handler uses PSPT columns while the historical CSV stays available',async()=>{
+  const source=fs.readFileSync(new URL('../../drf/app.mjs',import.meta.url),'utf8'),
+    handler=source.match(/^\$\('exportCsv'\)\.onclick = .*;$/m)?.[0];
+  assert.ok(handler,'CSV download handler exists');
+  const scene=await scenario(),manual=calculate(scene,2,true),button={},downloads=[];
+  new Function('state','psptSnapshotCsv','download','Blob','$',handler)(
+    {frames:manual.frames,evaluations:manual.evaluations},psptSnapshotCsv,
+    (blob,name)=>downloads.push({blob,name}),Blob,()=>button);
+  button.onclick();
+  assert.equal(downloads[0].name,'echomap-drf-snapshots.csv');
+  const csv=await downloads[0].blob.text();
+  assert.equal(csv.replace(/^\ufeff/,'').split('\r\n')[0].split(',').length,18);
+  assert.equal(csv,psptSnapshotCsv(manual.frames,manual.evaluations).replace(/^\ufeff/,''),'Blob text decoding strips the BOM');
+  assert.equal(snapshotCsv(manual.frames,manual.evaluations).trim().split('\r\n')[0].split(',').length,12);
+});
+
+
+test('PSPT sweep rejects exact zero range noise before generating a run', async () => {
+  await assert.rejects(runExperiment({ sigmaD: 0, sigmaP: .1, vehicles: 20 }), /σd/);
 });

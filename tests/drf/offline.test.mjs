@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import { createGrid, createField } from '../../drf/field.mjs';
+import { PSPT } from '../../drf/pspt.mjs';
 import { generateScenario } from '../../drf/scenario.mjs';
 
 const root = new URL('../../', import.meta.url), read = path => readFileSync(new URL(path, root));
@@ -40,14 +41,14 @@ test('offline bundle is current and its classic Blob workers preserve the field'
   });
   vm.runInContext(artifact.slice(0, split), context);
   const runtime = context.__drfOffline;
-  for (const path of ['drf/app.mjs', 'drf/render.mjs', 'drf/field.worker.mjs', 'drf/sweep.mjs', 'build-drf-offline.mjs'])
+  for (const path of ['drf/app.mjs', 'drf/render.mjs', 'drf/field.worker.mjs', 'drf/sweep.mjs', 'drf/pspt.mjs', 'drf/pspt.worker.mjs', 'drf/pspt-math.mjs', 'drf/pspt-ridges.mjs', 'build-drf-offline.mjs'])
     assert.ok(runtime.sourceHashes[path], `Recorded source: ${path}`);
   for (const [path, hash] of Object.entries(runtime.sourceHashes))
     assert.equal(createHash('sha256').update(read(path)).digest('hex'), hash, `${path}: run npm run build:drf-offline`);
   assert.deepEqual(JSON.parse(JSON.stringify(runtime.metadata)),
     ['drf/provenance.json', 'drf/reference/octave/fixtures.json'].map(path => JSON.parse(read(path))));
   assert.throws(() => runtime.worker('unknown'), /Unknown DRF worker/);
-  for (const name of ['scenario', 'field', 'eval', 'sweep']) {
+  for (const name of ['scenario', 'field', 'eval', 'sweep', 'pspt']) {
     const worker = runtime.worker(name);
     assert.equal(worker.options, undefined, 'Blob workers must use the classic script transport');
     assert.equal(runtime.worker(name).url, worker.url, 'Each worker type reuses one Blob URL');
@@ -55,7 +56,7 @@ test('offline bundle is current and its classic Blob workers preserve the field'
     assert.ok(!source.includes('import.meta'), `${name}: no module metadata dependency`);
     assert.doesNotThrow(() => new vm.Script(source), `${name}: parses as a classic script`);
   }
-  assert.equal(blobs.size, 4);
+  assert.equal(blobs.size, 5);
   const messages = [], workerContext = vm.createContext({ performance, postMessage: data => messages.push(data) });
   workerContext.self = workerContext;
   vm.runInContext(await blobs.get(runtime.worker('field').url).text(), workerContext);
@@ -82,5 +83,19 @@ test('offline bundle is current and its classic Blob workers preserve the field'
   assert.equal(JSON.stringify(offline.scenario.wallModel), JSON.stringify(module.wallModel));
   assert.equal(JSON.stringify(offline.scenario.wallGeneration), JSON.stringify(module.wallGeneration));
   assert.equal(JSON.stringify(offline.scenario.domain), JSON.stringify([0, 80, -20, 50]));
+  const psptMessages = [], psptContext = vm.createContext({ performance, postMessage: data => psptMessages.push(data) });
+  psptContext.self = psptContext;
+  vm.runInContext(await blobs.get(runtime.worker('pspt').url).text(), psptContext);
+  psptContext.onmessage({ data: { type: 'init', requestId: 4 } });
+  const model = new PSPT();
+  for (const wire of module.wire) {
+    psptContext.incoming = JSON.stringify({ type: 'step', requestId: 5, snapshot: wire });
+    vm.runInContext('onmessage({data: JSON.parse(incoming)})', psptContext);
+    const result = psptMessages.at(-1);
+    assert.equal(result.type, 'candidates', result.message);
+    assert.equal(JSON.stringify(result.candidates), JSON.stringify(model.step(wire)), 'Offline and module PSPT decisions match');
+  }
+  psptContext.onmessage({ data: { type: 'init', requestId: 6, wallSide: 'upper' } });
+  assert.equal(psptMessages.at(-1).type, 'error', 'Worker rejects truth-side options');
   events.get('beforeunload')(); assert.deepEqual(revoked.sort(), [...blobs.keys()].sort());
 });

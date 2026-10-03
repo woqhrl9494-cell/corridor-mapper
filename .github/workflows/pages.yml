@@ -12,7 +12,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    uses: ./.github/workflows/tests.yml
   deploy:
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read
