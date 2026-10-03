@@ -469,8 +469,7 @@ dialog p + p { margin-top: 14px; }
 }
 
 /* Online decisions are distinct from the orange truth-only evaluation layer. */
-.swatch-supported { background: linear-gradient(#009e73,#009e73) center/100% 2.5px no-repeat; }
-.swatch-supported::after { content: ""; position: absolute; width: 9px; height: 9px; top: 50%; left: 50%; transform: translate(-50%,-50%); border-radius: 50%; background: #009e73; box-shadow: 0 0 0 1px var(--color-plot-bg); }
+.swatch-supported { background: linear-gradient(#009e73,#009e73) center/100% 5px no-repeat; box-shadow: 0 0 0 2px var(--color-plot-bg); }
 .swatch-pending::after { content: ""; position: absolute; width: 10px; height: 10px; top: 50%; left: 50%; transform: translate(-50%,-50%); border: 1.5px solid #777; border-radius: 50%; }
 .swatch-contradicted { background: linear-gradient(45deg, transparent 43%, #c54b28 44% 56%, transparent 57%) center/12px 12px no-repeat, linear-gradient(-45deg, transparent 43%, #c54b28 44% 56%, transparent 57%) center/12px 12px no-repeat; }
 .candidate-counts { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0 12px; padding: 8px 10px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-surface-2); font-variant-numeric: tabular-nums; }

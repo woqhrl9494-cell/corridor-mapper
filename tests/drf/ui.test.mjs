@@ -44,13 +44,15 @@ test('axis-fitted camera preserves metre coordinates and the zoom anchor', () =>
 });
 
 test('render keeps world row order, uses real DPR/300 dpi pixels, and charts execute', async () => {
-  const snapshots={},created=[],rectangles=[],labels=[],gridSegments=[],labelPositions=[],dots=[],ellipseStarts=[],gridColor='#c4d3e2';
+  const snapshots={},created=[],rectangles=[],labels=[],gridSegments=[],labelPositions=[],dots=[],ellipseStarts=[],strokes=[],gridColor='#c4d3e2';
   const context=() => {
     let path=[],point;
     return new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{
       if (key==='beginPath') {path=[];point=undefined;}
       if (key==='moveTo') point=args;
       if (key==='lineTo') {if (point) path.push([point,args]);point=args;}
+      if (key==='setLineDash') target.lineDash=args[0].slice();
+      if (key==='stroke') strokes.push({color:target.strokeStyle,width:target.lineWidth,cap:target.lineCap,dash:target.lineDash?.slice() ?? [],segments:path.slice()});
       if (key==='stroke' && target.strokeStyle===gridColor) gridSegments.push(...path);
       if (key==='stroke' && target.strokeStyle!==gridColor && path.length===96) ellipseStarts.push(path[0][0]);
       if (key==='arc') dots.push(args);
@@ -354,6 +356,28 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       floorMap.zoom(.0001,anchor);floorMap.paint(floorCanvas,1);
       assert.ok(floorMap.camera.scaleX>=minimum[0]-1e-9 && floorMap.camera.scaleY>=minimum[1]-1e-9);
     }
+    // Truth must not cover support, and drawing must preserve actual patch gaps
+    // even with overlapping supported patches and a narrow display.
+    const patchCanvas=makeCanvas(),patchMap=new DrfMap(patchCanvas),patchState={
+      mode:'geometry',aspectMode:'equal',cameraBounds:[0,30,0,30],domain:[0,30,0,30],frame:{t:1},
+      walls:[[[0,10],[30,10]]],layers:{showTruth:true,showProxy:true},
+      candidates:[10,11.5,16].map(x=>({center:[x,10],phi:0,kappa:0,sg:1,ell:1,status:'supported'}))
+    },patchBefore=JSON.stringify(patchState);
+    for (const width of [700,250]) {
+      patchCanvas.clientWidth=width;patchMap.set(patchState);patchMap.fit();strokes.length=0;patchMap.paint(patchCanvas,1);
+      const truthIndex=strokes.findIndex(s=>s.dash.join(',')==='7,5'),casings=strokes.filter(s=>s.width===8),support=strokes.filter(s=>s.color==='#009e73');
+      assert.equal(casings.length,3);assert.equal(support.length,3,'Each supported patch must remain an independent path');
+      assert.ok(truthIndex>=0 && truthIndex<strokes.indexOf(casings[0]),'Truth must be behind support');
+      assert.ok(strokes.indexOf(casings.at(-1))<strokes.indexOf(support[0]),'Later casings must not erase earlier support');
+      support.forEach((s,k)=>{
+        assert.equal(s.width,5);assert.equal(s.cap,'butt','Round endpoints would visually bridge short unsupported gaps');
+        assert.deepEqual(s.dash,[]);assert.equal(s.segments.length,20);
+        const endpoints=[s.segments[0][0],s.segments.at(-1)[1]].map(p=>mapToWorld(p,patchMap.camera,patchMap.box)[0]);
+        const expected=[[9,11],[10.5,12.5],[15,17]][k];
+        endpoints.forEach((x,j)=>assert.ok(Math.abs(x-expected[j])<1e-9,'Patch support extent must not expand or connect across its gap'));
+      });
+    }
+    assert.equal(JSON.stringify(patchState),patchBefore,'Presentation must not alter inferred patch geometry or status');
     canvas.clientHeight=540;
     const mobile=makeCanvas();mobile.clientWidth=250;mobile.clientHeight=385;
     const surf=new SurfaceMap(mobile,()=>{});

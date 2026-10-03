@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261003-legend1" />
+    <link rel="stylesheet" href="drf/style.css?v=20261003-support1" />
   </head>
   <body>
     <header class="site-header">
@@ -108,7 +108,7 @@
                           <li data-layer="observed"><span class="swatch swatch-observed" aria-hidden="true"></span>관측 벽 마스크</li>
                         </ul>
                       </div>
-                      <div class="legend-footer"><p class="legend-note">지지는 측정 기반 추정입니다. 정답 일치 여부는 사후 평가합니다.</p><span id="ellipseStats" class="view-meta"></span></div>
+                      <div class="legend-footer"><p class="legend-note">지지는 벽 추정입니다. 실선이 없는 구간은 지지 미확보입니다.</p><span id="ellipseStats" class="view-meta"></span></div>
                     </div>
                   </figcaption>
                   <div class="plot-shell view-body"><canvas id="mapCanvas" class="dashboard-canvas" aria-label="측정 타원, 차량 궤적과 평가 레이어">Canvas를 지원하는 브라우저가 필요합니다.</canvas></div>
@@ -160,8 +160,8 @@
       <p><math><mover accent="true"><mi>β</mi><mo>ˆ</mo></mover></math>는 필드 대비 지표입니다. 확률·posterior·occupancy로 해석하지 않습니다.</p><p class="prior-note">DRF의 ridge에서 국소 표면 후보를 만들고, PSPT가 이후 측정 거리의 예측 일치와 경쟁 가설을 검사합니다. 실제 벽 방향·개수는 판정기에 전달하지 않습니다. 상태는 지지·보류·기각이며 점수는 보정된 존재 확률이 아닙니다.</p><p>벽은 공유 중심선과 위·아래 독립 요철의 uniform cubic B-spline입니다. 수직 방향으로 합성하며 대칭 복사를 사용하지 않습니다. 차량은 중심선 주변을 주행하고 출구 이후에는 중심선 끝의 접선 방향으로 나아갑니다. 계산 영역은 [0, 80] × [−20, 50] m, 양쪽 벽의 최소 통로 폭은 4 m, 선택한 벽과의 수직 차량 여유는 1 m입니다.</p><p>PSPT 판정은 100×100 격자·잔차 4σ·정확 둘레·입사각 45°·p_miss=0.05의 고정 설정입니다. 표시 필드의 수치 설정과 구분됩니다. 공선 대칭에서는 보류하며 비공선·큰 잡음에서도 오판이 남는 연구용 방법입니다. 지지 후보가 없으면 정확도는 미정, 관측 벽 복원율은 0입니다.</p><p>Fermat's principle에 따른 정반사점과 facet diffuse 모델을 사용합니다. 수치·통계 검증 여부는 저장소의 DRF_VALIDATION.md에 기록합니다.</p></dialog>
     <script>
       const runtime = document.createElement('script');
-      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261003-pspt1';
-      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261003-pspt1'; }
+      if (location.protocol === 'file:') runtime.src = 'drf/offline.bundle.js?v=20261003-support1';
+      else { runtime.type = 'module'; runtime.src = 'drf/app.mjs?v=20261003-support1'; }
       runtime.onerror = () => { document.getElementById('status').textContent = '실행 코드를 불러오지 못했습니다. 로컬 실행본을 다시 빌드하거나 파일 위치를 확인하세요.'; };
       document.body.append(runtime);
     </script>

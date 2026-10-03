@@ -214,9 +214,9 @@ export class DrfMap {
       ctx.imageSmoothingEnabled=false; ctx.drawImage(this.heat,p[0],p[1],q[0]-p[0],q[1]-p[1]);
     }
     drawGrid(ctx,box,xs.map(x=>screen([x,0])[0]),ys.map(y=>screen([0,y])[1]),token('grid'));
-    const path=(points,color,width=2,dash=[],alpha=1) => {
+    const path=(points,color,width=2,dash=[],alpha=1,cap=dash.length ? 'butt' : 'round') => {
       if (!points?.length) return;
-      ctx.beginPath();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.lineJoin='round';ctx.lineCap=dash.length ? 'butt' : 'round';
+      ctx.beginPath();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.lineJoin='round';ctx.lineCap=cap;
       points.forEach((p,i) => { const [x,y]=screen(p); i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
     };
     // One arc per marker; a surface-coloured ring keeps overlapping markers legible.
@@ -229,8 +229,9 @@ export class DrfMap {
     };
     const square=(p,size,color,lineWidth=1.5) => { if (!p) return; const [x,y]=screen(p);ctx.beginPath();ctx.rect(x-size/2,y-size/2,size,size);ctx.fillStyle=background;ctx.fill();ctx.lineWidth=lineWidth;ctx.strokeStyle=color;ctx.stroke(); };
     const {layers={},wire,truth,walls=[],proxy=[],candidates=[],observed=[],history=[]}=this.state;
-    // Layer order, back to front: measurement ellipses (thin, translucent) → evaluation mask →
-    // wall candidates (filled dots) → true wall (dashed) → scattering points → tracks → vehicles.
+    // Truth and other overlays stay behind the supported patches. Each patch is
+    // a separate path: do not join candidates or snap their geometry to truth.
+    const supportedPatches=[];
     // Drawing budget only: the estimator still receives every measured path.
     const ellipseTotal=(wire?.configs ?? []).reduce((sum,config)=>sum+(config.paths?.length ?? 0),0),ellipseStride=Math.max(1,Math.ceil(ellipseTotal/600));
     let ellipseIndex=0,ellipseShown=0;
@@ -248,6 +249,7 @@ export class DrfMap {
       const stats=panel?.querySelector?.('#ellipseStats');
       if (stats) stats.textContent=layers.showEllipses ? `타원 표시 ${ellipseShown}개 · 측정 ${ellipseTotal}개` : '타원 숨김';
     }
+    if (layers.showTruth) for (const wall of walls) path(wall,truthColor,geometry ? 1.75 : 2,[7,5]);
     if (layers.showObserved) for (const p of observed) square(p,9,evalColor);
     if (layers.showProxy) {
       for (const p of proxy) marker(p,{r:2.75,fill:proxyColor,ring:1.25});
@@ -257,13 +259,11 @@ export class DrfMap {
           const points=[],tx=Math.cos(c.phi),ty=Math.sin(c.phi);
           for (let k=0;k<=20;k++) { const u=-c.ell+2*c.ell*k/20,b=.5*c.kappa*u*u*c.sg;
             points.push([c.center[0]+u*tx-b*ty,c.center[1]+u*ty+b*tx]); }
-          path(points,color,2.5);
-          marker(c.center,{r:3,fill:color,ring:1});
+          supportedPatches.push(points);
         } else if (pending) marker(c.center,{r:2.5,stroke:color,lineWidth:1.25});
         else { const [x,y]=screen(c.center);ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.moveTo(x-2.5,y-2.5);ctx.lineTo(x+2.5,y+2.5);ctx.moveTo(x-2.5,y+2.5);ctx.lineTo(x+2.5,y-2.5);ctx.stroke(); }
       }
     }
-    if (layers.showTruth) for (const wall of walls) path(wall,truthColor,geometry ? 1.75 : 2,[7,5]);
     if (layers.showSpecular || layers.showDiffuse) for (const config of truth?.configs ?? []) {
       if (layers.showSpecular) for (const q of config.specular ?? []) marker(q.s,{r:4.5,stroke:evalColor,lineWidth:1.75});
       if (layers.showDiffuse) for (const q of config.diffuse ?? []) marker(q.s,{r:2.25,fill:evalColor});
@@ -276,7 +276,7 @@ export class DrfMap {
       }
       const current=new Map();
       for (const config of wire?.configs ?? []) { current.set(config.i,config.pHat_i);current.set(config.j,config.pHat_j); }
-      // Tracks are the boldest line; a casing separates them from ellipses and heat cells.
+      // A casing separates tracks from ellipses and heat cells.
       const color=geometry ? trackColor : token("field-track",ink),casing=geometry ? background : token("field-casing",background);
       for (const track of tracks.values()) {
         const points=track.map((q) => q.p);
@@ -305,6 +305,10 @@ export class DrfMap {
         ctx.textAlign="center";ctx.fillStyle=ink;ctx.fillText(text,lx,ly);
       }
     }
+    // Paint every casing first so overlapping patch casings cannot erase green
+    // support. Flat caps preserve endpoint gaps instead of extending each line.
+    for (const points of supportedPatches) path(points,background,8,[],1,'butt');
+    for (const points of supportedPatches) path(points,'#009e73',5,[],1,'butt');
     ctx.restore();
     ctx.font=uiFont(14);ctx.fillStyle=muted;ctx.strokeStyle=line;ctx.lineWidth=1;
     ctx.strokeRect(box.x,box.y,box.w,box.h);

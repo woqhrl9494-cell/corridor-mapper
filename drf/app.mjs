@@ -3,7 +3,7 @@ import { createGrid } from './field.mjs';
 import { percentile } from './evaluate.mjs?v=20261003-pspt1';
 import { psptSnapshotCsv } from './pspt-evaluate.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261003-pspt1';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261003-pspt1';
+import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261003-support1';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
