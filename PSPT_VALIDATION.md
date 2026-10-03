@@ -140,7 +140,7 @@ PSPT_FULL_PARITY=1 npm run test:pspt
 node build-pages.mjs
 ```
 
-The integration revision passed **161 automated tests**, with full Python checkpoint comparison enabled. Three measured-only cases were replayed for 120 snapshots each. At checkpoints 1, 5, 15, 30, 60, and 120, all 20,394 discrete entries matched exactly; 18,540 floating entries had a maximum absolute difference of 3.77 × 10⁻¹³ (angles compared modulo 2π). The seven historical DRF fixtures also retained exact field hashes and numerical results.
+The integration revision passed **161 automated tests on Node.js 26.7.0**, with full Python checkpoint comparison enabled. Three measured-only cases were replayed for 120 snapshots each. At checkpoints 1, 5, 15, 30, 60, and 120, all 20,394 discrete entries matched exactly; 18,540 floating entries had a maximum absolute difference of 3.77 × 10⁻¹³ (angles compared modulo 2π). The seven historical DRF fixtures also retained exact field hashes and numerical results.
 
 The HTTP browser UI completed upper-only, lower-only, and two-wall 120-snapshot runs. View reset retained the selected snapshot and completed results. At a 1920 × 980 viewport, the default sidebar fit without vertical scrolling. The zero-range-noise setting was visibly rejected before computation. [Browser smoke record](validation/2026-10-03/browser-smoke.json). Direct `file://` visual testing was unavailable because the browser automation URL policy blocks that protocol; the committed classic-worker bundle was executed and compared in isolation instead.
 

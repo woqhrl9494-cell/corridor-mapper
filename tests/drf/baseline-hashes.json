@@ -13,7 +13,6 @@
     "revised_wall_estimator.js": "5031b251bdd4ce5757c5b32bd808a513961f92b5c674c404052765c995ef7eef",
     "surf/app.mjs": "fc45a346a6e629555eb5ef810a6b62de3ccffe1eb6a027986857af7be4921036",
     "surf/core/B4_frozen_protocol.json": "a080a23c40439aebf3880f9b29af3b1f9ec9777ba7c0f0e4b7993edf05901343",
-    "surf/core/__pycache__/surface.cpython-314.pyc": "c14b6fe2aa596207e0952b100f5e508e10b7fd7b134c64654fc4072a5ac21f2e",
     "surf/core/browser_bridge.py": "3bb427a2b2f932227c26693342c4b24b0d8a31004f130eb374d12b5b6ebce4a3",
     "surf/core/manifest.json": "fad175fb6439f86cebe5e8804cbf11027d197985b01a3c46e824ddaa9d883277",
     "surf/core/numerical_tolerances.json": "f881d2c42e34e057705a50f617f5bdbc2d88f78c08703537742ad5e0f91ded00",

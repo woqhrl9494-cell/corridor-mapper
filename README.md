@@ -68,7 +68,7 @@ The wall spans 0–80 m. The raw map initially shows −10–90 m horizontally w
 
 ## Local Development
 
-Use Node.js with support for ES modules and the built-in test runner, plus npm.
+Use **Node.js 26.7.0** and npm for the recorded test environment. Historical generator fixtures compare exact hashes and can differ across JavaScript engine versions.
 
 ```sh
 npm ci

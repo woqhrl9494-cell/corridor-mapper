@@ -5,9 +5,12 @@ import { createHash } from 'node:crypto';
 const root = new URL('../../', import.meta.url);
 const read = path => fs.readFileSync(new URL(path, root));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-test('approved display changes preserve all 44 other protected files', () => {
+test('approved display changes preserve all 43 other protected source/artifact files', () => {
   const baseline = JSON.parse(read('tests/drf/baseline-hashes.json'));
   const allowed = new Set(['index.html', 'surf/style.css', 'surf/map.mjs']);
+  // Python bytecode is ignored, runtime-specific output, not a protected source.
+  assert.equal(Object.keys(baseline.sha256).length, 46);
+  for (const path of Object.keys(baseline.sha256)) assert.doesNotMatch(path, /(^|\/)__pycache__\/|\.pyc$/);
   for (const [path, hash] of Object.entries(baseline.sha256)) if (!allowed.has(path)) assert.equal(sha(read(path)), hash, path);
 });
 test('displayed frozen DRF core hash matches the actual worker estimator source', () => {
