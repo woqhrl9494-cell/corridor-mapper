@@ -19,7 +19,7 @@ The research question is practical: when a bright field peak appears, does the n
 ## From Echoes to Candidate Decisions
 
 ```mermaid
-flowchart LR
+flowchart TB
     W[Simulated walls and vehicle motion] --> M[Measured positions, covariances, ranges]
     M --> D[Direct Residual Field]
     D --> P[Paired local surface candidates]
