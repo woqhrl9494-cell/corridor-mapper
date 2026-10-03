@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261003-pspt1" />
+    <link rel="stylesheet" href="drf/style.css?v=20261003-legend1" />
   </head>
   <body>
     <header class="site-header">
@@ -64,7 +64,7 @@
             <fieldset><legend>추정기가 보는 정보</legend><div class="toggle-list">
               <label class="toggle"><input id="showEllipses" type="checkbox" checked /><span class="swatch swatch-ellipse" aria-hidden="true"></span>측정 타원</label>
               <label class="toggle"><input id="showVehicles" type="checkbox" checked /><span class="swatch swatch-track" aria-hidden="true"></span>차량·궤적</label>
-              <label class="toggle" title="측정만으로 만든 표면 후보 · 지지·보류·기각을 표시"><input id="showProxy" type="checkbox" checked /><span class="swatch swatch-proxy" aria-hidden="true"></span>후보 판정</label>
+              <label class="toggle" title="측정만으로 만든 표면 후보 · 지지·보류·기각을 표시"><input id="showProxy" type="checkbox" checked /><span class="swatch swatch-supported" aria-hidden="true"></span>후보 판정</label>
             </div></fieldset>
             <fieldset class="evaluation"><legend>평가 전용</legend><div class="toggle-list">
               <label class="toggle" title="시뮬레이션에서 생성한 벽의 실제 위치 · 사후 평가용"><input id="showTruth" type="checkbox" checked /><span class="swatch swatch-truth" aria-hidden="true"></span>실제 벽</label>
@@ -85,16 +85,31 @@
                   <figcaption class="vlabel map-head">
                     <div class="vtitle"><span class="tag">RAW</span><h2 id="mapTitle">측정 타원 · 차량 궤적</h2><span class="view-unit"><math><mi>x</mi><mo>,</mo><mi>y</mi></math> [m] · 1 : 1</span></div>
                     <div class="map-toolbar" role="group" aria-label="지도 조작"><button id="fitView" type="button">전체 보기</button><button id="zoomIn" class="icon" type="button" aria-label="지도 확대">＋</button><button id="zoomOut" class="icon" type="button" aria-label="지도 축소">−</button><button id="firstSnapshot" type="button" title="확대와 이동을 기본 보기로 복원합니다. 현재 snapshot과 계산 기록은 유지합니다.">처음으로</button></div>
-                    <div class="legend-row"><ul class="legend" aria-label="RAW 지도 범례">
-                      <li data-layer="vehicles"><span class="swatch swatch-track" aria-hidden="true"></span>차량 궤적</li>
-                      <li data-layer="vehicles"><span class="swatch swatch-vehicle" aria-hidden="true"></span>현재 위치</li>
-                      <li data-layer="ellipses"><span class="swatch swatch-ellipse" aria-hidden="true"></span>측정 타원</li>
-                      <li data-layer="proxy"><span class="swatch swatch-supported" aria-hidden="true"></span>지지 ● <span class="swatch swatch-pending" aria-hidden="true"></span>보류 ○ <span class="swatch swatch-contradicted" aria-hidden="true"></span>기각 ×</li>
-                      <li data-layer="truth" class="evaluation"><span class="swatch swatch-truth" aria-hidden="true"></span>실제 벽 · 평가</li>
-                      <li data-layer="specular" class="evaluation"><span class="swatch swatch-specular" aria-hidden="true"></span>정반사점</li>
-                      <li data-layer="diffuse" class="evaluation"><span class="swatch swatch-diffuse" aria-hidden="true"></span>diffuse점</li>
-                      <li data-layer="observed" class="evaluation"><span class="swatch swatch-observed" aria-hidden="true"></span>관측 벽 마스크</li>
-                    </ul><span id="ellipseStats" class="view-meta"></span></div>
+                    <div class="legend-row" role="group" aria-label="RAW 지도 범례">
+                      <div class="legend-group legend-measured" role="group" aria-label="측정 정보">
+                        <span class="legend-label">측정</span><ul class="legend">
+                          <li data-layer="vehicles"><span class="swatch swatch-track" aria-hidden="true"></span>차량 궤적</li>
+                          <li data-layer="vehicles"><span class="swatch swatch-vehicle" aria-hidden="true"></span>현재 위치</li>
+                          <li data-layer="ellipses"><span class="swatch swatch-ellipse" aria-hidden="true"></span>측정 타원</li>
+                        </ul>
+                      </div>
+                      <div class="legend-group legend-decisions" role="group" aria-label="측정 기반 후보 판정">
+                        <span class="legend-label">후보 추정</span><ul class="legend">
+                          <li data-layer="proxy" title="지지: 측정 기반으로 벽으로 추정한 후보. 정답 확인을 뜻하지 않습니다."><span class="swatch swatch-supported" aria-hidden="true"></span><span><b>지지</b><span class="legend-description"> · 벽으로 추정</span></span></li>
+                          <li data-layer="proxy" title="보류: 측정 근거가 부족하거나 모호하여 판정을 유보한 후보"><span class="swatch swatch-pending" aria-hidden="true"></span><span><b>보류</b><span class="legend-description"> · 판정 유보</span></span></li>
+                          <li data-layer="proxy" title="기각: 측정 기반 판정에서 제외한 후보. 실제 벽이 없음을 확정한 것은 아닙니다."><span class="swatch swatch-contradicted" aria-hidden="true"></span><span><b>기각</b><span class="legend-description"> · 후보 제외</span></span></li>
+                        </ul>
+                      </div>
+                      <div class="legend-group legend-evaluation evaluation" role="group" aria-label="정답 정보 · 사후 평가 전용">
+                        <span class="legend-label">정답 비교</span><ul class="legend">
+                          <li data-layer="truth"><span class="swatch swatch-truth" aria-hidden="true"></span>실제 벽 (정답)</li>
+                          <li data-layer="specular"><span class="swatch swatch-specular" aria-hidden="true"></span>정반사점</li>
+                          <li data-layer="diffuse"><span class="swatch swatch-diffuse" aria-hidden="true"></span>diffuse점</li>
+                          <li data-layer="observed"><span class="swatch swatch-observed" aria-hidden="true"></span>관측 벽 마스크</li>
+                        </ul>
+                      </div>
+                      <div class="legend-footer"><p class="legend-note">지지는 측정 기반 추정입니다. 정답 일치 여부는 사후 평가합니다.</p><span id="ellipseStats" class="view-meta"></span></div>
+                    </div>
                   </figcaption>
                   <div class="plot-shell view-body"><canvas id="mapCanvas" class="dashboard-canvas" aria-label="측정 타원, 차량 궤적과 평가 레이어">Canvas를 지원하는 브라우저가 필요합니다.</canvas></div>
                 </figure>
