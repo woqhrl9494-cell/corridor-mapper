@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="측정값과 평가용 참값을 분리하는 Direct Residual Field 실험 도구." />
     <title>EchoMap — DRF 시뮬레이터 | 한양대학교 WSL</title>
-    <link rel="stylesheet" href="drf/style.css?v=20261003-support1" />
+    <link rel="stylesheet" href="drf/style.css?v=20261004-run1" />
   </head>
   <body>
     <header class="site-header">
@@ -18,7 +18,7 @@
       <aside class="sidebar settings-panel" aria-label="실험 설정">
         <section class="run-section" aria-label="실행 제어">
           <div class="sidebar-title"><h2>실험 설정</h2><button id="resetButton" class="ghost" type="button" title="모든 설정을 기본값으로 되돌리고 계산 결과를 지웁니다.">기본값 복원</button></div>
-          <div class="run-actions"><button id="cancelButton" class="danger" type="button" disabled>취소</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="stepButton" type="button" disabled>한 step</button><button id="runButton" class="primary run-button" type="button" disabled title="기본 120회 주행 · 입력한 snapshot 수만큼 계산"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor" /></svg>실행</button></div>
+          <div class="run-actions"><button id="cancelButton" class="danger" type="button" disabled>취소</button><button id="pauseButton" type="button" disabled>일시정지</button><button id="stepButton" type="button" disabled>한 step</button><button id="runButton" class="primary run-button" type="button" disabled title="기본 120회 주행 · 입력한 snapshot 수만큼 계산">실행</button></div>
           <p id="status" class="status" role="status" aria-live="polite">설정을 확인한 뒤 실행하세요.</p>
           <progress id="runProgress" max="120" value="0" aria-label="snapshot 계산 진행"></progress>
         </section>

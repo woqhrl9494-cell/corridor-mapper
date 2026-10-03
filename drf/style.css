@@ -122,10 +122,10 @@ nav a[aria-current="page"] { color: var(--color-accent); background: var(--color
 .run-section { position: relative; padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 2px); }
 .sidebar-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .sidebar-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-.run-actions { display: grid; grid-template-columns: auto auto auto minmax(0,1fr); gap: 6px; }
+.run-actions { display: grid; grid-template-columns: auto auto auto minmax(max-content,1fr); gap: 6px; }
 .run-actions button { height: 36px; min-height: 36px; padding: 0 11px; }
 #pauseButton { min-width: 84px; }
-.run-button { gap: 7px; font-size: 15px; }
+.run-button { font-size: 15px; }
 .run-section .status { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 2.9em; margin: 8px 0 0; padding: 0; overflow: hidden; border: 0; background: none; box-shadow: none; color: var(--color-ink); line-height: 1.45; }
 /* Progress rides on the divider under the run controls instead of taking its own row. */
 progress { position: absolute; left: 0; right: 0; bottom: -2px; z-index: 1; display: block; width: 100%; height: 3px; border: 0; border-radius: 0; background: transparent; appearance: none; -webkit-appearance: none; overflow: hidden; }
@@ -410,6 +410,7 @@ dialog p + p { margin-top: 14px; }
   .site-header { flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px; }
   .header-badge { display: none; }
   .workspace { grid-template-columns: 280px minmax(0,1fr); }
+  .run-actions button { padding: 0 6px; }
   .views { padding: 16px; }
   .primary-workspace { min-height: 0; }
   .dashboard { grid-template-columns: 1fr; grid-template-rows: auto; flex: none; }
