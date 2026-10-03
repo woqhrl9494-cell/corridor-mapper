@@ -68,7 +68,7 @@ The wall spans 0–80 m. The raw map initially shows −10–90 m horizontally w
 
 ## Local Development
 
-Use **Node.js 26.7.0** and npm for the recorded test environment. Historical generator fixtures compare exact hashes and can differ across JavaScript engine versions.
+Use **Node.js 26.7.0** and npm for the recorded test environment. Historical SURF fixtures compare exact hashes from macOS/arm64; they are not portable bit-for-bit across platforms. CI preserves the full suite on macOS and separately checks the current DRF/PSPT runtime on Linux.
 
 ```sh
 npm ci
