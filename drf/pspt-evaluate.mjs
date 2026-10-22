@@ -2,7 +2,8 @@
  * Geometry is labelled at its current position, tolerance 0.4 m. Surface
  * coverage is restricted to wall samples within 1 m of past generated echoes.
  */
-import { createEvaluator, percentile } from './evaluate.mjs';
+import { percentile } from './statistics.mjs';
+import { createReflectionDiagnostics } from './reflection-diagnostics.mjs';
 import '../wall_metrics.js';
 const metrics = globalThis.WallMetrics, tolerance = 0.4, sampleStep = 0.05;
 const fraction = (a, b) => b ? a / b : null;
@@ -76,7 +77,7 @@ function neighborhood(points) {
 }
 
 export function createPSPTEvaluator(scenario, grid) {
-  const diagnostic = createEvaluator(scenario, grid),
+  const diagnostic = createReflectionDiagnostics(scenario),
     gt = wallSamples(scenario),
     mask = metrics.createObservedMask(gt), onWall = neighborhood(gt), firstSupport = new Map();
   let cursor = 0;
@@ -100,11 +101,10 @@ export function createPSPTEvaluator(scenario, grid) {
       recall = fraction(observed.filter(nearPatch).length, observed.length),
       f1 = recall == null ? null : !surfacePrecision ? 0 : 2 * surfacePrecision * recall / (surfacePrecision + recall),
       pending = frame.candidates.filter(c => c.status === 'pending').length;
-    // Legacy calculations remain available only as explicit diagnostic evidence.
-    const old = sharedDiagnostics ?? diagnostic.step(frame);
-    return { ...old, method: frame.method ?? 'guarded45', proxy: centers.map(p => [p.x, p.y]), observed: observed.map(p => [p.x, p.y]),
+    const diagnostics = sharedDiagnostics?.diagnostics ?? diagnostic.step(frame.t);
+    return { t: frame.t, diagnostics, method: frame.method ?? 'guarded45', proxy: centers.map(p => [p.x, p.y]), observed: observed.map(p => [p.x, p.y]),
       medianError: percentile(distances, .5), p95: percentile(distances, .95), offwall: precision == null ? null : 1 - precision,
-      precision, surfacePrecision, recall, f1, offset: null, caMsd: null, caHd95: null,
+      precision, surfacePrecision, recall, f1,
       observedFraction: fraction(observed.length, gt.length), missing: observed.length - observed.filter(nearPatch).length,
       firstSupportPrecision: fraction([...firstSupport.values()].filter(Boolean).length, firstSupport.size),
       firstSupportErrors: [...firstSupport.values()].filter(x => !x).length, firstSupportCount: firstSupport.size,

@@ -32,13 +32,13 @@ export function normalizeInput(raw = {}) {
   if (![100, 150, 200].includes(p.grid) || ![3, 4, 5, 'full'].includes(p.band) || !['exact', 'ramanujan'].includes(p.perimeter))
     throw new Error('Unsupported numerical setting');
   if (p.sigmaP < 0 || p.sigmaD < 0 || p.sigmaP > 2 || p.sigmaD > 2 || p.sigmaP + p.sigmaD === 0)
-    throw new Error('위치·거리 잡음 중 하나는 0보다 커야 합니다. 허용 범위는 0–2 m입니다.');
+    throw new Error('Position and range SD must be within 0–2 m, with at least one greater than zero.');
   if (p.roughness < 0 || p.roughness > 20 || p.lambda0 < 0 || p.lambda0 > 30 || p.cellStep < 0.005 || p.cellStep > 0.2 || p.resolution < 0 || p.resolution > 2)
     throw new Error('Scattering settings are outside the supported range');
   if (!Number.isInteger(p.seed) || p.seed < 0 || p.seed > 0xffffffff) throw new Error('Seed must be a uint32');
   if (p.sigmaM < 0 || p.sigmaM > 12 || p.sigmaDGeometry < 0 || p.sigmaDGeometry > 3
     || p.deltaM < 4 || p.deltaM > 60 || p.deltaD < 1 || p.deltaD > 20)
-    throw new Error('기하 설정 범위: 중심선 진폭 0–12 m / 간격 4–60 m, 요철 진폭 0–3 m / 간격 1–20 m');
+    throw new Error('Geometry limits: centre amplitude 0–12 m, spacing 4–60 m; perturbation amplitude 0–3 m, spacing 1–20 m.');
   return p;
 }
 export const LAYERED_DOMAIN = Object.freeze([0, 80, -20, 50]);
@@ -74,7 +74,7 @@ export function createSceneGeometry(input) {
         wallSide, activeWalls, minWidthRequired: wallSide === 'both' ? 4 : null, vehicleClearanceRequired: 1, clearanceAxis: 'y',
         validationFleet: { vehicles: 20, snapshots: 120, wallInterval: [0, wallModel.L] } } };
   }
-  throw new Error('256회 벽 생성이 모두 기각되었습니다. 기하 진폭을 줄이거나 seed를 변경하세요.');
+  throw new Error('All 256 wall-generation attempts were rejected. Reduce geometry amplitudes or choose another seed.');
 }
 export function truePoses(t, vehicles = 3, wallModel = null) {
   return Array.from({ length: vehicles }, (_, v) => {

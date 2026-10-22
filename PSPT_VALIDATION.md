@@ -1,4 +1,6 @@
-# Guarded PSPT: Method and Validation
+# Guarded PSPT: Historical Method and Validation Record
+
+> **Historical evidence, not independent validation of the current method.** The 54 scenes below (seeds 501–506) were later reused for development and threshold selection. They are not an independent test of the current method. The current browser compares two estimators with tuning-200 thresholds and a changed layered trajectory; see [THRESHOLD_PROTOCOL.md](THRESHOLD_PROTOCOL.md). Numerical values below describe the original dated study and have not been relabelled as current-release results.
 
 This note records the selected research method and the **2026-10-03 Python-reference study**. Browser integration is a separate implementation: reference accuracy and Python timings must not be presented as JavaScript validation results.
 
@@ -48,12 +50,12 @@ The pose geometry gate compares a covariance-normalized line-fit residual agains
 Measurements came from the existing JavaScript wall/scattering generator. They were saved separately from evaluation truth and replayed through the Python estimators. The external prototype's independent generator was not substituted for the simulator's generator.
 
 - **Calibration:** seeds 301–303, upper-only/lower-only/two-wall configurations, and mixed/specular/diffuse returns; 27 cases.
-- **Held-out study:** seeds 501–506 and the same nine configurations per seed; 54 cases.
+- **Original evaluation set (later reused for development):** seeds 501–506 and the same nine configurations per seed; 54 cases.
 - **Common settings:** three vehicles, 120 snapshots, a 100 × 100 grid, and 0.1 m standard deviation for position and range noise.
 - **Additional stress:** one seed with increased roughness, pose error, range error, or wall variation. These cases do not define a statistical population guarantee.
 - **Scaling:** one seed with 3, 10, and 20 vehicles over 40 snapshots. This measures early-run cost, not complete 80 m reconstruction.
 
-Selection used calibration cases and was locked before inspection of held-out truth metrics. Among eligible guarded settings, the selection target was at least 95% supported-center precision, then greater observed-wall coverage at 0.4 m. This was an empirical selection rule, not a promised error bound.
+Selection used calibration cases and was locked before inspection of original evaluation truth metrics. Among eligible guarded settings, the selection target was at least 95% supported-center precision, then greater observed-wall coverage at 0.4 m. This was an empirical selection rule, not a promised error bound.
 
 The DRF beta baselines reuse the guarded method's candidate coordinates, geometry, and histories. They compare **classification on shared candidates**, not independent end-to-end mapping systems. The forced threshold maximizes calibration mean Youden J. The selective thresholds match calibration support/rejection proportions. All thresholds remain fixed during test evaluation.
 

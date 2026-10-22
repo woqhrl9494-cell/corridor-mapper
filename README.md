@@ -1,100 +1,151 @@
+<div align="center">
+
 # EchoMap
 
+### Range-only wall mapping from collaborative bistatic echoes
+
+A research workbench for seeing how measurements become surface hypotheses, and when those hypotheses remain ambiguous.
+
 [![Tests and deployment](https://github.com/woqhrl9494-cell/corridor-mapper/actions/workflows/pages.yml/badge.svg)](https://github.com/woqhrl9494-cell/corridor-mapper/actions/workflows/pages.yml)
-[![Demo](https://img.shields.io/badge/Live_simulator-Open-009e73?style=flat-square)](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html)
-[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-5369a8?style=flat-square)](LICENSE)
+[![Live workbench](https://img.shields.io/badge/Live_workbench-Open-1e6386?style=flat-square)](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html)
+[![License](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-66727d?style=flat-square)](LICENSE)
 
-**Explore how unlabeled bistatic echoes support a wall map, one snapshot at a time.**
+[**Open the workbench**](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html) · [**Comparison protocol**](THRESHOLD_PROTOCOL.md) · [**Reproduce locally**](#reproduce-locally)
 
-[Launch the simulator](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html) / [Method and validation](PSPT_VALIDATION.md) / [License](LICENSE)
+</div>
 
-EchoMap is a browser research simulator developed by Jaebok Lee at **WSL, Hanyang University**. It generates rough, curved walls and collaborative range measurements, accumulates a Direct Residual Field (DRF), and tests local surface candidates against later measurements with a guarded Paired Surfel Predictive Test (PSPT).
+![EchoMap: Guarded PSPT and Fixed-fragment B on the same measurement sequence](assets/echomap-comparison.png)
 
-![EchoMap: online surface candidates and independent evaluation](assets/echomap-preview.jpg)
+*One synthetic scene, two causal estimators. The screenshot uses seed 549028359, 10 vehicles, 120 snapshots, and position/range SD 0.1 m. It illustrates the interface, not aggregate performance. [Replay these settings](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html#v1=%7B%22vehicles%22%3A10%2C%22snapshots%22%3A120%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22seed%22%3A549028359%7D).*
 
-*Measured echoes, field maps, and supported / pending / contradicted surface candidates in one workspace. The interface currently uses Korean labels; method documentation is in English.*
+EchoMap is developed by **Jaebok Lee, Wireless Systems Laboratory, Hanyang University**. It studies a question in collaborative sensing: can noisy, unlabeled path lengths distinguish a wall patch from a plausible geometric alternative?
 
-The research question is practical: when a bright field peak appears, does the next observation support a wall there, or is the peak a geometric ambiguity?
+The browser generates curved walls, vehicle motion, and specular/diffuse returns. Two non-learning estimators process the **same measured prefix**, while a separate evaluator measures agreement with simulated truth. Computation runs locally in Web Workers; no model service or training dataset is required to run an experiment.
 
-## From Echoes to Candidate Decisions
+## Explore the evidence
+
+| Capability | What you can inspect |
+|:--|:--|
+| Compare two methods | Linked maps, common axes and snapshot, separate decisions and metrics |
+| Inspect ambiguity | Supported, held and rejected hypotheses; B has no rejection decision |
+| Replay the measurement history | Advance one snapshot, pause, replay, or inspect any completed prefix |
+| Control the scene | 2–20 vehicles, 1–120 snapshots, one or two walls, position/range noise and scattering |
+| Run paired sweeps | Both methods, fixed thresholds, current duration; mean and sample SD across seeds |
+| Save the experiment | Shared settings URL, JSON with provenance, per-method CSV, 300 dpi field PNG |
+
+The interface uses English labels, light and dark themes, equal spatial scales, and colour plus line/marker shape to distinguish layers. Camera changes affect presentation, not inferred geometry.
+
+## Two estimators, one input contract
+
+For transmitter position $p_i$, receiver position $p_j$ and a possible reflection point $s$, the ideal bistatic path length is
+
+$$d = \lVert s-p_i\rVert_2 + \lVert s-p_j\rVert_2.$$
+
+A single range defines an ellipse. Multiple measurements accumulate a **Direct Residual Field (DRF)**, from which each estimator proposes local surface candidates. A bright field peak is a proposal, not wall confirmation.
+
+| | Guarded PSPT | Fixed-fragment B |
+|:--|:--|:--|
+| Representation | Local quadratic patches with mirror alternatives | Fixed 2 m straight fragments |
+| Evidence | Four hypotheses: neither, original, mirror, both | Gaussian range evidence with competition between fragments |
+| Geometry | Updated after predictive scoring | Fixed after proposal |
+| Decision score | Current marginal log-odds, with geometry/evidence guards | Highest qualified Gaussian log-score reached so far |
+| Fixed tuning threshold | **6.650397183049193** | **29.108623616301394** |
+| Decisions | Supported / held / rejected | Supported / unselected |
+
+PSPT means *Paired Surfel Predictive Test*. The two score scales are different and are not calibrated probabilities. The methods share measurements and a 100 × 100 candidate grid, but their models, state sizes and computational costs differ. Changing the display-field grid does not change their candidate grids.
 
 ```mermaid
-flowchart TB
-    W[Simulated walls and vehicle motion] --> M[Measured positions, covariances, ranges]
-    M --> D[Direct Residual Field]
-    D --> P[Paired local surface candidates]
-    M --> P
-    P --> O[Supported / Pending / Contradicted]
-    O --> E[Post-hoc evaluation]
-    W -. Evaluation only .-> E
+flowchart LR
+    S["Synthetic scene"] --> M["Measured positions, covariances and ranges"]
+    M --> P["Guarded PSPT"]
+    M --> B["Fixed-fragment B"]
+    P --> E["Post-hoc evaluation"]
+    B --> E
+    S -. "Truth only here" .-> E
 ```
 
-- **Asymmetric walls:** a shared center spline with independent upper and lower roughness splines, with upper-only, lower-only, and two-wall configurations.
-- **Collaborative sensing:** 2–20 vehicles, specular and diffuse returns, position uncertainty, and range uncertainty.
-- **Online candidate tracking:** local curved surface patches compete with constructed mirror alternatives. Unresolved candidates stay pending.
-- **Inspectable experiments:** measurement geometry, accumulated fields, candidate states, snapshot replay, and separate post-hoc metrics.
-- **Local execution:** computation runs in browser workers. A bundled entry supports opening `drf.html` directly from disk.
+The inference wire contains snapshot indices, measured 2D positions, reported pose covariances and unordered total path lengths with their reported range SDs. It excludes true walls, true poses, wall count/side, reflection labels, generator seeds and future observations. Candidate birth data are not reused as subsequent predictive evidence. [Inspect the wire contract](drf/wire.mjs).
 
-## What the Benchmark Shows
+## Know which experiment a number belongs to
 
-The **Python reference** was tested on 54 held-out synthetic cases: six seeds, three wall configurations, and three scattering modes. The selected guarded PSPT achieved:
+The current operating points come from **exploratory tuning on 200 synthetic scenes**, not an independent test. They maximise observed-wall recall subject to empirical mean grouped-fragment FP ≤ 1% in that tuning set.
 
-- **99.4% final supported-center precision**, with a seed-level 95% interval of 99.0–99.8%.
-- **60.5% coverage of the echo-observed wall** within 0.4 m, with an interval of 55.9–65.0%.
-- **62.9% of candidates still pending**, with an interval of 61.8–64.1%.
+| Tuning-only result | Guarded PSPT | Fixed-fragment B |
+|:--|--:|--:|
+| Mean grouped-fragment FP | 0.992% | 0.792% |
+| Mean observed-wall recall | 58.70% | 2.57% |
+| Scenes with an empty estimate | 0% | 43.5% |
 
-There were **25 erroneous first-support decisions among 1,499 first-supported candidates**. High final precision does not erase earlier mistakes or establish complete wall recovery. Genuine noncollinear geometry and increased pose noise still produced false support in separate tests.
+These are archived Python tuning aggregates, **not a fresh benchmark of the current browser release**. They used 3 vehicles, position SD 0 m, range SD 0.1 m, 120 snapshots and the earlier trajectory. Neither method simultaneously met the empirical FP ≤ 1% and recall ≥ 60% targets; neither has an LTT-certified error bound. B's low coverage at this threshold is part of the result.
 
-![Python-reference comparison across six held-out seeds](assets/pspt-benchmark.png)
+The original 54-scene set was initially used for evaluation and later reused for development. Its old results must not be advertised as held-out evidence for the current method. It used 3 vehicles and position SD 0.1 m. Those two settings match the current **unshared defaults**, but do not describe the 10-vehicle example above, the 200-scene tuning distribution, or all current generator settings.
 
-*Python-reference benchmark, not a JavaScript performance measurement. Error bars describe between-seed variation. Definitions, denominators, comparison scope, and remaining failures are recorded in [PSPT_VALIDATION.md](PSPT_VALIDATION.md).*
+[Read the complete protocol and distribution differences](THRESHOLD_PROTOCOL.md) · [Inspect the tuning record and source hashes](validation/threshold-tuning-20261020.json) · [Read the historical study](PSPT_VALIDATION.md)
 
-## Keep Truth Outside the Estimator
+## Read the map and metrics
 
-The estimator receives measured vehicle positions, reported pose covariances, total bistatic path lengths, range standard deviations, and snapshot indices. It does not receive the actual wall, wall count, selected wall side, true reflection points, path labels, or future observations.
+- **Supported** means sufficient measurement evidence under the method's model. It does not authenticate an echo source or guarantee a true wall.
+- **Centre precision** is the fraction of supported centres within 0.4 m of a true wall. It is undefined for an empty estimate.
+- **Observed recall** is the fraction of observed wall samples within 0.4 m of supported patches. A wall sample is observed if it lies within 1 m of a generated reflection point from the measured prefix.
+- **Surface F₁** combines sampled-patch precision and observed recall. Overlapping patch samples count repeatedly in surface precision.
+- **First support** records centre precision at each candidate's first support decision. Later corrections do not erase an earlier error.
+- **P95 distance** and **off-wall centres** describe supported-centre error. They are not the grouped-fragment loss used for tuning.
 
-Actual geometry belongs to measurement generation and post-hoc evaluation. Changing an actual-wall display layer must not change candidate decisions. The fixed computational domain is public configuration; display bounds derived from the actual wall must not set the estimator search area.
+D̄ is the mean residual density in m⁻². β̂ is a dimensionless field-contrast index, not a probability. True walls and reflection points are optional evaluation overlays. Supported patches are never snapped to true walls or joined across unsupported gaps.
 
-**A PSPT score is an uncalibrated composite model weight.** A score of 0.99 is not a 99% probability that the point is a real wall. The geometric guard is a conservative heuristic, not an identifiability theorem or an error-rate guarantee. This implementation requires positive range noise; exact zero range noise is rejected because shared pose uncertainty can leave the covariance singular.
+## Run and share an experiment
 
-## Run an Experiment
+1. [Open EchoMap](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html), choose settings, and select **Run comparison**.
+2. Use **Compare both** or enlarge either method. Replay completed snapshots to inspect when support first appears.
+3. Open **Experiments, diagnostics & exports** for paired sweeps and post-hoc scattering diagnostics.
+4. Choose **Share experiment** to copy a seeded settings URL, or download JSON/CSV to retain results.
 
-1. Open the [simulator](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html).
-2. Choose the wall configuration, vehicle count, measurement uncertainty, and scattering settings.
-3. Record the seed and settings, then run or advance one snapshot at a time.
-4. Replay snapshots and compare candidate states with the optional actual-wall overlay and post-hoc metrics.
+Shared URLs preserve their seed and snapshot count on reload. An unseeded visit chooses a new seed. A URL shares settings, not computed outputs or an immutable software revision; retain the JSON and repository commit for a research record.
 
-The wall spans 0–80 m. The raw map initially shows −10–90 m horizontally with equal axis scales. Zoom, pan, and view reset affect the camera without resetting the experiment. Reloading generates a new seed; enter a recorded seed before running to repeat an experiment.
+The layered wall spans x = 0–80 m. Vehicles advance ⅔ m in x per snapshot, so 120 snapshots cover 80 m from their initial positions. Physical time per snapshot is unspecified. Large fleets cost more: 10 vehicles produce 45 unordered pairs per snapshot. Use progress, pause and cancel rather than interpreting elapsed browser time as a method benchmark.
 
-## Local Development
+## Reproduce locally
 
-Use **Node.js 26.7.0** and npm for the recorded test environment. Historical SURF fixtures compare exact hashes from macOS/arm64; they are not portable bit-for-bit across platforms. CI preserves the full suite on macOS and separately checks the current DRF/PSPT runtime on Linux.
+The recorded development environment is **Node.js 26.7.0**. Install the pinned development dependencies, build the offline bundle, and run the full reference checks:
 
 ```sh
+git clone https://github.com/woqhrl9494-cell/corridor-mapper.git
+cd corridor-mapper
 npm ci
 npm run build:drf-offline
-npm test
-PSPT_FULL_PARITY=1 npm run test:pspt
+PSPT_FULL_PARITY=1 npm test
 node build-pages.mjs
 python3 -m http.server 8871 --bind 127.0.0.1 --directory _site
 ```
 
-Open `http://127.0.0.1:8871/drf.html`. To use `file://`, open the repository's `drf.html` after rebuilding the offline bundle. Rebuild the bundle whenever a runtime module changes so local-file and HTTP execution use the same source revision.
+Open [localhost:8871/drf.html](http://127.0.0.1:8871/drf.html). For local-file use, open the repository's `drf.html` after rebuilding the offline bundle. Rebuild it whenever runtime sources change.
 
-The integration revision passes **161 automated checks**, including three 120-snapshot Python-reference replays when `PSPT_FULL_PARITY=1` is set. The maximum checkpoint difference was 3.77 × 10⁻¹³; discrete decisions matched exactly. [View the numerical record](validation/2026-10-03/pspt-port-parity.json).
+[Release verification record](validation/2026-10-22/protocol-audit.json).
 
-`npm test` checks the repository's automated tests. It does not reproduce the separate 54-case Python study or establish browser timing. Module tests, offline-bundle tests, visible browser behavior, and deployment checks are separate evidence.
+The tests cover analytic geometry and likelihood cases, frozen Python checkpoints, causal prefixes, truth exclusion, paired sweep/export contracts, and bundle/deployment integrity. Historical SURF hash fixtures are platform sensitive; CI runs the full suite on macOS and the current DRF suite on Linux. Tests establish the properties they check, not physical-sensor performance or an error-rate guarantee. The 200-scene raw tuning archive is not bundled, so `npm test` does not regenerate its table.
 
-## Repository and Deployment
+## Scope and research limits
 
-The public entry is [`drf.html`](drf.html). Runtime modules are under [`drf/`](drf/), and numerical and regression checks are under [`tests/drf/`](tests/drf/). [`build-drf-offline.mjs`](build-drf-offline.mjs) builds the local-file bundle. [`build-pages.mjs`](build-pages.mjs) packages the public runtime, and [GitHub Actions](.github/workflows/pages.yml) deploys it from `main`.
+This is a **synthetic, measurement-level simulator**, not an RF waveform or hardware validation platform. The reported noise SDs match those used to generate observations. Controlled noise/model-mismatch experiments are not implemented; curved walls, finite patches and scattering can still differ from the estimators' assumptions.
 
-The old home and comparison pages are excluded from the Pages artifact. Earlier research sources remain in the repository. [DRF_METHOD.md](DRF_METHOD.md) and [DRF_VALIDATION.md](DRF_VALIDATION.md) are historical records; their older results do not validate the current wall model or PSPT implementation. The [current validation note](PSPT_VALIDATION.md) separates the Python reference, browser implementation, and unresolved research questions.
+Mirror ambiguity, insufficient noncollinear geometry and noisy pose information can leave candidates unresolved or produce false support. Two vehicles cannot pass PSPT's instantaneous noncollinearity guard. A high final precision can coexist with poor coverage, empty estimates or earlier false decisions. Current experiments provide no claim of robustness to unspecified mismatch, real cave performance or complete wall recovery.
 
-## Reproduce, Inspect, Challenge
+## Source and evidence map
 
-Use the exported JSON to retain settings, measurement prefixes, candidate decisions, and evaluation truth in separate fields. CSV records per-snapshot metrics and computation time. When reporting a problem, include the seed, wall configuration, vehicle count, browser version, and the first snapshot where behavior diverges. [Open a reproducible issue](https://github.com/woqhrl9494-cell/corridor-mapper/issues).
+| Location | Purpose |
+|:--|:--|
+| [`drf.html`](drf.html), [`drf/`](drf/) | Current application, simulator, estimators and post-hoc evaluation |
+| [`drf/comparison.mjs`](drf/comparison.mjs) | Executable method thresholds and provenance |
+| [`THRESHOLD_PROTOCOL.md`](THRESHOLD_PROTOCOL.md) | Current selection rules, dataset roles and export definitions |
+| [`tests/drf/`](tests/drf/) | Numerical, causal, integration and browser-support checks |
+| [`PSPT_VALIDATION.md`](PSPT_VALIDATION.md) | Historical Python study and JavaScript port evidence |
+| [`DRF_METHOD.md`](DRF_METHOD.md), [`DRF_VALIDATION.md`](DRF_VALIDATION.md) | Archived field-method evidence under older protocols |
+| [`build-pages.mjs`](build-pages.mjs) | Runtime-only Pages package; excludes old pages and legacy peak evaluation |
 
-## License and Attribution
+For a reproducible issue, include the shared URL or JSON, repository commit, browser/OS, and first snapshot where the result differs from your expectation. Numerical counterexamples and clear reproduction steps are especially useful. [Report an issue](https://github.com/woqhrl9494-cell/corridor-mapper/issues).
 
-Copyright © 2026 Jaebok Lee, Hanyang University. The repository uses **CC BY-NC-ND 4.0**: attribution is required, commercial use is restricted, and the license does not permit distribution of modified material. See [LICENSE](LICENSE) for the terms and contact details for separate licensing permission.
+If you use EchoMap in research, cite this repository with its commit hash and access date, and report the method thresholds, generator settings and evaluation definitions. A browser screenshot alone is not a reproducibility record.
+
+## License
+
+Copyright © 2026 Jaebok Lee, Hanyang University. **CC BY-NC-ND 4.0** applies; see [LICENSE](LICENSE) for terms and separate licensing contact details.

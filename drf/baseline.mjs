@@ -73,7 +73,7 @@ export class Baseline {
     if (!Number.isFinite(sigmaR) || sigmaR<=0) throw new RangeError('Method B requires sigmaR > 0');
     this.sigmaR=sigmaR;this.field=new DRF();this.active=[];this.expired=[];this.all=[];this.lastT=0;
   }
-  step(snapshot) {
+  step(snapshot, threshold=12) {
     const {wire}=prepareMeasuredSnapshot(snapshot),t=wire.t,c=BASELINE_CONFIG;
     if (t!==this.lastT+1) throw new RangeError('snapshots must be consecutive from t=1');
     for (const link of wire.configs) for (const p of link.paths)
@@ -104,8 +104,10 @@ export class Baseline {
         this.all.push(candidate);this.active.push(candidate);
       }
     }
-    return this.report();
+    return this.report(threshold);
   }
+  // The default preserves the archived Python checkpoints; the web comparison
+  // always supplies its explicitly versioned tuning threshold.
   report(threshold=12) {
     return this.all.map(p=>({id:`b${p.id}`,center:p.piece.slice(0,2),phi:p.piece[2],ell:p.piece[3],kappa:0,sg:1,
       birth:p.birth,checkedThrough:this.lastT,lastScored:p.lastScored,logit:p.logit,selectionLogit:p.bestLogit,

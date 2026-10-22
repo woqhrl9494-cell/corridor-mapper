@@ -1,16 +1,18 @@
-import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261022-route1';
+import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261022-audit1';
 import { createGrid } from './field.mjs';
-import { percentile } from './evaluate.mjs?v=20261003-pspt1';
-import { psptSnapshotCsv } from './pspt-evaluate.mjs';
-import { METHOD_PROTOCOL } from './comparison.mjs';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261022-route1';
-import { DrfMap, linkMapCameras, drawComparisonHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261022-ellipses1';
+import { percentile } from './statistics.mjs';
+import { psptSnapshotCsv } from './pspt-evaluate.mjs?v=20261022-audit1';
+import { METHOD_PROTOCOL } from './comparison.mjs?v=20261022-audit1';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261022-audit1';
+import { DrfMap, linkMapCameras, drawComparisonHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261022-audit1';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
 const state = { mode: 'idle', scenario: null, grid: null, frames: [], evaluations: [], selected: 0, next: 0,
   busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false, followLive: true, method: 'compare' };
 let fieldWorker, evalWorker, hoverWorker, psptWorker, hoverTimer, hoverGeneration = 0, replayFrame = 0, reference = [], provenance = {};
+$('thresholdSummary').textContent = `Tuning 200 · PSPT ${METHOD_PROTOCOL.guarded.threshold.toFixed(4)} · B ${METHOD_PROTOCOL.baseline.threshold.toFixed(4)}`;
+$('thresholdDetails').textContent = `Fixed tuning log-score thresholds: PSPT ${METHOD_PROTOCOL.guarded.threshold}; B ${METHOD_PROTOCOL.baseline.threshold}. They replace the earlier dev values ${METHOD_PROTOCOL.guarded.previousDevThreshold} and ${METHOD_PROTOCOL.baseline.previousDevThreshold}.`;
 const fmt = (v, places = 3) => typeof v !== 'number' ? '—' : Number.isFinite(v) ? v.toFixed(places) : v === Infinity ? 'Failed (∞)' : v === -Infinity ? 'Failed (−∞)' : 'Failed (NaN)';
 // The title keeps the full message when a short screen clamps the status to one line.
 const notice = text => { $('status').textContent = text; $('status').title = text; };
@@ -27,7 +29,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261022-route1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261022-audit1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -114,7 +116,7 @@ async function advance(single = false) {
     if (generation !== state.generation) return;
     const { type, requestId, ...frame } = data;
     frame.methods = prediction.methods; frame.candidates = prediction.methods.guarded.candidates;
-    frame.psptMs = prediction.methods.guarded.ms; frame.method = 'guarded-dev';
+    frame.psptMs = prediction.methods.guarded.ms; frame.method = 'guarded-tuned';
     const { evaluation } = await evalWorker.request({ type: 'evaluate', frame });
     if (generation !== state.generation) return;
     state.frames.push(frame); state.evaluations.push(evaluation); state.next++;
@@ -211,7 +213,7 @@ function renderSelected() {
   $('timingValue').title='Display field + both estimators, per snapshot; excludes generation, evaluation and rendering.';
   drawComparisonHistory($('metricChart'),state.evaluations.slice(0,state.selected),$('historyMetric').value,scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value));
   if (diag) {
-    $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · duplicate ranges ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: mean ${fmt(diag.theoremMean)}, median ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, negative=${diag.theoremNegative} · field offset ${fmt(evaluation.offset)} m / fold prediction ${fmt(diag.foldPrediction)} m`;
+    $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · duplicate ranges ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: mean ${fmt(diag.theoremMean)}, median ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, negative=${diag.theoremNegative} · fold prediction ${fmt(diag.foldPrediction)} m`;
     if (!$('diagnosticPanel').hidden) {
       drawHistogram($('diagnosticChart'), diag.ratios); drawCounts($('countChart'), diag.diffuseCounts, diag.predictedCounts); updateProfile();
     }
@@ -289,7 +291,8 @@ for (const button of document.querySelectorAll('[data-tab]')) button.onclick = (
 };
 function renderSweep() {
   const aggregates = aggregateRuns(state.sweepRuns); if ($('sweepPanel').hidden) return;
-  drawSweep($('sweepChart'), aggregates, state.sweepRuns[0]?.input.scene === 'reference' ? reference : []);
+  for (const [method, canvas] of [['guarded', 'sweepChart'], ['baseline', 'sweepBaselineChart']])
+    drawSweep($(canvas), aggregates.filter(row => row.method === method), [], 'recall');
   const body = $('sweepTable').querySelector('tbody'); body.replaceChildren();
   const statistic = (metric, total, scale = 1, places = 3) => {
     const counts = `valid ${metric.n}/${total}, failed ${metric.failed}, missing ${metric.missing}`;
@@ -297,7 +300,7 @@ function renderSweep() {
   };
   for (const row of aggregates) {
     const tr = document.createElement('tr');
-    for (const value of [row.roughness, row.sigmaD, row.n, statistic(row.medianError, row.n), statistic(row.p95, row.n), statistic(row.offwall, row.n, 100, 1)]) {
+    for (const value of [METHOD_PROTOCOL[row.method].name, row.roughness, row.sigmaD, row.n, statistic(row.precision, row.n, 100, 1), statistic(row.recall, row.n, 100, 1), statistic(row.p95, row.n), statistic(row.offwall, row.n, 100, 1)]) {
       const cell = document.createElement('td'); cell.textContent = value; tr.append(cell);
     }
     body.append(tr);
@@ -306,18 +309,18 @@ function renderSweep() {
 $('sweepButton').onclick = async () => {
   const generation = state.generation; let handle;
   try {
-    const base = settings(), values = Object.fromEntries(new FormData($('sweepSettings'))), jobs = sweepJobs({ ...base, snapshots: 60 }, parseValues(values.sweepNoise), parseValues(values.sweepRoughness), parseValues(values.sweepSeeds, true));
+    const base = settings(), values = Object.fromEntries(new FormData($('sweepSettings'))), jobs = sweepJobs(base, parseValues(values.sweepNoise), parseValues(values.sweepRoughness), parseValues(values.sweepSeeds, true));
     state.sweepRuns = []; $('sweepButton').disabled = true; $('sweepCancel').disabled = false;
-    $('sweepStatus').textContent = `0 / ${jobs.length} · Only completed seeds are retained.`;
+    $('sweepStatus').textContent = `0 / ${jobs.length} · ${base.snapshots} snapshots · Both methods use the fixed tuning-200 thresholds.`;
     handle = state.sweep = startSweep(jobs, ({ completed, total, results }) => {
       if (generation !== state.generation) return;
-      state.sweepRuns = results; $('sweepStatus').textContent = `${completed} / ${total} complete · mean ± 1 sample SD`; renderSweep();
+      state.sweepRuns = results; $('sweepStatus').textContent = `${completed} / ${total} complete · ${base.snapshots} snapshots · paired methods · mean ± 1 sample SD`; renderSweep();
     });
     controls();
     const result = await handle.promise;
     if (generation !== state.generation) return;
     state.sweepRuns = result.results;
-    $('sweepStatus').textContent = `${result.cancelled ? 'Cancelled' : 'Complete'} · ${result.results.length} / ${jobs.length} · original .m comparison unavailable`;
+    $('sweepStatus').textContent = `${result.cancelled ? 'Cancelled' : 'Complete'} · ${result.results.length} / ${jobs.length} · ${base.snapshots} snapshots · paired methods · tuning-200 thresholds`;
     renderSweep();
   } catch (error) { if (generation === state.generation) $('sweepStatus').textContent = `Sweep stopped: ${error.message}`; }
   finally { if (state.sweep === handle) { state.sweep = null; controls(); } }
@@ -325,7 +328,7 @@ $('sweepButton').onclick = async () => {
 $('sweepCancel').onclick = () => state.sweep?.cancel();
 const jsonValue = (_key, value) => ArrayBuffer.isView(value) ? Array.from(value) : typeof value === 'number' && !Number.isFinite(value) ? null : value;
 $('exportJson').onclick = () => {
-  const data = { schema: 'echomap-drf/4', estimators: METHOD_PROTOCOL, selectedMethod: state.method, toleranceM: 0.4, provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
+  const data = { schema: 'echomap-drf/5', estimators: METHOD_PROTOCOL, selectedMethod: state.method, toleranceM: 0.4, provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
     grid: state.grid ? { ...state.grid, arrayOrder: 'iy*nx+ix; ascending y; cell centers' } : null,
     input: state.scenario?.input ?? state.sweepRuns[0]?.input, measurement: state.scenario?.wire.slice(0, state.frames.length) ?? [], result: state.frames,
     evaluation: state.evaluations, truth: { role: 'evaluation only', wallModel: state.scenario?.wallModel, wallGeneration: state.scenario?.wallGeneration, walls: state.scenario?.walls ?? [], snapshots: state.scenario?.truth.slice(0, state.frames.length) ?? [] },
@@ -337,9 +340,9 @@ $('exportCsv').onclick = () => {
   for (const method of ['guarded','baseline']) {
     const frames=state.frames.map(f=>({...f,candidates:f.methods[method].candidates,psptMs:f.methods[method].ms}));
     const lines=psptSnapshotCsv(frames,state.evaluations.map(e=>e.methods[method])).replace(/^\ufeff/,'').trim().split('\r\n');
-    header=lines[0].replace('pspt_ms','estimator_ms');rows.push(...lines.slice(1).map(line=>method+','+line));
+    header=lines[0].replace('pspt_ms','estimator_ms');rows.push(...lines.slice(1).map(line=>[method,METHOD_PROTOCOL[method].threshold,METHOD_PROTOCOL[method].tuning.id,line].join(',')));
   }
-  download(new Blob(['\ufeffmethod,'+header+'\r\n'+rows.join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'}),'echomap-method-comparison.csv');
+  download(new Blob(['\ufeffmethod,selection_threshold,threshold_source,'+header+'\r\n'+rows.join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'}),'echomap-method-comparison.csv');
 };
 $('exportPng').onclick = async () => { try { const field=$('heatField').value;download(await png300dpi(await (field==='betaHat' ? contrastMap : densityMap).png()), `echomap-drf-${field}-300dpi.png`); } catch (error) { notice(`PNG export failed: ${error.message}`); } };
 const chartResize = new ResizeObserver(() => { renderSelected(); renderSweep(); });

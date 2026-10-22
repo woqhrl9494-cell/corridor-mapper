@@ -1,4 +1,7 @@
-/** Evaluation only: truth never goes back to field.mjs.
+/** LEGACY ONLY: frozen reference-corridor diagnostics, not current app metrics.
+ * Assumes a y=15 wall split and x in [10,50]; invalid for general layered walls.
+ * Kept for historical fixture reproduction. Never import in the live runtime.
+ * Evaluation only: truth never goes back to field.mjs.
  * Input: emitted truth through t and the field at t. Output: corridor proxy and metrics.
  * The outer-peak readout uses a corridor prior; it is not a final wall extractor.
  */

@@ -32,7 +32,7 @@ test('PSPT evaluation labels geometry only, independent of truth path classes an
   assert.deepEqual(primary(changed), primary(clean));
   assert.deepEqual(f, before, 'Post-hoc truth must not mutate candidate decisions or coordinates');
   assert.notEqual(changed.diagnostics.specularCount, clean.diagnostics.specularCount,
-    'Class-specific legacy diagnostics are intentionally separate from candidate accuracy');
+    'Class-specific reflection diagnostics are intentionally separate from candidate accuracy');
 });
 
 test('future truth is never read and cannot expand the current observed-wall mask', () => {
@@ -156,4 +156,17 @@ test('PSPT CSV exports 18 explicit columns, keeps empty precision blank, and inc
   assert.ok(!/\b(?:NaN|Infinity|null|undefined)\b/.test(nonfinite));
   assert.equal(nonfinite.trim().split('\r\n')[1].split(',').length, 18);
   assert.equal(psptSnapshotCsv([], []).trim().split('\r\n').length, 1);
+});
+
+
+test('current evaluation does not read field peaks and is invariant to a wall crossing y=15',()=>{
+  const base=scene(), moved=scene(), dx=100,dy=-20;
+  moved.walls=moved.walls.map(w=>w.map(([x,y])=>[x+dx,y+dy]));
+  for (const snapshot of moved.truth) for (const config of snapshot.configs)
+    for (const q of config.specular) q.s=[q.s[0]+dx,q.s[1]+dy];
+  const make=(x,y)=>({t:1,candidates:[candidate('one',[x,y])],get Dbar(){throw Error('legacy field accessed');}});
+  const a=createPSPTEvaluator(base,grid).step(make(30,22)),b=createPSPTEvaluator(moved,grid).step(make(130,2));
+  for (const key of ['precision','recall','p95','offwall','firstSupportPrecision']) assert.equal(a[key],b[key],key);
+  assert.deepEqual(a.diagnostics,b.diagnostics);
+  for (const key of ['offset','observedColumns','caMsd','caHd95']) assert.equal(Object.hasOwn(b,key),false,key);
 });

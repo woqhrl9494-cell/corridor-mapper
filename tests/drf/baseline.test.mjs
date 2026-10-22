@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {Baseline,predictFragment,gaussianEvidence,duplicateFragment} from '../../drf/baseline.mjs';
-import {METHOD_PROTOCOL,selectGuarded} from '../../drf/comparison.mjs';
+import {METHOD_PROTOCOL,selectGuarded,MethodComparison} from '../../drf/comparison.mjs';
 const fixtures=JSON.parse(fs.readFileSync(new URL('./pspt-reference.json',import.meta.url))),reference=JSON.parse(fs.readFileSync(new URL('./baseline-reference.json',import.meta.url)));
 const close=(a,b,label,tol=1e-7)=>assert.ok(Number.isFinite(a)&&Math.abs(a-b)<=tol*Math.max(1,Math.abs(b)),`${label}: ${a} != ${b}`);
 
@@ -53,8 +53,42 @@ test('B duplicate gate is symmetric and respects orientation modulo pi',()=>{
   assert.equal(duplicateFragment(a,[0,0,Math.PI/2,1,0,1]),false);
 });
 test('development thresholds do not imply calibration; guarded selection stays finite after sigmoid saturation',()=>{
-  assert.equal(METHOD_PROTOCOL.guarded.calibrated,false);assert.equal(METHOD_PROTOCOL.baseline.threshold,12);
+  assert.equal(METHOD_PROTOCOL.guarded.calibrated,false);assert.equal(METHOD_PROTOCOL.baseline.threshold,29.108623616301394);
   const g={gid:0,L:[-100,100,-100,100],nobs:2,qualified_active:[2,0],qualified_matched:[2,0]};
   const rows=selectGuarded({groups:[g]},[0,1].map(k=>({gid:0,side:k,status:'pending'})));
   close(rows[0].selectionLogit,200,'finite log score');assert.equal(rows[0].status,'supported');assert.equal(rows[1].status,'pending');
+});
+
+
+test('comparison applies the tuning gate to B without changing its qualified score history',()=>{
+  const comparison=new MethodComparison();
+  comparison.baseline.all=[{id:0,piece:[0,0,0,1,0,1],birth:0,logit:20,bestLogit:20,matches:2,lastScored:1}];
+  comparison.baseline.active=[];
+  comparison.guarded.step=()=>[];
+  const wire={t:1,configs:[{i:0,j:1,pHat_i:[0,2],pHat_j:[1,2],Sigma_i:[0,0,0],Sigma_j:[0,0,0],paths:[]}]};
+  const rows=comparison.step(wire).baseline.candidates;
+  assert.equal(rows[0].selectionLogit,20);assert.equal(rows[0].status,'pending');
+  assert.equal(comparison.baseline.report(12)[0].status,'supported','old gate would select the same score');
+});
+
+test('guarded selection uses the tuning breakpoint, including equality',()=>{
+  for (const [score,status] of [[6.5,'pending'],[METHOD_PROTOCOL.guarded.threshold,'supported']]) {
+    const g={gid:0,L:[0,score,0,score],nobs:2,qualified_active:[2,0],qualified_matched:[2,0]};
+    const [row]=selectGuarded({groups:[g]},[{gid:0,side:0,status:'pending'}]);
+    close(row.selectionLogit,score,'marginal log odds');assert.equal(row.status,status);
+  }
+});
+
+
+test('published tuning provenance matches the exact runtime thresholds and dataset role',()=>{
+  const record=JSON.parse(fs.readFileSync(new URL('../../validation/threshold-tuning-20261020.json',import.meta.url)));
+  for (const method of ['guarded','baseline']) {
+    const protocol=METHOD_PROTOCOL[method];
+    assert.equal(protocol.threshold,record.methods[method].selected.logit);
+    assert.equal(protocol.tuning.scenes,record.n_scenes);
+    assert.equal(protocol.tuning.sigmaP,record.generator.sigmaP);
+    assert.deepEqual(protocol.tuning.seedRangeInclusive,record.seed_range_inclusive);
+    assert.equal(record.methods[method].joint_target_operating_points,0);
+    assert.equal(protocol.tuning.certified,false);
+  }
 });

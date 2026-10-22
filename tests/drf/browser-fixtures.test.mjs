@@ -43,10 +43,10 @@ for (const c of fixture.cases) test(`historical DRF browser fixture remains repr
 });
 test('production PSPT preserves the historical field bytes without substituting its metrics',async()=>{
   const c=fixture.cases.find(c=>c.input.snapshots===3&&c.input.roughness>0),result=await runExperiment(c.input);
-  assert.equal(result.method,'guarded45');
+  assert.equal(result.method,'paired-comparison');
   assert.equal(hash([result.final.Dbar,result.final.betaHat]),c.expected.combined);
-  assert.ok(Object.hasOwn(result.summary,'firstSupportPrecision'));
-  assert.equal(result.summary.caMsd,null,'The old metric is diagnostic only under PSPT');
+  assert.ok(Object.hasOwn(result.methods.guarded.summary,'firstSupportPrecision'));
+  assert.equal(Object.hasOwn(result.methods.guarded.summary,'caMsd'),false,'Legacy metrics must not enter the current sweep');
 });
 test('actual browser comparison permits Float64 roundoff and rejects count changes',()=>{
   const html=readFileSync(new URL('./browser-check.html',import.meta.url),'utf8'),start=html.indexOf('function compareSummary('),end=html.indexOf('button.onclick=',start);

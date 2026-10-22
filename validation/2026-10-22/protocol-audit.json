@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-22",
+  "protocol": "tuning-200-20261020",
+  "automated": {
+    "command": "PSPT_FULL_PARITY=1 npm test",
+    "passed": 173,
+    "failed": 0,
+    "skipped": 0,
+    "environment": "macOS arm64, Node.js 26.7.0",
+    "after_layout_change": "DRF UI, offline-bundle and Pages checks passed"
+  },
+  "browser": {
+    "connection": "Existing Chrome profile via extension",
+    "main_run": {
+      "seed": 549028359,
+      "vehicles": 10,
+      "snapshots": 120,
+      "sigmaP": 0.1,
+      "sigmaD": 0.1,
+      "completed": true
+    },
+    "paired_sweep": {
+      "seeds": [
+        41,
+        42
+      ],
+      "vehicles": 3,
+      "snapshots": 8,
+      "sigmaD": 0.1,
+      "roughness": 2,
+      "completed": true,
+      "methods": [
+        "guarded",
+        "baseline"
+      ],
+      "charts_equal_height_px": 320
+    },
+    "counts_panel": {
+      "tested_viewports": [
+        [
+          1920,
+          873
+        ],
+        [
+          1440,
+          800
+        ]
+      ],
+      "p95_offwall_first_support_visible_and_not_occluded": true
+    },
+    "single_method_layout": {
+      "viewport": [
+        1920,
+        873
+      ],
+      "density_height_px": 300.5,
+      "contrast_height_px": 300.5,
+      "comparison_height_px": 380,
+      "history_height_px": 215,
+      "column_order": [
+        "large candidate map",
+        "density above contrast",
+        "comparison above history"
+      ],
+      "compact_viewport": {
+        "viewport": [
+          1440,
+          800
+        ],
+        "density_height_px": 264,
+        "contrast_height_px": 264,
+        "comparison_height_px": 340,
+        "history_height_px": 182
+      }
+    },
+    "custom_input_errors": "English duplicate-seed and zero-range-SD messages observed"
+  },
+  "export_validation": {
+    "schema": "echomap-drf/5",
+    "actual_handler_tests": "JSON and CSV handlers executed with download stubs; threshold provenance and causal prefixes verified",
+    "browser_file_save": "User cancelled save requests; saved browser files not inspected"
+  },
+  "limits": [
+    "No fresh independent population benchmark or LTT certification.",
+    "No controlled model-mismatch generator option.",
+    "No physical sensor or real-cave validation.",
+    "Browser timing is not a controlled method benchmark."
+  ]
+}

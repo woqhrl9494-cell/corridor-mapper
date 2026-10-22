@@ -165,7 +165,7 @@ test('actual view reset preserves simulation, selection and replay; experiment r
   assert.equal(state.frames.length,3,'View reset must preserve completed records');assert.equal(fitCalls-beforeFit,4);assert.equal(pending.size,0);
   releaseField({type:'frame',requestId:1,t:4,Q:4,admitted:4,rejected:0,ms:1});await inFlight;
   assert.equal(state.frames.length,4,'An in-flight completed result must be retained');
-  assert.equal(state.frames.at(-1).candidates,predictedCandidates);assert.equal(state.frames.at(-1).psptMs,2);assert.equal(state.frames.at(-1).method,'guarded-dev');assert.equal(state.selected,4,'Live following must continue after a view reset');
+  assert.equal(state.frames.at(-1).candidates,predictedCandidates);assert.equal(state.frames.at(-1).psptMs,2);assert.equal(state.frames.at(-1).method,'guarded-tuned');assert.equal(state.selected,4,'Live following must continue after a view reset');
   assert.equal(state.mode,'running');assert.equal(state.followLive,true);assert.equal(pending.size,1,'Keep advancing after the current frame');
   state.workers=[{stop(){stoppedWorkers++;}}];
   $('inspector').textContent='old D/A/Q';$('diagnosticSummary').textContent='old Theorem 2';

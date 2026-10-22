@@ -428,15 +428,16 @@ export function drawMetricHistory(canvas,evaluations,selection='all',snapshots=e
     chartLine(surface,axes,points,surface.color("eval"),[],false,false,true);
   });
 }
-export function drawSweep(canvas,aggregates,reference=[]) {
+export function drawSweep(canvas,aggregates,reference=[],metric='medianError') {
   const surface=chartSurface(canvas);if (!surface) return;
   const colors=["#0072b2","#d55e00","#009e73","#cc79a7"],roughness=[...new Set(aggregates.map(a => a.roughness))].sort((a,b) => a-b);
-  const all=aggregates.map(a => ({x:a.sigmaD,y:a.medianError.mean,sd:a.medianError.sd})),[ymin,ymax]=extent([...all,...reference.map(a=>({y:a.medianError}))]);
+  const scale=metric==='recall' ? 100 : 1, metricLabel=metric==='recall' ? 'Observed recall' : 'Median distance';
+  const all=aggregates.map(a => ({x:a.sigmaD,y:a[metric].mean == null ? NaN : scale*a[metric].mean,sd:a[metric].sd == null ? null : scale*a[metric].sd})),[ymin,ymax]=metric==='recall' ? [0,100] : extent([...all,...reference.map(a=>({y:a.medianError}))]);
   const xmin=Math.min(.05,...aggregates.map(a=>a.sigmaD)),xmax=Math.max(.3,...aggregates.map(a=>a.sigmaD));
-  const axes=chartAxes(surface,{title:aggregates.some(a => a.medianError.failed) ? `${aggregates.filter(a => a.medianError.failed).length} failed conditions · see table` : "Median distance · mean ± 1 SD",xLabel:"$σ_d$ [m]",yLabel:"m",xmin,xmax,ymin,ymax,top:36,height:surface.height-36});
+  const axes=chartAxes(surface,{title:aggregates.some(a => a[metric].failed) ? `${aggregates.filter(a => a[metric].failed).length} failed conditions · see table` : `${metricLabel} · mean ± 1 SD`,xLabel:"$σ_d$ [m]",yLabel:metric==='recall' ? "%" : "m",xmin,xmax,ymin,ymax,top:36,height:surface.height-36});
   const {ctx}=surface;let legendX=14;
   roughness.forEach((r,k) => {
-    const color=colors[k%colors.length],points=aggregates.filter(a=>a.roughness===r).sort((a,b)=>a.sigmaD-b.sigmaD).map(a=>({x:a.sigmaD,y:a.medianError.mean,sd:a.medianError.sd}));
+    const color=colors[k%colors.length],points=aggregates.filter(a=>a.roughness===r).sort((a,b)=>a.sigmaD-b.sigmaD).map(a=>({x:a.sigmaD,y:a[metric].mean == null ? NaN : scale*a[metric].mean,sd:a[metric].sd == null ? null : scale*a[metric].sd}));
     chartLine(surface,axes,points,color,[],true);
     chartLine(surface,axes,reference.filter(a=>a.roughness===r).map(a=>({x:a.sigmaD,y:a.medianError})),color,[5,5]);
     // Legend: coloured line key, text in ink (identity never rides on text colour alone).

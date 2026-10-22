@@ -1,56 +1,72 @@
-import { generateScenario, normalizeInput } from './scenario.mjs?v=20261022-route1';
+import { generateScenario, normalizeInput } from './scenario.mjs?v=20261022-audit1';
 import { createGrid, createField } from './field.mjs';
-import { percentile } from './evaluate.mjs?v=20261003-pspt1';
-import { createPSPTEvaluator } from './pspt-evaluate.mjs';
-import { PSPT } from './pspt.mjs';
+import { percentile } from './statistics.mjs';
+import { createPSPTEvaluator } from './pspt-evaluate.mjs?v=20261022-audit1';
+import { MethodComparison, METHOD_PROTOCOL } from './comparison.mjs?v=20261022-audit1';
 
-/** Same engine for Node validation and browser sweep; seeds, truth and evaluation
- * stay outside the estimator wire. Memory O(G+truth), frames are not retained. */
+function summarize(frame, evaluation) {
+  const keys = ['precision', 'surfacePrecision', 'recall', 'holdRate', 'firstSupportPrecision',
+    'medianError', 'p95', 'offwall', 'f1', 'observedFraction', 'missing',
+    'supportedCount', 'pendingCount', 'rejectedCount'];
+  return { ...Object.fromEntries(keys.map(key => [key, evaluation[key]])),
+    Q: frame.Q, admitted: frame.admitted, rejected: frame.rejected };
+}
+/** Paired sweep uses the same causal estimators and thresholds as the main view.
+ * Each seed generates one shared measurement sequence. No per-condition tuning.
+ * Memory O(field + truth + estimator state); frame history is not retained.
+ */
 export async function runExperiment(raw, progress = () => {}) {
   const input = normalizeInput(raw);
-  if (input.sigmaD === 0) throw new Error('현재 PSPT는 거리 오차 σd > 0이 필요합니다. σd = 0의 특이 공분산은 지원하지 않습니다.');
-  const scenario = await generateScenario(input),
-    grid = createGrid(input.grid, input.grid, scenario.domain), field = createField(grid, { band: input.band, perimeter: input.perimeter }),
-    evaluator = createPSPTEvaluator(scenario, grid), estimator = new PSPT(), timings = [];
-  let frame, evaluation, fieldMs = 0, evaluationMs = 0, psptMs = 0;
+  if (input.sigmaD === 0) throw new Error('Both methods require range SD σd > 0; exact zero range noise is unsupported.');
+  const scenario = await generateScenario(input), grid = createGrid(input.grid, input.grid, scenario.domain),
+    field = createField(grid, { band: input.band, perimeter: input.perimeter }),
+    evaluators = Object.fromEntries(['guarded', 'baseline'].map(key => [key, createPSPTEvaluator(scenario, grid)])),
+    estimator = new MethodComparison({ sigmaR: input.sigmaD }), timings = [];
+  let frame, evaluations, fieldMs = 0, evaluationMs = 0;
+  const estimatorMs = { guarded: 0, baseline: 0 };
   for (const wire of scenario.wire) {
     frame = field.step(wire); fieldMs += frame.ms;
-    const psptStart = performance.now(); frame.candidates = estimator.step(wire); frame.psptMs = performance.now() - psptStart;
-    frame.method = 'guarded45'; psptMs += frame.psptMs; timings.push(frame.ms + frame.psptMs);
-    const start = performance.now(); evaluation = evaluator.step(frame); evaluationMs += performance.now() - start;
+    const methods = estimator.step(wire);
+    for (const key of Object.keys(methods)) estimatorMs[key] += methods[key].ms;
+    timings.push(frame.ms + methods.guarded.ms + methods.baseline.ms);
+    const start = performance.now();
+    const guarded = evaluators.guarded.step({ ...frame, method: 'guarded-tuned', candidates: methods.guarded.candidates });
+    const baseline = evaluators.baseline.step({ ...frame, method: 'baseline-b', candidates: methods.baseline.candidates }, guarded);
+    evaluations = { guarded, baseline }; evaluationMs += performance.now() - start;
     progress(frame.t, input.snapshots);
   }
-  return { input, wallGeneration: scenario.wallGeneration, method: 'guarded45', summary: { precision: evaluation.precision, recall: evaluation.recall, holdRate: evaluation.holdRate, firstSupportPrecision: evaluation.firstSupportPrecision, medianError: evaluation.medianError, p95: evaluation.p95, offwall: evaluation.offwall,
-    offset: evaluation.offset, f1: evaluation.f1, caMsd: evaluation.caMsd, caHd95: evaluation.caHd95,
-    observedFraction: evaluation.observedFraction, missing: evaluation.missing,
-    diffusePerConfig: evaluation.diagnostics.diffusePerConfig, duplicateFraction: evaluation.diagnostics.duplicateFraction,
-    theoremMean: evaluation.diagnostics.theoremMean, theoremMedian: evaluation.diagnostics.theoremMedian,
-    theoremN: evaluation.diagnostics.ratios.length, theoremNegative: evaluation.diagnostics.theoremNegative,
-    Q: frame.Q, admitted: frame.admitted, rejected: frame.rejected },
-    timing: { simulatorMs: scenario.simulatorMs, fieldMs, psptMs, evaluationMs, frameP50: percentile(timings, 0.5), frameP95: percentile(timings, 0.95) },
+  return { input, wallGeneration: scenario.wallGeneration, method: 'paired-comparison', protocol: METHOD_PROTOCOL,
+    methods: Object.fromEntries(Object.entries(evaluations).map(([key, evaluation]) => [key, { summary: summarize(frame, evaluation) }])),
+    diagnostics: evaluations.guarded.diagnostics,
+    timing: { simulatorMs: scenario.simulatorMs, fieldMs, estimatorMs, evaluationMs,
+      frameP50: percentile(timings, .5), frameP95: percentile(timings, .95) },
     final: { t: frame.t, Dbar: frame.Dbar, betaHat: frame.betaHat, Q: frame.Q, admitted: frame.admitted, rejected: frame.rejected },
   };
 }
 export function parseValues(text, integer = false) {
   const values = String(text).split(/[\s,]+/).filter(Boolean).map(Number);
-  if (!values.length || values.some(v => !Number.isFinite(v) || (integer && (!Number.isInteger(v) || v < 0 || v > 0xffffffff)))) throw new Error('쉼표로 구분한 유효한 숫자를 입력하세요.');
-  if (new Set(values).size !== values.length) throw new Error('중복된 값이나 seed를 제거하세요.');
+  if (!values.length || values.some(v => !Number.isFinite(v) || (integer && (!Number.isInteger(v) || v < 0 || v > 0xffffffff)))) throw new Error('Enter valid comma-separated numbers.');
+  if (new Set(values).size !== values.length) throw new Error('Remove duplicate values or seeds.');
   return values;
 }
 export function sweepJobs(base, noise, roughness, seeds) {
-  if (noise.length * roughness.length * seeds.length > 1000) throw new Error('한 번에 최대 1,000개 조합을 실행할 수 있습니다.');
+  if (noise.length * roughness.length * seeds.length > 1000) throw new Error('A sweep supports at most 1,000 seed/condition combinations.');
   return roughness.flatMap(r => noise.flatMap(d => seeds.map(seed => normalizeInput({ ...base, sigmaD: d, roughness: r, seed }))));
 }
 export function aggregateRuns(runs) {
   const groups = new Map();
-  for (const run of runs) {
-    const key = `${run.input.roughness}:${run.input.sigmaD}`;
+  for (const run of runs) for (const [method, result] of Object.entries(run.methods ?? { historical: { summary: run.summary } })) {
+    // A changed duration, fleet, geometry or protocol must never silently pool.
+    const { seed, ...condition } = run.input;
+    const protocol = run.protocol?.[method] ?? null;
+    const key = JSON.stringify([method, condition, protocol]);
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(run);
+    groups.get(key).push({ ...run, method, methodProtocol: protocol, summary: result.summary });
   }
-  const fields = ['precision', 'recall', 'holdRate', 'firstSupportPrecision', 'medianError', 'p95', 'offwall', 'offset', 'f1', 'caMsd', 'caHd95', 'observedFraction', 'diffusePerConfig', 'duplicateFraction', 'theoremMean', 'theoremMedian'];
+  const fields = ['precision', 'recall', 'holdRate', 'firstSupportPrecision', 'medianError', 'p95', 'offwall', 'f1', 'observedFraction'];
   return [...groups.values()].map(group => {
-    const row = { roughness: group[0].input.roughness, sigmaD: group[0].input.sigmaD, n: group.length };
+    const { seed, ...input } = group[0].input;
+    const row = { method: group[0].method, protocol: group[0].methodProtocol, input, seeds: group.map(run => run.input.seed), roughness: input.roughness, sigmaD: input.sigmaD, n: group.length };
     for (const key of fields) {
       const all = group.map(run => run.summary[key]), values = all.filter(Number.isFinite), n = values.length,
         missing = all.filter(v => v == null).length, failed = all.length - n - missing,
@@ -63,7 +79,7 @@ export function aggregateRuns(runs) {
         n, failed, missing };
     }
     return row;
-  }).sort((a, b) => a.roughness - b.roughness || a.sigmaD - b.sigmaD);
+  }).sort((a, b) => a.roughness - b.roughness || a.sigmaD - b.sigmaD || ['guarded','baseline','historical'].indexOf(a.method) - ['guarded','baseline','historical'].indexOf(b.method));
 }
 /** Bounded pool: at most four default jobs, no frame history.
  * Cancellation terminates workers and keeps only fully completed seed results. */
@@ -78,7 +94,7 @@ export function startSweep(jobs, onProgress, workerCount = Math.min(4, Math.max(
   }
   const count = Math.min(jobs.length, workerCount);
   for (let k = 0; k < count; k++) {
-    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261022-route1', import.meta.url), { type: 'module' }); workers.push(worker);
+    const worker = new Worker(new URL('./sweep.worker.mjs?v=20261022-audit1', import.meta.url), { type: 'module' }); workers.push(worker);
     worker.onmessage = ({ data }) => {
       if (cancelled || settled) return;
       if (data.type === 'error') { settled = true; stop(); fail(new Error(data.message)); return; }

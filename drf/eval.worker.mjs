@@ -1,4 +1,4 @@
-import { createPSPTEvaluator } from './pspt-evaluate.mjs';
+import { createPSPTEvaluator } from './pspt-evaluate.mjs?v=20261022-audit1';
 import { diffuseProfile } from './diffuse.mjs';
 let evaluator, baselineEvaluator, scenario;
 self.onmessage = ({ data }) => {

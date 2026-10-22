@@ -1,0 +1,83 @@
+{
+  "id": "tuning-200-20261020",
+  "role": "Tuning exploration only; no calibration/test evaluation or certification.",
+  "n_scenes": 200,
+  "seed_range_inclusive": [
+    12000000,
+    12000199
+  ],
+  "generator": {
+    "scene": "layered",
+    "vehicles": 3,
+    "snapshots": 120,
+    "sigmaP": 0.0,
+    "sigmaD": 0.1,
+    "grid": 100
+  },
+  "condition_counts": {
+    "upper/diffuse": 26,
+    "lower/mixed": 28,
+    "both/specular": 16,
+    "upper/specular": 25,
+    "upper/mixed": 14,
+    "lower/specular": 29,
+    "lower/diffuse": 21,
+    "both/diffuse": 20,
+    "both/mixed": 21
+  },
+  "aggregation": "Equal scene means; center precision excludes empty scenes.",
+  "targets": {
+    "fp": 0.01,
+    "recall": 0.6,
+    "delta": 0.1
+  },
+  "selection": "Maximum observed-wall recall among all eligible finite score breakpoints with empirical mean grouped-fragment FP <= 0.01; inclusive score >= threshold.",
+  "methods": {
+    "baseline": {
+      "selected": {
+        "logit": 29.108623616301394,
+        "empty_endpoint": false,
+        "fp": 0.007916666666666666,
+        "recall": 0.025677596277877145,
+        "center_precision_nonempty": 1.0,
+        "center_defined": 0.565,
+        "pending": 0.9991486709873736,
+        "accepted": 0.96,
+        "empty": 0.435,
+        "groups": 0.96,
+        "fragment_precision_nonempty": 0.9859882005899705
+      },
+      "joint_target_operating_points": 0
+    },
+    "guarded": {
+      "selected": {
+        "logit": 6.650397183049193,
+        "empty_endpoint": false,
+        "fp": 0.009922129544332789,
+        "recall": 0.5870240280203328,
+        "center_precision_nonempty": 0.9925048752570995,
+        "center_defined": 1.0,
+        "pending": 0.5549006686691182,
+        "accepted": 25.245,
+        "empty": 0.0,
+        "groups": 24.785,
+        "fragment_precision_nonempty": 0.9900778704556672
+      },
+      "joint_target_operating_points": 0
+    }
+  },
+  "source_files": {
+    "analysis/summary.json": {
+      "sha256": "8ed05c223ad302085b3b88c66249211448396c0d71ed94fb3c194a1ee43f0b16"
+    },
+    "tuning_plan.json": {
+      "sha256": "2fed5fadcf52aa2b9e672284e433fd375e4a20ef9f316d1edcea5b90f42d5fdc"
+    }
+  },
+  "limitations": [
+    "Development/tuning results, not held-out validation or an error certificate.",
+    "Source aggregates are retained here for audit; the full 200-scene raw archive is not bundled.",
+    "Current layered trajectories use 2/3 m per snapshot; tuning used the earlier 0.75 m trajectory.",
+    "Grouped-fragment FP is not the browser centre off-wall fraction."
+  ]
+}

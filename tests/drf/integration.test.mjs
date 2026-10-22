@@ -1,4 +1,4 @@
-import { METHOD_PROTOCOL } from '../../drf/comparison.mjs';
+import { METHOD_PROTOCOL, MethodComparison } from '../../drf/comparison.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -154,20 +154,32 @@ test('sweep aggregation retains failed seeds separately from genuinely unobserve
   assert.ok(Number.isNaN(aggregateRuns([run(.1), run(NaN)])[0].medianError.mean));
 });
 
-test('shared PSPT sweep matches manual measurement-only estimator and post-hoc evaluation', async () => {
-  const scene = await scenario(), manual = calculate(scene, scene.wire.length, true), run = await runExperiment(input),
-    last = manual.frames.at(-1), evaluation = manual.evaluations.at(-1);
-  assert.deepEqual(run.input, scene.input);
-  assert.deepEqual(run.final, { t: last.t, Dbar: last.Dbar, betaHat: last.betaHat,
-    Q: last.Q, admitted: last.admitted, rejected: last.rejected });
-  assert.equal(run.method, 'guarded45');
-  assert.deepEqual(run.summary, { precision: evaluation.precision, recall: evaluation.recall,
-    holdRate: evaluation.holdRate, firstSupportPrecision: evaluation.firstSupportPrecision,
-    ...summary(last, evaluation) });
-  assert.ok(Number.isFinite(run.timing.psptMs) && run.timing.psptMs >= 0);
-  const baseline = calculate(scene);
-  assert.deepEqual(last.Dbar, baseline.frames.at(-1).Dbar, 'Candidate classification must not overwrite the display field');
-  assert.deepEqual(last.betaHat, baseline.frames.at(-1).betaHat);
+test('paired sweep matches both main-view estimators on the same wire and requested duration', async () => {
+  const scene=await scenario(), grid=createGrid(scene.input.grid,scene.input.grid,scene.domain), field=createField(grid),
+    comparison=new MethodComparison({sigmaR:scene.input.sigmaD}),
+    evaluators={guarded:createPSPTEvaluator(scene,grid),baseline:createPSPTEvaluator(scene,grid)}, progress=[];
+  let last,expected;
+  for (const wire of scene.wire) {
+    last=field.step(wire);const methods=comparison.step(wire);
+    const guarded=evaluators.guarded.step({...last,candidates:methods.guarded.candidates});
+    expected={guarded,baseline:evaluators.baseline.step({...last,candidates:methods.baseline.candidates},guarded)};
+  }
+  const run=await runExperiment(input,t=>progress.push(t));
+  assert.deepEqual(progress,[1,2,3]);assert.deepEqual(run.input,scene.input);
+  assert.deepEqual(run.protocol,METHOD_PROTOCOL);assert.equal(run.method,'paired-comparison');
+  for (const method of ['guarded','baseline']) for (const [key,value] of Object.entries(run.methods[method].summary))
+    assert.deepEqual(value, ['Q','admitted','rejected'].includes(key)?last[key]:expected[method][key],`${method}/${key}`);
+  assert.deepEqual(run.final.Dbar,last.Dbar);assert.deepEqual(run.final.betaHat,last.betaHat);
+  assert.equal(run.final.t,input.snapshots);assert.deepEqual(run.diagnostics,expected.guarded.diagnostics);
+});
+
+test('sweep aggregates never pool methods, thresholds, or different durations',()=>{
+  const run=(seed,snapshots=120,threshold=6.65)=>({input:{seed,snapshots,sigmaD:.1,roughness:2},
+    protocol:{guarded:{threshold},baseline:{threshold:29}},methods:{guarded:{summary:{recall:.5}},baseline:{summary:{recall:.1}}}});
+  const rows=aggregateRuns([run(1),run(2),run(3,60),run(4,120,7)]);
+  assert.equal(rows.length,5);
+  assert.equal(rows.find(r=>r.method==='guarded'&&r.protocol.threshold===6.65&&r.input.snapshots===120).n,2);
+  assert.equal(rows.find(r=>r.method==='baseline'&&r.input.snapshots===120).n,3);
 });
 
 test('snapshot CSV retains completed rows and leaves nonfinite/missing values empty', async () => {
@@ -196,7 +208,7 @@ test('actual JSON export handler separates truth, wire, and completed results wi
   assert.equal(output.units.roughnessInput, 'deg'); assert.equal(output.units.truthAngles, 'rad'); assert.equal(output.units.betaHat, 'dimensionless');
   assert.deepEqual(output.grid.x, Array.from(manual.grid.x)); assert.deepEqual(output.grid.y, Array.from(manual.grid.y));
   assert.equal(output.grid.arrayOrder, 'iy*nx+ix; ascending y; cell centers');
-  assert.equal(output.schema, 'echomap-drf/4'); assert.deepEqual(output.provenance, provenance);
+  assert.equal(output.schema, 'echomap-drf/5'); assert.deepEqual(output.provenance, provenance);
   assert.deepEqual(output.estimators,METHOD_PROTOCOL);assert.equal(output.toleranceM,.4);
   assert.deepEqual(output.result.map(f=>f.candidates),manual.frames.map(f=>f.candidates));
   assert.ok(output.result.every(f=>f.method==='guarded45'));
@@ -219,14 +231,15 @@ test('actual CSV download exports distinct per-method rows and leaves missing pr
   const scene=await scenario(),manual=calculate(scene,2,true),button={},downloads=[];
   const frames=manual.frames.map(f=>({...f,methods:{guarded:{candidates:f.candidates,ms:2},baseline:{candidates:[],ms:3}}}));
   const evaluations=manual.evaluations.map(e=>({methods:{guarded:e,baseline:{...e,precision:null,supportedCount:0}}}));
-  new Function('state','psptSnapshotCsv','download','Blob','$',handler)(
-    {frames,evaluations},psptSnapshotCsv,(blob,name)=>downloads.push({blob,name}),Blob,()=>button);
+  new Function('state','psptSnapshotCsv','download','Blob','$','METHOD_PROTOCOL',handler)(
+    {frames,evaluations},psptSnapshotCsv,(blob,name)=>downloads.push({blob,name}),Blob,()=>button,METHOD_PROTOCOL);
   button.onclick();
   assert.equal(downloads[0].name,'echomap-method-comparison.csv');
   const rows=(await downloads[0].blob.text()).trim().split('\r\n').map(line=>line.split(','));
-  assert.equal(rows.length,5);assert.equal(rows[0].length,19);assert.equal(rows[0][0],'method');assert.equal(rows[0].at(-1),'estimator_ms');
+  assert.equal(rows.length,5);assert.equal(rows[0].length,21);assert.equal(rows[0][0],'method');assert.equal(rows[0].at(-1),'estimator_ms');
   assert.deepEqual(rows.slice(1).map(row=>row[0]),['guarded','guarded','baseline','baseline']);
-  assert.equal(rows[3][8],'','Undefined precision must not become zero');
+  assert.equal(rows[3][10],'','Undefined precision must not become zero');
+  assert.equal(Number(rows[1][1]),METHOD_PROTOCOL.guarded.threshold);assert.equal(rows[3][2],METHOD_PROTOCOL.baseline.tuning.id);
   assert.equal(rows[1].at(-1),'2');assert.equal(rows[3].at(-1),'3');
   assert.equal(snapshotCsv(manual.frames,manual.evaluations).trim().split('\r\n')[0].split(',').length,12);
 });
