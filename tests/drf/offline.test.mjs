@@ -12,7 +12,7 @@ const artifact = read('drf/offline.bundle.js').toString(), marker = '// Bundled 
 
 test('actual HTML selects the classic local bundle for file and modules for HTTP', () => {
   const html = read('drf.html').toString();
-  const bootstrap = html.match(/<script>\s*(const runtime = document\.createElement\('script'\);[\s\S]*?)<\/script>/)?.[1];
+  const bootstrap = html.match(/<script>\s*(const runtime\s*=\s*document\.createElement\('script'\);[\s\S]*?)<\/script>/)?.[1];
   assert.ok(bootstrap, 'Actual protocol bootstrap exists');
   assert.ok(!/disable-web-security|allow-file-access-from-files/.test(bootstrap));
   for (const protocol of ['file:', 'http:', 'https:']) {
@@ -24,7 +24,7 @@ test('actual HTML selects the classic local bundle for file and modules for HTTP
     assert.equal(scripts.length, 1);
     assert.match(scripts[0].src, protocol === 'file:' ? /^drf\/offline\.bundle\.js\?/ : /^drf\/app\.mjs\?/);
     assert.equal(scripts[0].type, protocol === 'file:' ? undefined : 'module');
-    scripts[0].onerror(); assert.match(status.textContent, /실행 코드/);
+    scripts[0].onerror(); assert.match(status.textContent, /Could not load/);
   }
 });
 
@@ -48,7 +48,7 @@ test('offline bundle is current and its classic Blob workers preserve the field'
   assert.deepEqual(JSON.parse(JSON.stringify(runtime.metadata)),
     ['drf/provenance.json', 'drf/reference/octave/fixtures.json'].map(path => JSON.parse(read(path))));
   assert.throws(() => runtime.worker('unknown'), /Unknown DRF worker/);
-  for (const name of ['scenario', 'field', 'eval', 'sweep', 'pspt']) {
+  for (const name of ['scenario', 'field', 'eval', 'sweep', 'pspt', 'compare']) {
     const worker = runtime.worker(name);
     assert.equal(worker.options, undefined, 'Blob workers must use the classic script transport');
     assert.equal(runtime.worker(name).url, worker.url, 'Each worker type reuses one Blob URL');
@@ -56,7 +56,7 @@ test('offline bundle is current and its classic Blob workers preserve the field'
     assert.ok(!source.includes('import.meta'), `${name}: no module metadata dependency`);
     assert.doesNotThrow(() => new vm.Script(source), `${name}: parses as a classic script`);
   }
-  assert.equal(blobs.size, 5);
+  assert.equal(blobs.size, 6);
   const messages = [], workerContext = vm.createContext({ performance, postMessage: data => messages.push(data) });
   workerContext.self = workerContext;
   vm.runInContext(await blobs.get(runtime.worker('field').url).text(), workerContext);

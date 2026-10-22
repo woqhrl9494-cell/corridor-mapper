@@ -80,7 +80,7 @@ export function createPSPTEvaluator(scenario, grid) {
     gt = wallSamples(scenario),
     mask = metrics.createObservedMask(gt), onWall = neighborhood(gt), firstSupport = new Map();
   let cursor = 0;
-  return { step(frame) {
+  return { step(frame, sharedDiagnostics = null) {
     if (!Array.isArray(frame.candidates)) throw new Error('PSPT evaluation requires estimator candidates');
     if (!Number.isInteger(frame.t) || frame.t < cursor || frame.t > scenario.truth.length) throw new Error('Evaluation requires a causal snapshot');
     while (cursor < frame.t) {
@@ -101,8 +101,8 @@ export function createPSPTEvaluator(scenario, grid) {
       f1 = recall == null ? null : !surfacePrecision ? 0 : 2 * surfacePrecision * recall / (surfacePrecision + recall),
       pending = frame.candidates.filter(c => c.status === 'pending').length;
     // Legacy calculations remain available only as explicit diagnostic evidence.
-    const old = diagnostic.step(frame);
-    return { ...old, method: 'guarded45', proxy: centers.map(p => [p.x, p.y]), observed: observed.map(p => [p.x, p.y]),
+    const old = sharedDiagnostics ?? diagnostic.step(frame);
+    return { ...old, method: frame.method ?? 'guarded45', proxy: centers.map(p => [p.x, p.y]), observed: observed.map(p => [p.x, p.y]),
       medianError: percentile(distances, .5), p95: percentile(distances, .95), offwall: precision == null ? null : 1 - precision,
       precision, surfacePrecision, recall, f1, offset: null, caMsd: null, caHd95: null,
       observedFraction: fraction(observed.length, gt.length), missing: observed.length - observed.filter(nearPatch).length,

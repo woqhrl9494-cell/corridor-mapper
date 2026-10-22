@@ -41,7 +41,7 @@ function allowKeys(object, allowed, name) {
   }
 }
 
-function prepare(snapshot) {
+export function prepareMeasuredSnapshot(snapshot) {
   allowKeys(snapshot, SNAP_KEYS, "snapshot");
   if (!Array.isArray(snapshot.configs) || !snapshot.configs.length) throw new RangeError("snapshot needs at least one measured configuration");
   for (const c of snapshot.configs) {
@@ -171,7 +171,7 @@ export class PSPT {
 
   step(snapshot) {
     // Validate/copy all input before mutating state, including rejected time order.
-    const { wire, pre, veh } = prepare(snapshot), t = wire.t;
+    const { wire, pre, veh } = prepareMeasuredSnapshot(snapshot), t = wire.t;
     if (t !== (this.last_t ?? 0) + 1) throw new RangeError("snapshots must be processed once in causal t=1,2,... order");
     const byId = new Map(this.groups.map((g) => [g.gid, g]));
     if (byId.size !== this.groups.length) throw new RangeError("group IDs must be unique");

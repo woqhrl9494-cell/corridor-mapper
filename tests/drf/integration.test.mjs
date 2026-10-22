@@ -1,3 +1,4 @@
+import { METHOD_PROTOCOL } from '../../drf/comparison.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -187,16 +188,16 @@ test('actual JSON export handler separates truth, wire, and completed results wi
   const button = {}, downloads = [], state = { scenario: scene, grid: manual.grid, frames: manual.frames,
     evaluations: manual.evaluations, sweepRuns: [] }, provenance = { baseCommit: 'integration fixture' };
   // Execute the shipped pure export handler with a download stub; no browser DOM is required.
-  new Function('state', 'provenance', 'aggregateRuns', 'download', 'Blob', '$', source.slice(start, end))(
-    state, provenance, aggregateRuns, (blob, name) => downloads.push({ blob, name }), Blob, () => button);
+  new Function('state', 'provenance', 'aggregateRuns', 'download', 'Blob', '$', 'METHOD_PROTOCOL', source.slice(start, end))(
+    state, provenance, aggregateRuns, (blob, name) => downloads.push({ blob, name }), Blob, () => button, METHOD_PROTOCOL);
   button.onclick();
   assert.equal(downloads[0].name, 'echomap-drf.json');
   const output = JSON.parse(await downloads[0].blob.text());
   assert.equal(output.units.roughnessInput, 'deg'); assert.equal(output.units.truthAngles, 'rad'); assert.equal(output.units.betaHat, 'dimensionless');
   assert.deepEqual(output.grid.x, Array.from(manual.grid.x)); assert.deepEqual(output.grid.y, Array.from(manual.grid.y));
   assert.equal(output.grid.arrayOrder, 'iy*nx+ix; ascending y; cell centers');
-  assert.equal(output.schema, 'echomap-drf/3'); assert.deepEqual(output.provenance, provenance);
-  assert.deepEqual(output.estimator,{method:'guarded45',grid:[100,100],toleranceM:.4,scoreKind:'uncalibrated composite weight'});
+  assert.equal(output.schema, 'echomap-drf/4'); assert.deepEqual(output.provenance, provenance);
+  assert.deepEqual(output.estimators,METHOD_PROTOCOL);assert.equal(output.toleranceM,.4);
   assert.deepEqual(output.result.map(f=>f.candidates),manual.frames.map(f=>f.candidates));
   assert.ok(output.result.every(f=>f.method==='guarded45'));
   assert.deepEqual(output.truth.wallModel,scene.wallModel,'Preserve component coefficients and shifted knot origins in truth only');
@@ -212,22 +213,23 @@ test('actual JSON export handler separates truth, wire, and completed results wi
 });
 
 
-test('actual CSV download handler uses PSPT columns while the historical CSV stays available',async()=>{
-  const source=fs.readFileSync(new URL('../../drf/app.mjs',import.meta.url),'utf8'),
-    handler=source.match(/^\$\('exportCsv'\)\.onclick = .*;$/m)?.[0];
-  assert.ok(handler,'CSV download handler exists');
+test('actual CSV download exports distinct per-method rows and leaves missing precision blank',async()=>{
+  const source=fs.readFileSync(new URL('../../drf/app.mjs',import.meta.url),'utf8');
+  const handler=source.slice(source.indexOf("$('exportCsv').onclick"),source.indexOf("$('exportPng').onclick"));
   const scene=await scenario(),manual=calculate(scene,2,true),button={},downloads=[];
+  const frames=manual.frames.map(f=>({...f,methods:{guarded:{candidates:f.candidates,ms:2},baseline:{candidates:[],ms:3}}}));
+  const evaluations=manual.evaluations.map(e=>({methods:{guarded:e,baseline:{...e,precision:null,supportedCount:0}}}));
   new Function('state','psptSnapshotCsv','download','Blob','$',handler)(
-    {frames:manual.frames,evaluations:manual.evaluations},psptSnapshotCsv,
-    (blob,name)=>downloads.push({blob,name}),Blob,()=>button);
+    {frames,evaluations},psptSnapshotCsv,(blob,name)=>downloads.push({blob,name}),Blob,()=>button);
   button.onclick();
-  assert.equal(downloads[0].name,'echomap-drf-snapshots.csv');
-  const csv=await downloads[0].blob.text();
-  assert.equal(csv.replace(/^\ufeff/,'').split('\r\n')[0].split(',').length,18);
-  assert.equal(csv,psptSnapshotCsv(manual.frames,manual.evaluations).replace(/^\ufeff/,''),'Blob text decoding strips the BOM');
+  assert.equal(downloads[0].name,'echomap-method-comparison.csv');
+  const rows=(await downloads[0].blob.text()).trim().split('\r\n').map(line=>line.split(','));
+  assert.equal(rows.length,5);assert.equal(rows[0].length,19);assert.equal(rows[0][0],'method');assert.equal(rows[0].at(-1),'estimator_ms');
+  assert.deepEqual(rows.slice(1).map(row=>row[0]),['guarded','guarded','baseline','baseline']);
+  assert.equal(rows[3][8],'','Undefined precision must not become zero');
+  assert.equal(rows[1].at(-1),'2');assert.equal(rows[3].at(-1),'3');
   assert.equal(snapshotCsv(manual.frames,manual.evaluations).trim().split('\r\n')[0].split(',').length,12);
 });
-
 
 test('PSPT sweep rejects exact zero range noise before generating a run', async () => {
   await assert.rejects(runExperiment({ sigmaD: 0, sigmaP: .1, vehicles: 20 }), /σd/);

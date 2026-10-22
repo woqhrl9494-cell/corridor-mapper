@@ -2,15 +2,16 @@ import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } fr
 import { createGrid } from './field.mjs';
 import { percentile } from './evaluate.mjs?v=20261003-pspt1';
 import { psptSnapshotCsv } from './pspt-evaluate.mjs';
+import { METHOD_PROTOCOL } from './comparison.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261003-pspt1';
-import { DrfMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261003-support1';
+import { DrfMap, linkMapCameras, drawComparisonHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261022-compare1';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');
 const state = { mode: 'idle', scenario: null, grid: null, frames: [], evaluations: [], selected: 0, next: 0,
-  busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false, followLive: true };
+  busy: false, replay: false, replayAt: 0, generation: 0, workers: [], sweep: null, sweepRuns: [], valid: false, followLive: true, method: 'compare' };
 let fieldWorker, evalWorker, hoverWorker, psptWorker, hoverTimer, hoverGeneration = 0, replayFrame = 0, reference = [], provenance = {};
-const fmt = (v, places = 3) => typeof v !== 'number' ? '—' : Number.isFinite(v) ? v.toFixed(places) : v === Infinity ? '실패 (∞)' : v === -Infinity ? '실패 (−∞)' : '실패 (NaN)';
+const fmt = (v, places = 3) => typeof v !== 'number' ? '—' : Number.isFinite(v) ? v.toFixed(places) : v === Infinity ? 'Failed (∞)' : v === -Infinity ? 'Failed (−∞)' : 'Failed (NaN)';
 // The title keeps the full message when a short screen clamps the status to one line.
 const notice = text => { $('status').textContent = text; $('status').title = text; };
 function fillSettings(input) {
@@ -20,13 +21,13 @@ function fillSettings(input) {
   }
 }
 function settings() {
-  if (Number(form.elements.namedItem('sigmaD').value) === 0) throw new Error('현재 PSPT는 거리 오차 σd > 0이 필요합니다. 0에서는 공유 위치 오차 공분산이 특이해질 수 있습니다.');
-  if (!form.reportValidity()) throw new Error('입력값과 허용 범위를 확인하세요.');
+  if (Number(form.elements.namedItem('sigmaD').value) === 0) throw new Error('Both methods require range SD σd > 0. Zero range noise can make the joint pose update singular.');
+  if (!form.reportValidity()) throw new Error('Check the input values and their allowed ranges.');
   const values = Object.fromEntries(new FormData(form)); values.specular = form.elements.namedItem('specular').checked;
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261003-pspt1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261022-compare1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
@@ -40,23 +41,25 @@ function makeWorker(name, onProgress = () => {}) {
   }); }, stop() { stopped = true; worker.terminate(); for (const p of pending.values()) p.reject(new Error('Cancelled')); pending.clear(); } };
   state.workers.push(handle); return handle;
 }
-function stopReplay() { cancelAnimationFrame(replayFrame); replayFrame = 0; state.replay = false; $('replayButton').textContent = '재생'; }
+function stopReplay() { cancelAnimationFrame(replayFrame); replayFrame = 0; state.replay = false; $('replayButton').textContent = 'Replay'; }
 function controls() {
   const active = ['running', 'paused'].includes(state.mode), sweeping = !!state.sweep, preparing = active && !state.scenario;
   $('runButton').disabled = active || sweeping; $('pauseButton').disabled = !active || preparing;
-  $('pauseButton').textContent = state.mode === 'paused' ? '계속 실행' : '일시정지';
+  $('pauseButton').textContent = state.mode === 'paused' ? 'Resume' : 'Pause';
   $('stepButton').disabled = preparing || state.busy || state.mode === 'running' || sweeping;
   $('cancelButton').disabled = !active;
   for (const el of form.elements) el.disabled = active || sweeping;
   for (const el of $('sweepSettings').elements) el.disabled = active || sweeping;
   $('sweepButton').disabled = active || sweeping; $('sweepCancel').disabled = !sweeping;
-  $('timeSlider').max = state.frames.length; $('timeSlider').value = state.selected; $('timeSlider').disabled = !state.frames.length;
+  $('timeSlider').max = Math.max(1, state.frames.length); $('timeSlider').value = state.selected; $('timeSlider').disabled = !state.frames.length;
   $('replayButton').disabled = !state.frames.length;
   $('runProgress').max = state.scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value || DEFAULT_INPUT.snapshots); $('runProgress').value = state.frames.length;
   $('firstSnapshot').disabled = false;
   $('exportJson').disabled = (!state.valid || !state.frames.length) && !state.sweepRuns.length;
   for (const id of ['exportCsv', 'exportPng']) $(id).disabled = !state.valid || !state.frames.length;
   document.body.dataset.state = state.mode;
+  $('runState').textContent = ({idle:'Ready',running:'Computing',paused:'Paused',cancelled:'Partial run',done:'Complete'})[state.mode] ?? 'Stopped';
+  $('newSeed').disabled = active || sweeping;
 }
 function cancel(clear = false) {
   state.generation++; hoverGeneration++; clearTimeout(hoverTimer); stopReplay();
@@ -64,10 +67,10 @@ function cancel(clear = false) {
   fieldWorker = null; evalWorker = null; hoverWorker = null; psptWorker = null;
   state.busy = false; state.mode = clear ? 'idle' : 'cancelled';
   if (clear) {
-    state.scenario = null; state.grid = null; state.frames = []; state.evaluations = []; state.selected = 0; state.next = 0; state.valid = false;
+    state.pendingInput = null; state.scenario = null; state.grid = null; state.frames = []; state.evaluations = []; state.selected = 0; state.next = 0; state.valid = false;
     state.followLive = true;
     $('mapCanvas').removeAttribute('data-field-hash');
-    for (const view of [map,densityMap,contrastMap]) view.fit();
+    for (const view of [map,baselineMap,densityMap,contrastMap]) view.fit();
   } else if (state.frames.length && state.scenario) {
     // Preserve inspection of completed prefixes after cancellation; no future wire is supplied.
     hoverWorker = makeWorker('field'); evalWorker = makeWorker('eval');
@@ -78,17 +81,17 @@ function cancel(clear = false) {
 async function prepare(single = false) {
   try {
     const input = settings();
-    cancel(true); state.mode = 'running'; const generation = state.generation; controls();
+    cancel(true); state.pendingInput=input; state.mode = 'running'; const generation = state.generation; controls();
     location.hash = `v1=${encodeURIComponent(JSON.stringify(input))}`;
-    notice('벽 모델과 측정 기록을 생성하는 중입니다.');
-    const scenarioWorker = makeWorker('scenario', ({ t, total }) => { if (generation === state.generation) notice(`측정 생성 ${t} / ${total}`); });
+    notice('Generating wall geometry and measurements.');
+    const scenarioWorker = makeWorker('scenario', ({ t, total }) => { if (generation === state.generation) notice(`Generating measurements ${t} / ${total}`); });
     const { scenario } = await scenarioWorker.request({ type: 'generate', input });
     if (generation !== state.generation) return;
     scenarioWorker.stop(); state.scenario = scenario; state.grid = createGrid(input.grid, input.grid, scenario.domain); state.valid = true;
-    fieldWorker = makeWorker('field'); evalWorker = makeWorker('eval'); hoverWorker = makeWorker('field'); psptWorker = makeWorker('pspt');
+    fieldWorker = makeWorker('field'); evalWorker = makeWorker('eval'); hoverWorker = makeWorker('field'); psptWorker = makeWorker('compare');
     await Promise.all([
       fieldWorker.request({ type: 'init', grid: state.grid, numerical: { band: input.band, perimeter: input.perimeter } }),
-      psptWorker.request({ type: 'init' }),
+      psptWorker.request({ type: 'init', sigmaR: input.sigmaD }),
       evalWorker.request({ type: 'init', scenario, grid: state.grid }),
     ]);
     if (generation !== state.generation) return;
@@ -97,7 +100,7 @@ async function prepare(single = false) {
 }
 function fail(error) {
   if (error.message === 'Cancelled') return;
-  cancel(false); state.valid = false; controls(); notice(`실행 중단: ${error.message}`);
+  cancel(false); state.valid = false; controls(); notice(`Run stopped: ${error.message}`);
 }
 async function advance(single = false) {
   if (state.busy || !state.scenario || (state.mode !== 'running' && !single)) return;
@@ -110,18 +113,19 @@ async function advance(single = false) {
     ]);
     if (generation !== state.generation) return;
     const { type, requestId, ...frame } = data;
-    frame.candidates = prediction.candidates; frame.psptMs = prediction.psptMs; frame.method = 'guarded45';
+    frame.methods = prediction.methods; frame.candidates = prediction.methods.guarded.candidates;
+    frame.psptMs = prediction.methods.guarded.ms; frame.method = 'guarded-dev';
     const { evaluation } = await evalWorker.request({ type: 'evaluate', frame });
     if (generation !== state.generation) return;
     state.frames.push(frame); state.evaluations.push(evaluation); state.next++;
     if (state.followLive || !state.selected) state.selected = state.frames.length;
     $('timeSlider').value = state.selected; state.busy = false;
-    renderSelected(); notice(`필드 · 벽 후보 판정 ${frame.t} / ${state.scenario.input.snapshots}`);
+    renderSelected(); notice(`Comparing methods ${frame.t} / ${state.scenario.input.snapshots}`);
     if (state.next === state.scenario.wire.length) {
       state.mode = 'done'; controls(); const hash = await hashField(frame);
       if (generation !== state.generation) return;
       $('mapCanvas').dataset.fieldHash = hash;
-      notice(`계산 완료 · 측정 생성 ${(state.scenario.simulatorMs / 1000).toFixed(2)} s · PSPT 지지·보류·기각`);
+      notice(`Complete · ${state.frames.length} snapshots · both methods evaluated`);
     } else if (single) state.mode = 'paused';
     controls();
     if (state.mode === 'running') requestAnimationFrame(() => advance());
@@ -136,7 +140,7 @@ async function hashField(frame) {
 const inspect = point => {
   clearTimeout(hoverTimer); const generation = ++hoverGeneration;
   const frame = state.frames[state.selected - 1];
-  if (!frame || point.index < 0 || !hoverWorker) { $('inspector').textContent = '지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동'; return; }
+  if (!frame || point.index < 0 || !hoverWorker) { $('inspector').textContent = 'Hover to inspect a grid cell. Scroll to zoom; drag to pan.'; return; }
   const grid = state.grid, ix = point.index % grid.nx, iy = Math.floor(point.index / grid.nx), x = grid.x[ix], y = grid.y[iy];
   hoverTimer = setTimeout(async () => {
     if (generation !== hoverGeneration || !hoverWorker) return;
@@ -148,18 +152,19 @@ const inspect = point => {
       if ($('showTruth').checked) {
         let distance = Infinity;
         for (const wall of state.scenario.walls) for (const p of wall) distance = Math.min(distance, Math.hypot(x - p[0], y - p[1]));
-        wallDistance = ` · 벽 표본 거리 ${fmt(distance)} m · 평가 전용`;
+        wallDistance = ` · Wall-sample distance ${fmt(distance)} m · evaluation only`;
       }
-      $('inspector').textContent = `snapshot ${value.t} · 격자 (${fmt(x, 2)}, ${fmt(y, 2)}) m · D ${fmt(value.D)} · A ${fmt(value.A)} [1/m²] · Q ${value.Q} · D̄ ${fmt(value.Dbar)} · β̂ ${fmt(value.betaHat)}${wallDistance}`;
-    } catch (error) { if (error.message !== 'Cancelled') $('inspector').textContent = `조회 중단: ${error.message}`; }
+      $('inspector').textContent = `snapshot ${value.t} · grid (${fmt(x, 2)}, ${fmt(y, 2)}) m · D ${fmt(value.D)} · A ${fmt(value.A)} [1/m²] · Q ${value.Q} · D̄ ${fmt(value.Dbar)} · β̂ ${fmt(value.betaHat)}${wallDistance}`;
+    } catch (error) { if (error.message !== 'Cancelled') $('inspector').textContent = `Inspection stopped: ${error.message}`; }
   }, 100);
 };
-const map = new DrfMap($('mapCanvas'),inspect),densityMap=new DrfMap($('densityCanvas'),inspect),contrastMap=new DrfMap($('contrastCanvas'),inspect);
+const map = new DrfMap($('mapCanvas'),inspect),baselineMap=new DrfMap($('baselineCanvas'),inspect),densityMap=new DrfMap($('densityCanvas'),inspect),contrastMap=new DrfMap($('contrastCanvas'),inspect);
+linkMapCameras(map,baselineMap,()=>state.method==='compare');
 let previewKey='',preview=[],previewBounds;
 function previewWalls() {
   // Static truth preview uses exactly the accepted geometry used by the worker.
   try {
-    const input = normalizeInput(Object.fromEntries(new FormData(form))),
+    const input = state.pendingInput ?? normalizeInput(Object.fromEntries(new FormData(form))),
       key = JSON.stringify([input.scene, input.wallSide, input.seed, input.sigmaM, input.deltaM, input.sigmaDGeometry, input.deltaD]);
     if (key !== previewKey) { const geometry=createSceneGeometry(input);preview=geometry.walls;previewBounds=geometry.cameraBounds;previewKey=key; }
     return preview;
@@ -167,47 +172,57 @@ function previewWalls() {
 }
 function renderSelected() {
   hoverGeneration++;
-  $('inspector').textContent = '지도 위에 포인터를 올리면 격자 값을 표시합니다 · 휠 확대 · 드래그 이동';
+  $('inspector').textContent = 'Hover to inspect a grid cell. Scroll to zoom; drag to pan.';
   const frame = state.frames[state.selected - 1], evaluation = state.evaluations[state.selected - 1], scenario = state.scenario;
   const layers = Object.fromEntries(['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved'].map(id => [id, $(id).checked]));
   const display={ grid: state.grid, domain: state.scenario?.domain ?? LAYERED_DOMAIN, frame, truth: scenario?.truth[state.selected - 1], wire: scenario?.wire[state.selected - 1], walls: scenario?.walls ?? previewWalls(),cameraBounds:scenario?.cameraBounds ?? previewBounds,
-    candidates: frame?.candidates ?? [], observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
+    candidates: frame?.methods?.[state.method]?.candidates ?? frame?.candidates ?? [], observed: evaluation?.observed, layers, heatField: $('heatField').value, scaleMode: $('scaleMode').value,
     history: scenario?.wire.slice(0, state.selected),aspectMode:$('aspectMode').value };
+  $('mapPair').dataset.mode=state.method;
+  $('baselinePane').hidden=state.method!=='compare';
+  $('primaryMapName').textContent=state.method==='baseline'?'Fixed-fragment B':'Guarded PSPT';
   map.set({...display,mode:'geometry',xRange:[-10,90]});
+  baselineMap.set({...display,candidates:frame?.methods?.baseline?.candidates ?? [],mode:'geometry',xRange:[-10,90]});
   const fieldLayers={showTruth:layers.showTruth,showVehicles:layers.showVehicles};
   densityMap.set({...display,layers:fieldLayers,heatField:'Dbar'});
   contrastMap.set({...display,layers:fieldLayers,heatField:'betaHat'});
   $('snapshotLabel').textContent = `${frame?.t ?? 0} / ${scenario?.input.snapshots ?? form.elements.namedItem('snapshots').value}`;
-  $('evaluationNote').textContent = '지지 후보 · 허용 거리 0.4 m';
-  $('evaluationNote').title = '진위 판정 후에만 실제 벽과 비교합니다. 관측 벽 복원율은 과거 반사점 1 m 이내의 벽에 대해 지지 표면조각으로 평가합니다. 지지점이 없으면 정확도는 미정입니다.';
-  const candidates = frame?.candidates ?? [];
-  for (const [id, status] of [['supportedValue','supported'],['pendingValue','pending'],['contradictedValue','contradicted']])
-    $(id).textContent = candidates.filter(c => c.status === status).length;
+  $('evaluationNote').textContent = '0.4 m tolerance · same measured prefix';
+  for (const [method,prefix] of [['guarded',''],['baseline','b']]) {
+    const e=evaluation?.methods?.[method] ?? (method==='guarded' ? evaluation : null);
+    const node=(name)=>$(prefix ? prefix+name[0].toUpperCase()+name.slice(1) : name);
+    for (const [id,key] of [['precisionValue','precision'],['recallValue','recall'],['firstPrecisionValue','firstSupportPrecision'],['offwallValue','offwall']])
+      node(id).textContent=e?.[key]==null ? '—' : fmt(100*e[key],1);
+    for (const [id,key] of [['p95Value','p95'],['f1Value','f1']]) node(id).textContent=fmt(e?.[key]);
+    const candidates=frame?.methods?.[method]?.candidates ?? [];
+    for (const [id,status] of [['supportedValue','supported'],['pendingValue','pending'],['contradictedValue','contradicted']])
+      node(id).textContent=method==='baseline' && status==='contradicted' ? '—' : candidates.filter(c=>c.status===status).length;
+    node('firstPrecisionValue').title=e ? `First-support errors: ${e.firstSupportErrors} / ${e.firstSupportCount}` : '';
+  }
+  for (const button of document.querySelectorAll('[data-method]')) button.setAttribute('aria-pressed',String(button.dataset.method===state.method));
+  $('methodNote').textContent=state.method==='compare' ? 'Shared snapshot and axes · zoom and pan are linked. B retains past threshold crossings.' : state.method==='guarded'
+    ? 'PSPT updates curved patches and holds geometrically ambiguous alternatives.'
+    : 'B retains fixed fragments that crossed its threshold in a past qualified snapshot; unselected fragments are held.';
   $('qValue').textContent = frame?.Q ?? 0; $('acceptedValue').textContent = frame?.admitted ?? 0; $('rejectedValue').textContent = frame?.rejected ?? 0;
-  const metricIds = { p95Value: 'p95', f1Value: 'f1' };
-  for (const [id, key] of Object.entries(metricIds)) $(id).textContent = fmt(evaluation?.[key]);
-  for (const [id, key] of [['precisionValue','precision'],['recallValue','recall'],['firstPrecisionValue','firstSupportPrecision']])
-    $(id).textContent = evaluation?.[key] == null ? '—' : fmt(100 * evaluation[key], 1);
-  $('firstPrecisionValue').title = evaluation ? `최초 지지 오류 ${evaluation.firstSupportErrors} / ${evaluation.firstSupportCount}` : '';
-  $('offwallValue').textContent = evaluation?.offwall == null ? '—' : fmt(100 * evaluation.offwall, 1);
   const diag = evaluation?.diagnostics;
-  $('pathValue').textContent = diag ? `정반사 ${diag.specularCount} / diffuse ${diag.diffuseCount}` : '—';
-  const times = state.frames.slice(0, state.selected).map(f => (f.psptMs ?? 0) + f.ms);
-  $('timingValue').textContent = times.length ? `p50 ${fmt(percentile(times, .5), 1)} ms · p95 ${fmt(percentile(times, .95), 1)} ms` : '—';
-  drawMetricHistory($('metricChart'), state.evaluations.slice(0, state.selected),$('historyMetric').value,scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value));
+  $('pathValue').textContent = diag ? `Specular ${diag.specularCount} / diffuse ${diag.diffuseCount}` : '—';
+  const times = state.frames.slice(0,state.selected).map(f=>f.ms+(f.methods?.guarded.ms ?? 0)+(f.methods?.baseline.ms ?? 0));
+  $('timingValue').textContent = times.length ? `p50 ${fmt(percentile(times,.5),1)} / p95 ${fmt(percentile(times,.95),1)} ms` : '—';
+  $('timingValue').title='Display field + both estimators, per snapshot; excludes generation, evaluation and rendering.';
+  drawComparisonHistory($('metricChart'),state.evaluations.slice(0,state.selected),$('historyMetric').value,scenario?.input.snapshots ?? Number(form.elements.namedItem('snapshots').value));
   if (diag) {
-    $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · 거리 중복 ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: 평균 ${fmt(diag.theoremMean)}, 중앙 ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, 음수=${diag.theoremNegative} · field offset ${fmt(evaluation.offset)} m / fold 예측 ${fmt(diag.foldPrediction)} m`;
+    $('diagnosticSummary').textContent = `diffuse / configuration ${fmt(diag.diffusePerConfig, 1)} · duplicate ranges ${diag.duplicateFraction == null ? '—' : fmt(100 * diag.duplicateFraction, 1) + '%'} · Theorem 2: mean ${fmt(diag.theoremMean)}, median ${fmt(diag.theoremMedian)}, n=${diag.ratios.length}, negative=${diag.theoremNegative} · field offset ${fmt(evaluation.offset)} m / fold prediction ${fmt(diag.foldPrediction)} m`;
     if (!$('diagnosticPanel').hidden) {
       drawHistogram($('diagnosticChart'), diag.ratios); drawCounts($('countChart'), diag.diffuseCounts, diag.predictedCounts); updateProfile();
     }
   }
   if (!diag) {
-    $('diagnosticSummary').textContent = '실행 결과가 없습니다.';
+    $('diagnosticSummary').textContent = 'No results yet.';
     drawHistogram($('diagnosticChart'), []); drawProfile($('profileChart'), [],display.domain); drawCounts($('countChart'), [], []);
   }
   const selectedConfig = $('configSelect').value;
   $('configSelect').replaceChildren(...(scenario?.truth[state.selected - 1]?.configs ?? []).map((c, k) => {
-    const option = document.createElement('option'); option.value = k; option.textContent = `snapshot ${frame.t} · 차량 ${c.i}–${c.j}`; return option;
+    const option = document.createElement('option'); option.value = k; option.textContent = `snapshot ${frame.t} · vehicles ${c.i}–${c.j}`; return option;
   }));
   $('configSelect').value = selectedConfig || '0';
   if (!$('configSelect').value && $('configSelect').options.length) $('configSelect').value = '0';
@@ -231,22 +246,22 @@ function replayTick(time) {
 }
 function toggleReplay() {
   if (!state.frames.length) return;
-  if (state.replay) stopReplay(); else { state.followLive = false; state.replay = true; state.replayAt = 0; $('replayButton').textContent = '재생 정지'; replayFrame = requestAnimationFrame(replayTick); }
+  if (state.replay) stopReplay(); else { state.followLive = false; state.replay = true; state.replayAt = 0; $('replayButton').textContent = 'Stop replay'; replayFrame = requestAnimationFrame(replayTick); }
 }
 function resetView() {
-  for (const view of [map,densityMap,contrastMap]) view.fit();
+  for (const view of [map,baselineMap,densityMap,contrastMap]) view.fit();
 }
 $('runButton').onclick = () => prepare();
-$('pauseButton').onclick = () => { state.mode = state.mode === 'paused' ? 'running' : 'paused'; controls(); if (state.mode === 'running') { state.followLive = true; advance(); } else notice('현재 snapshot에서 일시정지했습니다.'); };
+$('pauseButton').onclick = () => { state.mode = state.mode === 'paused' ? 'running' : 'paused'; controls(); if (state.mode === 'running') { state.followLive = true; advance(); } else notice('Paused after the current snapshot.'); };
 $('stepButton').onclick = () => { state.followLive = true; state.mode === 'paused' ? advance(true) : prepare(true); };
 $('firstSnapshot').onclick = resetView;
-$('cancelButton').onclick = () => { cancel(); notice('취소했습니다. 완전히 계산된 snapshot만 남겼습니다.'); };
-$('resetButton').onclick = () => { state.sweep?.cancel(); state.sweepRuns = []; cancel(true); fillSettings(DEFAULT_INPUT); renderSelected(); location.hash = ''; renderSweep(); $('sweepStatus').textContent = '실행 결과가 없습니다.'; notice('기본 설정으로 재설정했습니다.'); };
-form.addEventListener('change', () => { state.sweepRuns = []; cancel(true); renderSweep(); $('sweepStatus').textContent = '실행 결과가 없습니다.'; notice('설정이 바뀌어 이전 결과를 무효화했습니다.'); try { location.hash = `v1=${encodeURIComponent(JSON.stringify(settings()))}`; } catch (e) { notice(e.message); } });
+$('cancelButton').onclick = () => { cancel(); notice('Cancelled. Completed snapshots remain available.'); };
+$('resetButton').onclick = () => { state.sweep?.cancel(); state.sweepRuns = []; cancel(true); fillSettings(DEFAULT_INPUT); renderSelected(); location.hash = ''; renderSweep(); $('sweepStatus').textContent = 'No results yet.'; notice('Restored default settings.'); };
+form.addEventListener('change', () => { state.sweepRuns = []; cancel(true); renderSweep(); $('sweepStatus').textContent = 'No results yet.'; notice('Parameters changed. Run again to compare methods.'); try { location.hash = `v1=${encodeURIComponent(JSON.stringify(settings()))}`; } catch (e) { notice(e.message); } });
 $('timeSlider').oninput = () => { stopReplay(); state.followLive = false; state.selected = Number($('timeSlider').value); hoverGeneration++; renderSelected(); };
 $('replayButton').onclick = toggleReplay;
 document.addEventListener('keydown', event => {
-  if (event.target.matches('input,select,textarea,button') || $('aboutDialog').open) return;
+  if (event.target.matches('input,select,textarea,button') || $('aboutDialog').open || $('shareDialog').open || $('analysisDialog').open) return;
   if (event.code === 'Space') { event.preventDefault(); toggleReplay(); }
   if (['ArrowLeft', 'ArrowRight'].includes(event.key) && state.frames.length) {
     event.preventDefault(); stopReplay(); state.followLive = false; state.selected = Math.max(1, Math.min(state.frames.length, state.selected + (event.key === 'ArrowRight' ? 1 : -1)));
@@ -254,7 +269,7 @@ document.addEventListener('keydown', event => {
   }
 });
 for (const id of ['showEllipses', 'showVehicles', 'showProxy', 'showTruth', 'showSpecular', 'showDiffuse', 'showObserved', 'heatField', 'scaleMode','historyMetric','aspectMode']) $(id).onchange = renderSelected;
-$('fitView').onclick = () => { for (const view of [map,densityMap,contrastMap]) view.fit(true); }; $('zoomIn').onclick = () => map.zoom(1.3); $('zoomOut').onclick = () => map.zoom(1 / 1.3);
+$('fitView').onclick = () => { for (const view of [map,baselineMap,densityMap,contrastMap]) view.fit(true); }; $('zoomIn').onclick = () => map.zoom(1.3); $('zoomOut').onclick = () => map.zoom(1 / 1.3);
 for (const [prefix,view] of [['density',densityMap],['contrast',contrastMap]]) {
   $(prefix+'ZoomIn').onclick = () => view.zoom(1.3);
   $(prefix+'ZoomOut').onclick = () => view.zoom(1 / 1.3);
@@ -264,11 +279,11 @@ $('configSelect').onchange = updateProfile;
 $('aboutButton').onclick = () => $('aboutDialog').showModal(); $('closeAbout').onclick = () => $('aboutDialog').close();
 $('themeButton').onclick = () => {
   const dark = document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.theme = dark ? 'light' : 'dark'; renderSelected(); renderSweep();
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark'; $('themeButton').setAttribute('aria-label',dark ? 'Switch to dark theme' : 'Switch to light theme'); renderSelected(); renderSweep();
 };
 for (const button of document.querySelectorAll('[data-tab]')) button.onclick = () => {
   for (const tab of document.querySelectorAll('[data-tab]')) {
-    const selected = tab === button; tab.setAttribute('aria-selected', selected); $(tab.dataset.tab).hidden = !selected;
+    const selected = tab === button; tab.setAttribute('aria-selected', selected); tab.tabIndex=selected ? 0 : -1; $(tab.dataset.tab).hidden = !selected;
   }
   renderSelected(); renderSweep();
 };
@@ -277,8 +292,8 @@ function renderSweep() {
   drawSweep($('sweepChart'), aggregates, state.sweepRuns[0]?.input.scene === 'reference' ? reference : []);
   const body = $('sweepTable').querySelector('tbody'); body.replaceChildren();
   const statistic = (metric, total, scale = 1, places = 3) => {
-    const counts = `유효 ${metric.n}/${total}, 실패 ${metric.failed}, 미관측 ${metric.missing}`;
-    return metric.failed ? `실패 포함 (${counts})` : `${fmt(metric.mean == null ? null : scale * metric.mean, places)} ± ${fmt(metric.sd == null ? null : scale * metric.sd, places)} (${counts})`;
+    const counts = `valid ${metric.n}/${total}, failed ${metric.failed}, missing ${metric.missing}`;
+    return metric.failed ? `Includes failures (${counts})` : `${fmt(metric.mean == null ? null : scale * metric.mean, places)} ± ${fmt(metric.sd == null ? null : scale * metric.sd, places)} (${counts})`;
   };
   for (const row of aggregates) {
     const tr = document.createElement('tr');
@@ -293,32 +308,40 @@ $('sweepButton').onclick = async () => {
   try {
     const base = settings(), values = Object.fromEntries(new FormData($('sweepSettings'))), jobs = sweepJobs({ ...base, snapshots: 60 }, parseValues(values.sweepNoise), parseValues(values.sweepRoughness), parseValues(values.sweepSeeds, true));
     state.sweepRuns = []; $('sweepButton').disabled = true; $('sweepCancel').disabled = false;
-    $('sweepStatus').textContent = `0 / ${jobs.length} · 완료된 seed만 기록합니다.`;
+    $('sweepStatus').textContent = `0 / ${jobs.length} · Only completed seeds are retained.`;
     handle = state.sweep = startSweep(jobs, ({ completed, total, results }) => {
       if (generation !== state.generation) return;
-      state.sweepRuns = results; $('sweepStatus').textContent = `${completed} / ${total} 완료 · 평균 ± 1 표준편차`; renderSweep();
+      state.sweepRuns = results; $('sweepStatus').textContent = `${completed} / ${total} complete · mean ± 1 sample SD`; renderSweep();
     });
     controls();
     const result = await handle.promise;
     if (generation !== state.generation) return;
     state.sweepRuns = result.results;
-    $('sweepStatus').textContent = `${result.cancelled ? '취소' : '완료'} · ${result.results.length} / ${jobs.length} · 원본 .m 대조 미완료`;
+    $('sweepStatus').textContent = `${result.cancelled ? 'Cancelled' : 'Complete'} · ${result.results.length} / ${jobs.length} · original .m comparison unavailable`;
     renderSweep();
-  } catch (error) { if (generation === state.generation) $('sweepStatus').textContent = `Sweep 중단: ${error.message}`; }
+  } catch (error) { if (generation === state.generation) $('sweepStatus').textContent = `Sweep stopped: ${error.message}`; }
   finally { if (state.sweep === handle) { state.sweep = null; controls(); } }
 };
 $('sweepCancel').onclick = () => state.sweep?.cancel();
 const jsonValue = (_key, value) => ArrayBuffer.isView(value) ? Array.from(value) : typeof value === 'number' && !Number.isFinite(value) ? null : value;
 $('exportJson').onclick = () => {
-  const data = { schema: 'echomap-drf/3', estimator: { method: 'guarded45', grid: [100,100], toleranceM: 0.4, scoreKind: 'uncalibrated composite weight' }, provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
+  const data = { schema: 'echomap-drf/4', estimators: METHOD_PROTOCOL, selectedMethod: state.method, toleranceM: 0.4, provenance, units: { position: 'm', range: 'm', poseCovariance: 'm²', roughnessInput: 'deg', truthAngles: 'rad', D: '1/m²', A: '1/m²', Dbar: '1/m²', betaHat: 'dimensionless', time: 'snapshot index; physical dt unspecified' },
     grid: state.grid ? { ...state.grid, arrayOrder: 'iy*nx+ix; ascending y; cell centers' } : null,
     input: state.scenario?.input ?? state.sweepRuns[0]?.input, measurement: state.scenario?.wire.slice(0, state.frames.length) ?? [], result: state.frames,
     evaluation: state.evaluations, truth: { role: 'evaluation only', wallModel: state.scenario?.wallModel, wallGeneration: state.scenario?.wallGeneration, walls: state.scenario?.walls ?? [], snapshots: state.scenario?.truth.slice(0, state.frames.length) ?? [] },
     sweep: { completeSeedResults: state.sweepRuns.map(({ final, ...run }) => run), aggregates: aggregateRuns(state.sweepRuns) } };
   download(new Blob([JSON.stringify(data, jsonValue)], { type: 'application/json' }), 'echomap-drf.json');
 };
-$('exportCsv').onclick = () => download(new Blob([psptSnapshotCsv(state.frames, state.evaluations)], { type: 'text/csv;charset=utf-8' }), 'echomap-drf-snapshots.csv');
-$('exportPng').onclick = async () => { try { const field=$('heatField').value;download(await png300dpi(await (field==='betaHat' ? contrastMap : densityMap).png()), `echomap-drf-${field}-300dpi.png`); } catch (error) { notice(`PNG 저장 중단: ${error.message}`); } };
+$('exportCsv').onclick = () => {
+  const rows=[];let header;
+  for (const method of ['guarded','baseline']) {
+    const frames=state.frames.map(f=>({...f,candidates:f.methods[method].candidates,psptMs:f.methods[method].ms}));
+    const lines=psptSnapshotCsv(frames,state.evaluations.map(e=>e.methods[method])).replace(/^\ufeff/,'').trim().split('\r\n');
+    header=lines[0].replace('pspt_ms','estimator_ms');rows.push(...lines.slice(1).map(line=>method+','+line));
+  }
+  download(new Blob(['\ufeffmethod,'+header+'\r\n'+rows.join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'}),'echomap-method-comparison.csv');
+};
+$('exportPng').onclick = async () => { try { const field=$('heatField').value;download(await png300dpi(await (field==='betaHat' ? contrastMap : densityMap).png()), `echomap-drf-${field}-300dpi.png`); } catch (error) { notice(`PNG export failed: ${error.message}`); } };
 const chartResize = new ResizeObserver(() => { renderSelected(); renderSweep(); });
 chartResize.observe($('analysis-panel') ?? $('sweepPanel'));
 chartResize.observe($('metricChart'));
@@ -326,17 +349,43 @@ window.addEventListener('resize', () => { renderSelected(); renderSweep(); });
 window.addEventListener('beforeunload', () => { for (const worker of state.workers) worker.stop(); state.sweep?.cancel(); });
 let initialInput = DEFAULT_INPUT;
 try {
-  const raw = location.hash.startsWith('#v1=') ? JSON.parse(decodeURIComponent(location.hash.slice(4))) : DEFAULT_INPUT;
-  initialInput = normalizeInput({ ...raw, scene: 'layered' });
-} catch (error) { notice(`URL 설정을 불러오지 못했습니다: ${error.message}`); }
-// Refresh draws once; edits and simulation runs retain the displayed seed for reproducibility.
-let seed = crypto.getRandomValues(new Uint32Array(1))[0];
-if (seed === initialInput.seed) seed = (seed + 1) >>> 0;
-initialInput = { ...initialInput, seed, snapshots: initialInput.snapshots === 80 ? DEFAULT_INPUT.snapshots : initialInput.snapshots };
+  const hasSharedInput=location.hash.startsWith('#v1='),raw=hasSharedInput ? JSON.parse(decodeURIComponent(location.hash.slice(4))) : DEFAULT_INPUT;
+  initialInput=normalizeInput({...raw,scene:'layered'});
+  // A shared seed is a reproducibility contract. Randomise only an unseeded visit.
+  if (!hasSharedInput) initialInput={...initialInput,seed:crypto.getRandomValues(new Uint32Array(1))[0]};
+} catch (error) { notice(`Could not restore URL settings: ${error.message}`); }
 fillSettings(initialInput);
 history.replaceState(null, '', `#v1=${encodeURIComponent(JSON.stringify(initialInput))}`);
+if (matchMedia('(max-width: 760px)').matches) $('settingsDetails').open=false;
 (globalThis.__drfOffline ? Promise.resolve(globalThis.__drfOffline.metadata) : Promise.all([fetch(new URL('./provenance.json', import.meta.url)).then(r => r.json()), fetch(new URL('./reference/octave/fixtures.json', import.meta.url)).then(r => r.json())]))
-  .then(([p, f]) => { provenance = p; reference = f.statistics; $('provenanceCommit').textContent = `기준 commit ${p.baseCommit.slice(0, 8)}`;
-    $('provenanceCore').textContent = `core ${p.coreHash.slice(0, 12)}`; renderSweep(); })
-  .catch(error => notice(`검증 정보를 불러오지 못했습니다: ${error.message}`));
+  .then(([p, f]) => { provenance = p; reference = f.statistics; $('provenanceCommit').textContent = `${p.baseCommit.slice(0, 8)}`;
+    $('provenanceCore').textContent = `${p.coreHash.slice(0, 12)}`; renderSweep(); })
+  .catch(error => notice(`Could not load validation metadata: ${error.message}`));
 controls(); renderSelected();
+
+// Switching the displayed method never recomputes or mutates either estimator.
+for (const button of document.querySelectorAll('[data-method]')) button.onclick=()=>{state.method=button.dataset.method;map.fit();baselineMap.fit();renderSelected();};
+$('newSeed').onclick=()=>{
+  const seedField=form.elements.namedItem('seed'),old=Number(seedField.value);
+  let seed=crypto.getRandomValues(new Uint32Array(1))[0];if(seed===old) seed=(seed+1)>>>0;
+  seedField.value=seed;form.dispatchEvent(new Event('change'));
+};
+$('shareButton').onclick=async()=>{
+  try {
+    const input=state.scenario?.input ?? settings();location.hash=`v1=${encodeURIComponent(JSON.stringify(input))}`;
+    $('shareLink').value=location.href;$('shareDialog').showModal();
+    if(location.protocol==='file:') {$('shareStatus').textContent='This is a local file URL. Share the hosted page or downloaded JSON with collaborators.';return;}
+    try {await navigator.clipboard.writeText(location.href);$('shareStatus').textContent='Link copied. The seed and parameters are preserved.';}
+    catch {$('shareStatus').textContent='Select and copy the link above.';}
+  } catch(error) {notice(error.message);}
+};
+$('closeShare').onclick=()=>$('shareDialog').close();
+for(const tab of document.querySelectorAll('[data-tab]')) tab.addEventListener('keydown',event=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();const tabs=[...document.querySelectorAll('[data-tab]')],i=tabs.indexOf(tab);
+  const j=event.key==='Home'?0:event.key==='End'?tabs.length-1:(i+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  tabs[j].click();tabs[j].focus();
+});
+
+$('analysisButton').onclick=()=>{$('analysisDialog').showModal();renderSelected();renderSweep();};
+$('closeAnalysis').onclick=()=>$('analysisDialog').close();

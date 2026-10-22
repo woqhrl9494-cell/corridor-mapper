@@ -6,7 +6,7 @@
     "drf/field.mjs": "53ff0bcf4254a5f69014272473dcd8932865afa02af38c885fda443e008ec311",
     "drf/wire.mjs": "9b6636fc6c9f14577d43eaab2c98af610c8d80650389cd4a75310e0a12f73e72"
   },
-  "status": "guarded PSPT online candidates; fixed-domain measured-only estimation, Python checkpoint parity and boundary checks; synthetic research validation only",
+  "status": "Guarded PSPT and fixed-fragment B; causal measurement-only inputs; independent Python checkpoint parity; synthetic numerical validation only",
   "referenceStatus": "Provided text fixtures only; original MATLAB/Octave files unavailable",
   "numericalConventions": [
     "numerical K may underflow to zero",
@@ -54,5 +54,15 @@
     "minimumEvidenceSnapshots": 2,
     "referenceGuardSha256": "5e30bb7c381232016c316f72f77636f86052970e54dc6628ea45c99f2b6b6bec",
     "validation": "PSPT_VALIDATION.md"
+  },
+  "comparison": {
+    "release": "2026-10-22",
+    "guardedLogThreshold": 6.4615384615384635,
+    "baselineLogThreshold": 12,
+    "thresholdStatus": "Fixed development operating points; neither method has LTT-certified error control",
+    "baselineReference": "2026-10-20 Python baseline.py; source hashes and checkpoints in tests/drf/baseline-reference.json",
+    "baselineNoise": "Uses declared uniform range SD; previous experimental configuration was 0.1 m",
+    "testCommand": "PSPT_FULL_PARITY=1 npm test",
+    "evaluation": "Post-hoc 0.4 m centre/patch metrics; different from grouped whole-fragment FP loss in the prior tuning study"
   }
 }

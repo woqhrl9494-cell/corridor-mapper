@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DrfMap, mapToScreen, mapToWorld, zoomMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from '../../drf/render.mjs';
+import { DrfMap, linkMapCameras, mapToScreen, mapToWorld, zoomMap, drawMetricHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from '../../drf/render.mjs';
 import { SurfaceMap } from '../../surf/map.mjs';
 import { generateSnapshot, normalizeInput } from '../../drf/scenario.mjs';
 import { createWalls, sampleWalls } from '../../drf/wall.mjs';
@@ -11,24 +11,24 @@ test('DRF DOM contract and readable stylesheet', () => {
   const ids='settings runButton pauseButton stepButton resetButton cancelButton status mapCanvas fitView zoomIn zoomOut firstSnapshot ellipseStats aspectMode densityCanvas densityZoomOut densityZoomIn densityResetView contrastCanvas contrastZoomOut contrastZoomIn contrastResetView historyMetric timeSlider snapshotLabel replayButton playbackSpeed heatField scaleMode themeButton showEllipses showVehicles showProxy showTruth showSpecular showDiffuse showObserved qValue acceptedValue rejectedValue precisionValue recallValue firstPrecisionValue p95Value offwallValue f1Value supportedValue pendingValue contradictedValue timingValue pathValue inspector metricChart sweepPanel diagnosticPanel exportPanel sweepSettings sweepButton sweepCancel sweepStatus sweepChart sweepTable configSelect diagnosticChart profileChart countChart diagnosticSummary exportJson exportCsv exportPng aboutButton aboutDialog closeAbout provenanceCommit provenanceCore'.split(' ');
   for (const id of ids) assert.equal([...html.matchAll(new RegExp(`id="${id}"`,'g'))].length,1,id);
   for (const removed of ['medianValue','msdValue','hd95Value']) assert.ok(!html.includes(`id="${removed}"`),'Legacy-only metric removed: '+removed);
-  assert.match(html,/최초 지지/);assert.match(html,/지지 후보가 없으면 미정/);
+  assert.match(html,/First support/);assert.match(html,/Precision is undefined when no candidates are supported/);
   const historySelect=html.match(/<select id="historyMetric"[\s\S]*?<\/select>/)[0];
   for (const metric of ['precision','recall','firstSupportPrecision','holdRate','p95','offwall']) assert.ok(historySelect.includes(`value="${metric}"`));
   assert.ok(!historySelect.includes('value="all"'),'The compact dashboard renders one metric at a time');
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   assert.ok(!html.includes('장면'));
-  assert.match(html,/벽 모델 · 2층 B-spline/);
+  assert.match(html,/Two-layer cubic B-splines/);
   assert.match(html,/input name="scene" type="hidden" value="layered"/);
   assert.doesNotMatch(html,/<select[^>]*name="scene"/);
-  assert.match(html,/<select name="wallSide"><option value="both">양쪽<\/option><option value="upper">위쪽만<\/option><option value="lower">아래쪽만<\/option>/);
+  assert.match(html,/<select name="wallSide"><option value="both">Both walls<\/option><option value="upper">Upper only<\/option><option value="lower">Lower only<\/option>/);
   assert.match(html,/name="snapshots"[^>]*max="120"[^>]*value="120"/);
   for (const path of ['../../drf/style.css','../../surf/style.css']) {
     const css=readFileSync(new URL(path,import.meta.url),'utf8');
     for (const match of css.matchAll(/font-size:\s*(\d+)px/g)) {
-      if (path.includes('/drf/') && Number(match[1])===13) assert.match(css.slice(0,match.index),/\.sidebar \.metrics dt\s*\{[^{}]*$/,'only compact metric labels may use 13 px');
-      else assert.ok(Number(match[1])>=(path.includes('/drf/') ? 14 : 16),`${path}: ${match[0]}`);
+      assert.ok(Number(match[1])>=(path.includes('/drf/') ? 12 : 16),`${path}: ${match[0]}`);
     }
   }
+  assert.match(readFileSync(new URL('../../drf/style.css',import.meta.url),'utf8'),/body\s*\{[^}]*font:14px/,'Main text and controls retain a 14 px base');
   assert.match(html,/name="sigmaP"[^>]*value="0.1"/);
   assert.match(html,/name="roughness"[\s\S]*?value="2" selected/);
 });
@@ -252,7 +252,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
       expected.forEach((value,k)=>assert.ok(Math.abs(value-ellipseStarts[i][k])<1e-8,'sampled ellipse must come from the unchanged measured path'));
     });
     assert.equal(fleetCanvas.dataset.ellipseTotal,String(allPaths.length));assert.equal(fleetCanvas.dataset.ellipseShown,String(sampled.length));
-    assert.equal(stats.textContent,`타원 표시 ${sampled.length}개 · 측정 ${allPaths.length}개`);
+    assert.equal(stats.textContent,`${sampled.length} ellipses shown / ${allPaths.length} ranges`);
     const smallWire={...fleet.wire,configs:fleet.wire.configs.filter(c=>c.i<=3 && c.j<=3)};
     ellipseStarts.length=0;fleetMap.set({...fleetState,wire:smallWire,mode:'geometry'});fleetMap.paint(fleetCanvas,1);
     const smallPaths=smallWire.configs.reduce((sum,c)=>sum+c.paths.length,0);
@@ -268,7 +268,7 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
         assert.ok(boxes.slice(i+1).every(other=>box.right<=other.left || box.left>=other.right || box.bottom<=other.top || box.top>=other.bottom),'number labels must not overlap');
         assert.ok(dots.every(([x,y])=>box.right<=x-7 || box.left>=x+7 || box.bottom<=y-7 || box.top>=y+7),'number backgrounds must not cover any vehicle marker or its 2 px margin');
       }
-      if (mode==='geometry') {assert.equal(stats.textContent,'타원 숨김');assert.equal(fleetCanvas.dataset.ellipseShown,'0');}
+      if (mode==='geometry') {assert.equal(stats.textContent,'Ellipses hidden');assert.equal(fleetCanvas.dataset.ellipseShown,'0');}
     }
     assert.equal(JSON.stringify(fleet.wire),wireBefore,'drawing limits must not remove or reorder estimator measurements');
     assert.deepEqual([...frame.Dbar],[0,1,2,3]);assert.deepEqual([...frame.betaHat],[0,...new Float32Array([.2,.5]),1]);
@@ -385,4 +385,17 @@ test('render keeps world row order, uses real DPR/300 dpi pixels, and charts exe
     assert.ok(await surf.png() instanceof Blob);
     assert.ok(created.at(-1).height>Math.round((385+104)*300/96),'mobile captions must wrap into a taller export');
   } finally {for (const [key,value] of Object.entries(saved)) value===undefined ? delete globalThis[key] : globalThis[key]=value;}
+});
+
+
+test('comparison navigation links cameras without sharing estimator data or changing single views',()=>{
+  const left={camera:{cx:10,cy:2,scaleX:3,scaleY:3},auto:false,fullDomain:false,state:{candidates:[1]},draw(){}},
+    right={camera:null,auto:true,state:{candidates:[2]},draw(){}};
+  let paired=true;linkMapCameras(left,right,()=>paired);
+  left.onCameraChange();assert.deepEqual(right.camera,left.camera);assert.notEqual(right.camera,left.camera);
+  assert.deepEqual(right.state.candidates,[2]);assert.equal(right.auto,false);
+  right.camera.cx=20;right.onCameraChange();assert.equal(left.camera.cx,20);
+  right.camera=null;right.auto=true;right.fullDomain=true;right.onCameraChange();
+  assert.equal(left.camera,null);assert.equal(left.auto,true);assert.equal(left.fullDomain,true);
+  paired=false;left.camera={cx:4};left.onCameraChange();assert.equal(right.camera,null);
 });

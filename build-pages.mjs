@@ -5,7 +5,7 @@ const root = new URL('./', import.meta.url), output = new URL('_site/', root);
 const files = [
   'drf.html', 'wall_metrics.js', 'surf/map.mjs', 'surf/exports.mjs',
   ...[
-    'app.mjs', 'diffuse.mjs', 'eval.worker.mjs', 'evaluate.mjs', 'field.mjs',
+    'app.mjs', 'baseline.mjs', 'comparison.mjs', 'compare.worker.mjs', 'diffuse.mjs', 'eval.worker.mjs', 'evaluate.mjs', 'field.mjs',
     'field.worker.mjs', 'pspt.worker.mjs', 'pspt.mjs', 'pspt-math.mjs', 'pspt-ridges.mjs', 'pspt-evaluate.mjs', 'offline.bundle.js', 'poly.mjs', 'provenance.json',
     'reference/octave/fixtures.json', 'render.mjs', 'rng.mjs', 'scenario.mjs',
     'scenario.worker.mjs', 'specular.mjs', 'style.css', 'sweep.mjs',

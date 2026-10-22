@@ -11,25 +11,24 @@ const section=(start,end)=>{
   return source.slice(a,b);
 };
 
-test('actual page bootstrap refreshes the seed once, keeps other settings and updates the URL',()=>{
-  const initial={...DEFAULT_INPUT,scene:'reference',seed:0xffffffff,vehicles:7,snapshots:80};
+test('shared URLs preserve the exact seed and snapshot count across reloads; only unseeded visits randomise',()=>{
+  const initial={...DEFAULT_INPUT,scene:'layered',seed:0xffffffff,vehicles:7,snapshots:80};
   for (const hash of ['',`#v1=${encodeURIComponent(JSON.stringify(initial))}`,'#v1=invalid']) {
     const location={hash},filled=[],notices=[];let calls=0;
-    const context=vm.createContext({location,DEFAULT_INPUT,normalizeInput,
-      crypto:{getRandomValues:array=>{calls++;array[0]=hash.includes('invalid') || !hash ? 1 : 0xffffffff;return array;}},
+    const context=vm.createContext({location,DEFAULT_INPUT,normalizeInput,matchMedia:()=>({matches:false}),
+      crypto:{getRandomValues:array=>{calls++;array[0]=1234567;return array;}},
       fillSettings:input=>filled.push({...input}),notice:text=>notices.push(text),
       history:{replaceState:(_,__,url)=>{location.hash=url;}}});
     vm.runInContext(section('let initialInput = DEFAULT_INPUT;','(globalThis.__drfOffline ?'),context);
     const value=filled.at(-1),restored=JSON.parse(decodeURIComponent(location.hash.slice(4)));
-    assert.deepEqual(restored,value,'The displayed seed and shareable settings must match');
-    assert.equal(calls,1,'Only page bootstrap generates a new seed');
-    assert.equal(value.seed,hash && !hash.includes('invalid') ? 0 : 2,'Even a uint32 collision must produce a different seed');
-    assert.equal(value.scene,'layered');assert.equal(value.snapshots,120,'Migrate the old 80-snapshot default');
+    assert.deepEqual(restored,value);
+    assert.equal(calls,hash ? 0 : 1);
+    assert.equal(value.seed,hash.includes('invalid') ? DEFAULT_INPUT.seed : hash ? initial.seed : 1234567);
+    assert.equal(value.snapshots,hash && !hash.includes('invalid') ? 80 : DEFAULT_INPUT.snapshots);
     assert.equal(value.vehicles,hash && !hash.includes('invalid') ? 7 : DEFAULT_INPUT.vehicles);
     assert.equal(notices.length,hash.includes('invalid') ? 1 : 0);
-    const next=vm.createContext({...context,location,crypto:{getRandomValues:array=>{array[0]=value.seed;return array;}}});
-    vm.runInContext(section('let initialInput = DEFAULT_INPUT;','(globalThis.__drfOffline ?'),next);
-    assert.equal(filled.at(-1).seed,(value.seed+1)>>>0,'Refreshing the resulting URL must change the seed again');
+    vm.runInNewContext(section('let initialInput = DEFAULT_INPUT;','(globalThis.__drfOffline ?'),{...context,location});
+    assert.deepEqual(filled.at(-1),value,'Reloading the resulting URL preserves all settings');
   }
 });
 
@@ -75,7 +74,7 @@ test('actual preview geometry stays cached when the truth overlay is hidden',()=
   const truth={checked:true},input={scene:'layered',seed:1,sigmaM:6,deltaM:20,sigmaDGeometry:.33,deltaD:4};
   const walls=[[[0,6],[60,7]],[[0,24],[60,23]]],domain=[0,60,-20,50];
   let generated=0;
-  const context=vm.createContext({$:()=>truth,form:{},
+  const context=vm.createContext({state:{},$:()=>truth,form:{},
     FormData:class { *[Symbol.iterator]() { yield* Object.entries(input); } },
     previewKey:'',preview:[],previewBounds:undefined,normalizeInput:value=>value,notice:message=>assert.fail(message),
     createSceneGeometry:()=>{generated++;return {walls,domain};}});
@@ -92,7 +91,7 @@ test('actual view reset preserves simulation, selection and replay; experiment r
   const nodes=new Map(),pending=new Map(),charts=new Map();let nextFrame=0,stoppedWorkers=0,cancelledSweeps=0,fitCalls=0,releaseField;
   const $=id=>{
     if (!nodes.has(id)) nodes.set(id,{id,value:'',textContent:'old snapshot value',checked:false,options:[],
-      removeAttribute(){},replaceChildren(...options){this.options=options;}});
+      dataset:{},removeAttribute(){},replaceChildren(...options){this.options=options;}});
     return nodes.get(id);
   };
   const snapshots={value:'3'},elements=[snapshots];elements.namedItem=name=>name==='snapshots' ? snapshots : name==='wallSide' ? {value:'both'} : null;
@@ -103,10 +102,10 @@ test('actual view reset preserves simulation, selection and replay; experiment r
     workers:[{stop(){stoppedWorkers++;}}],sweep:{cancel(){cancelledSweeps++;}},sweepRuns:[{}]};
   const context=vm.createContext({state,$,form,hoverGeneration:0,hoverTimer:0,replayFrame:0,
     fieldWorker:{},evalWorker:{},hoverWorker:{},psptWorker:{},DEFAULT_INPUT:{snapshots:60},LAYERED_DOMAIN,location:{hash:'#old'},
-    document:{body:{dataset:{}},createElement:()=>({})},map:{set(){},fit(){fitCalls++;}},densityMap:{set(){},fit(){fitCalls++;}},contrastMap:{set(){},fit(){fitCalls++;}},previewWalls:()=>[],previewBounds:undefined,
+    document:{body:{dataset:{}},createElement:()=>({}),querySelectorAll:()=>[]},map:{set(){},fit(){fitCalls++;}},baselineMap:{set(){},fit(){fitCalls++;}},densityMap:{set(){},fit(){fitCalls++;}},contrastMap:{set(){},fit(){fitCalls++;}},previewWalls:()=>[],previewBounds:undefined,
     fmt:v=>Number.isFinite(v) ? String(v) : '—',percentile:values=>values[0]??null,
     requestAnimationFrame:fn=>{const id=++nextFrame;pending.set(id,fn);return id;},cancelAnimationFrame:id=>pending.delete(id),clearTimeout(){},
-    drawMetricHistory:(canvas,data)=>charts.set(canvas.id,data),drawHistogram:(canvas,data)=>charts.set(canvas.id,data),
+    drawComparisonHistory:(canvas,data)=>charts.set(canvas.id,data),drawHistogram:(canvas,data)=>charts.set(canvas.id,data),
     drawProfile:(canvas,data)=>charts.set(canvas.id,data),drawCounts:(canvas,a,b)=>charts.set(canvas.id,[a,b]),
     fillSettings:input=>{snapshots.value=String(input.snapshots);},renderSweep(){},notice:text=>{$('status').textContent=text;},
   });
@@ -122,7 +121,7 @@ test('actual view reset preserves simulation, selection and replay; experiment r
     const before={...state},beforeFit=fitCalls,queued=[...pending.keys()],replayFrame=context.replayFrame;
     const ui=[$('timeSlider').value,$('timeSlider').max,$('snapshotLabel').textContent,$('status').textContent,$('inspector').textContent,snapshots.value,context.location.hash];
     $('firstSnapshot').onclick();
-    assert.equal(fitCalls-beforeFit,3,'Restore all three map cameras');
+    assert.equal(fitCalls-beforeFit,4,'Restore all four map cameras');
     assert.deepEqual(state,before,'Keep every simulation/selection/replay field unchanged');
     for (const key of ['frames','evaluations','scenario','grid','workers','sweep','sweepRuns']) assert.equal(state[key],before[key],`Preserve ${key} identity`);
     assert.deepEqual([...pending.keys()],queued,'Keep the queued replay/advance callbacks');
@@ -160,13 +159,13 @@ test('actual view reset preserves simulation, selection and replay; experiment r
   state.scenario.wire=Array.from({length:5},()=>({}));
   context.fieldWorker={request:()=>new Promise(resolve=>{releaseField=resolve;})};context.evalWorker={request:async()=>({evaluation:{}})};
   const predictedCandidates=[{id:'1:h',center:[10,20],status:'pending'}];
-  context.psptWorker={request:async message=>{assert.deepEqual(Object.keys(message).sort(),['snapshot','type']);assert.equal(message.snapshot,state.scenario.wire[state.next]);return {candidates:predictedCandidates,psptMs:2};}};
+  context.psptWorker={request:async message=>{assert.deepEqual(Object.keys(message).sort(),['snapshot','type']);assert.equal(message.snapshot,state.scenario.wire[state.next]);return {methods:{guarded:{candidates:predictedCandidates,ms:2},baseline:{candidates:[],ms:1}}};}};
   const inFlight=context.advance();assert.equal(state.busy,true);
   const beforeFit=fitCalls;assertViewOnly();assert.equal(state.selected,3);assert.equal(state.mode,'running');assert.equal(state.followLive,true);
-  assert.equal(state.frames.length,3,'View reset must preserve completed records');assert.equal(fitCalls-beforeFit,3);assert.equal(pending.size,0);
+  assert.equal(state.frames.length,3,'View reset must preserve completed records');assert.equal(fitCalls-beforeFit,4);assert.equal(pending.size,0);
   releaseField({type:'frame',requestId:1,t:4,Q:4,admitted:4,rejected:0,ms:1});await inFlight;
   assert.equal(state.frames.length,4,'An in-flight completed result must be retained');
-  assert.equal(state.frames.at(-1).candidates,predictedCandidates);assert.equal(state.frames.at(-1).psptMs,2);assert.equal(state.frames.at(-1).method,'guarded45');assert.equal(state.selected,4,'Live following must continue after a view reset');
+  assert.equal(state.frames.at(-1).candidates,predictedCandidates);assert.equal(state.frames.at(-1).psptMs,2);assert.equal(state.frames.at(-1).method,'guarded-dev');assert.equal(state.selected,4,'Live following must continue after a view reset');
   assert.equal(state.mode,'running');assert.equal(state.followLive,true);assert.equal(pending.size,1,'Keep advancing after the current frame');
   state.workers=[{stop(){stoppedWorkers++;}}];
   $('inspector').textContent='old D/A/Q';$('diagnosticSummary').textContent='old Theorem 2';
@@ -174,11 +173,11 @@ test('actual view reset preserves simulation, selection and replay; experiment r
   for (const [id,callback] of [...pending]) {pending.delete(id);callback(400);}
   assert.equal(pending.size,0);assert.equal(stoppedWorkers,1);assert.equal(cancelledSweeps,1);
   assert.equal(state.frames.length,0);assert.equal(state.evaluations.length,0);assert.equal(state.scenario,null);assert.equal(state.valid,false);
-  assert.equal(Number($('timeSlider').max),0);assert.equal(Number($('timeSlider').value),0);assert.equal($('timeSlider').disabled,true);
+  assert.equal(Number($('timeSlider').max),1);assert.equal(Number($('timeSlider').value),0);assert.equal($('timeSlider').disabled,true);
   assert.equal($('snapshotLabel').textContent,'0 / 60');
-  assert.equal($('sweepStatus').textContent,'실행 결과가 없습니다.');
-  assert.equal($('diagnosticSummary').textContent,'실행 결과가 없습니다.');
-  assert.match($('inspector').textContent,/포인터/);assert.ok(!$('inspector').textContent.includes('old D/A/Q'));
+  assert.equal($('sweepStatus').textContent,'No results yet.');
+  assert.equal($('diagnosticSummary').textContent,'No results yet.');
+  assert.match($('inspector').textContent,/Hover/);assert.ok(!$('inspector').textContent.includes('old D/A/Q'));
   assert.equal(charts.get('diagnosticChart').length,0);assert.equal(charts.get('profileChart').length,0);
   assert.equal(charts.get('countChart')[0].length,0);assert.equal(charts.get('countChart')[1].length,0);
   assert.equal(context.fieldWorker,null);assert.equal(context.evalWorker,null);assert.equal(context.hoverWorker,null);assert.equal(context.psptWorker,null);
@@ -192,7 +191,7 @@ test('cancellation ignores late PSPT or evaluator responses without retaining a 
     const pause=()=>new Promise(resolve=>{release=resolve;waiting=true;});
     const context=vm.createContext({state,controls(){},renderSelected(){},notice(){},$:()=>({}),
       fieldWorker:{request:async message=>{assert.equal(message.snapshot,wire);return {type:'frame',requestId:1,t:1,Dbar:[],betaHat:[]};}},
-      psptWorker:{request:async message=>{assert.deepEqual(Object.keys(message).sort(),['snapshot','type']);return delayed==='pspt' ? pause() : {candidates:[],psptMs:1};}},
+      psptWorker:{request:async message=>{assert.deepEqual(Object.keys(message).sort(),['snapshot','type']);return delayed==='pspt' ? pause() : {methods:{guarded:{candidates:[],ms:1},baseline:{candidates:[],ms:1}}};}},
       evalWorker:{request:async()=>{evaluationCalls++;return pause();}},
       requestAnimationFrame:()=>{scheduled++;},fail:error=>{throw error;},
     });

@@ -117,7 +117,7 @@ export class DrfMap {
       if (this.pointer) {
         this.camera.cx -= (e.clientX-this.pointer[0])/this.camera.scaleX;
         this.camera.cy += (e.clientY-this.pointer[1])/this.camera.scaleY;
-        this.pointer = [e.clientX,e.clientY]; this.auto = false; this.draw();
+        this.pointer = [e.clientX,e.clientY]; this.auto = false; this.draw(); this.onCameraChange?.();
       }
       const [x,y] = mapToWorld([e.offsetX,e.offsetY],this.camera,this.box), g=this.state.grid;
       if (!g) return;
@@ -152,13 +152,13 @@ export class DrfMap {
     }
     ctx.putImageData(data,0,0);
   }
-  fit(fullDomain=false) { this.fullDomain=fullDomain;this.auto=true;this.camera=null;this.draw(); }
+  fit(fullDomain=false) { this.fullDomain=fullDomain;this.auto=true;this.camera=null;this.draw();this.onCameraChange?.(); }
   zoom(factor,anchor) {
     if (!this.camera || !this.box || !this.defaultScale) return;
     factor=Math.max(factor,this.defaultScale.scaleX/this.camera.scaleX,this.defaultScale.scaleY/this.camera.scaleY);
     if (factor===1) return;
     this.camera=zoomMap(this.camera,factor,anchor ?? [this.box.x+this.box.w/2,this.box.y+this.box.h/2],this.box);
-    this.auto=false; this.draw();
+    this.auto=false; this.draw();this.onCameraChange?.();
   }
   draw() {
     if (this.pending) return;
@@ -247,7 +247,7 @@ export class DrfMap {
     if (target===this.canvas && geometry) {
       this.canvas.dataset.ellipseTotal=String(ellipseTotal);this.canvas.dataset.ellipseShown=String(ellipseShown);
       const stats=panel?.querySelector?.('#ellipseStats');
-      if (stats) stats.textContent=layers.showEllipses ? `타원 표시 ${ellipseShown}개 · 측정 ${ellipseTotal}개` : '타원 숨김';
+      if (stats) stats.textContent=layers.showEllipses ? `${ellipseShown} ellipses shown / ${ellipseTotal} ranges` : 'Ellipses hidden';
     }
     if (layers.showTruth) for (const wall of walls) path(wall,truthColor,geometry ? 1.75 : 2,[7,5]);
     if (layers.showObserved) for (const p of observed) square(p,9,evalColor);
@@ -320,7 +320,7 @@ export class DrfMap {
     ctx.save();ctx.translate(17,box.y+box.h/2);ctx.rotate(-Math.PI/2);drawRich(ctx,"$y$ [m]",0,0,{align:"center",color:muted});ctx.restore();
     ctx.font=uiFont(14);ctx.fillStyle=muted;
     if (geometry) {
-      if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "벽 모델 미리보기 · 평가 전용" : "실행하면 현재 측정과 차량 궤적을 표시합니다.",box.x+box.w/2,box.y+box.h/2); }
+      if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText(layers.showTruth ? "Wall preview · evaluation only" : "Run to show measured ranges and trajectories.",box.x+box.w/2,box.y+box.h/2); }
       return;
     }
     // Colour bar spans the plot height minus its two end labels.
@@ -328,7 +328,7 @@ export class DrfMap {
     palette.forEach((value,i) => gradient.addColorStop(i/(palette.length-1),rgb(value)));
     ctx.fillStyle=gradient;ctx.fillRect(barX,barY,12,barH);ctx.strokeStyle=line;ctx.strokeRect(barX,barY,12,barH);ctx.fillStyle=muted;ctx.textAlign="center";
     ctx.fillText(numberLabel(this.maxValue),barX+6,barY-7);ctx.fillText("0",barX+6,barY+barH+17);
-    if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText("아직 누적 필드가 없습니다.",box.x+box.w/2,box.y+box.h/2); }
+    if (!this.state.frame) { ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText("No accumulated field yet.",box.x+box.w/2,box.y+box.h/2); }
   }
   async png() {
     const plot=document.createElement("canvas"),out=document.createElement("canvas"),ratio=300/96;
@@ -340,7 +340,7 @@ export class DrfMap {
     ctx.font='14px -apple-system, Arial';ctx.fillText(`snapshot ${this.state.frame?.t ?? 0} · ${this.state.scaleMode==='log' ? 'log(1 + value)' : 'linear'} color scale`,12,38);
     ctx.fillText('Dashed wall: evaluation only',12,58);
     ctx.fillText(this.state.aspectMode==='equal' ? 'Axes: equal metres' : 'Axes: independent x/y scale',12,78);
-    return new Promise((resolve,reject) => out.toBlob((blob) => blob ? resolve(blob) : reject(Error("PNG 렌더에 실패했습니다.")),"image/png"));
+    return new Promise((resolve,reject) => out.toBlob((blob) => blob ? resolve(blob) : reject(Error("PNG rendering failed.")),"image/png"));
   }
 }
 
@@ -409,7 +409,7 @@ function extent(points,includeZero=true) {
 }
 export function drawMetricHistory(canvas,evaluations,selection='all',snapshots=evaluations.at(-1)?.t ?? 60) {
   const surface=chartSurface(canvas);if (!surface) return;
-  const metrics=[["precision","지지 정확도 [%]","%"],["recall","관측 벽 복원 [%]","%"],["firstSupportPrecision","최초 지지 [%]","%"],["holdRate","보류율 [%]","%"],["offset","Signed offset [m]","m"],["p95","P95 |오차| [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
+  const metrics=[["precision","Centre precision [%]","%"],["recall","Observed recall [%]","%"],["firstSupportPrecision","First-support precision [%]","%"],["holdRate","Held / unselected [%]","%"],["offset","Signed offset [m]","m"],["p95","P95 distance [m]","m"],["offwall","off-wall [%]","%"]].filter(([key])=>selection==='all' || key===selection);
   metrics.forEach(([key,title,unit],k) => {
     const points=evaluations.map(e => ({x:e.t,y:e[key]==null ? NaN : e[key]*(unit==="%" ? 100 : 1)})),[ymin,ymax]=unit==="%" ? [0,100] : extent(points);
     // A single selected metric is already named by the card's selector.
@@ -422,7 +422,7 @@ export function drawSweep(canvas,aggregates,reference=[]) {
   const colors=["#0072b2","#d55e00","#009e73","#cc79a7"],roughness=[...new Set(aggregates.map(a => a.roughness))].sort((a,b) => a-b);
   const all=aggregates.map(a => ({x:a.sigmaD,y:a.medianError.mean,sd:a.medianError.sd})),[ymin,ymax]=extent([...all,...reference.map(a=>({y:a.medianError}))]);
   const xmin=Math.min(.05,...aggregates.map(a=>a.sigmaD)),xmax=Math.max(.3,...aggregates.map(a=>a.sigmaD));
-  const axes=chartAxes(surface,{title:aggregates.some(a => a.medianError.failed) ? `실패 ${aggregates.filter(a => a.medianError.failed).length}조건 · 표 참조` : "중앙 |오차| · 평균 ± 1 sd",xLabel:"$σ_d$ [m]",yLabel:"m",xmin,xmax,ymin,ymax,top:36,height:surface.height-36});
+  const axes=chartAxes(surface,{title:aggregates.some(a => a.medianError.failed) ? `${aggregates.filter(a => a.medianError.failed).length} failed conditions · see table` : "Median distance · mean ± 1 SD",xLabel:"$σ_d$ [m]",yLabel:"m",xmin,xmax,ymin,ymax,top:36,height:surface.height-36});
   const {ctx}=surface;let legendX=14;
   roughness.forEach((r,k) => {
     const color=colors[k%colors.length],points=aggregates.filter(a=>a.roughness===r).sort((a,b)=>a.sigmaD-b.sigmaD).map(a=>({x:a.sigmaD,y:a.medianError.mean,sd:a.medianError.sd}));
@@ -440,23 +440,46 @@ export function drawHistogram(canvas,ratios) {
   const density=counts.map((n,k) => ({x:xmin+(k+.5)*step,y:finite.length ? n/(finite.length*step) : 0}));
   const theoretical=Array.from({length:160},(_,k) => {const x=Math.max(.02,xmin+(xmax-xmin)*(k+.5)/160);return{x,y:Math.exp(-x/2)/Math.sqrt(2*Math.PI*x)};});
   const [,ymax]=extent([...density,...theoretical]);
-  const axes=chartAxes(surface,{title:"비율 밀도 · 점선 $χ^2_1$",xLabel:"$z = (ρ − ρ^*) / ς$",yLabel:"density",xmin,xmax,ymin:0,ymax});
+  const axes=chartAxes(surface,{title:"Ratio density · dashed $χ^2_1$",xLabel:"$z = (ρ − ρ^*) / ς$",yLabel:"density",xmin,xmax,ymin:0,ymax});
   const {ctx}=surface;ctx.save();ctx.beginPath();ctx.rect(axes.box.x,axes.box.y,axes.box.w,axes.box.h);ctx.clip();ctx.fillStyle=surface.color("eval");
   for (const p of density) ctx.fillRect(axes.x(p.x-step*.45),axes.y(p.y),(axes.x(xmin+step)-axes.x(xmin))*.9,axes.y(0)-axes.y(p.y));
   ctx.restore();chartLine(surface,axes,theoretical,surface.color("ink"),[6,5]);
 }
 export function drawProfile(canvas,cells,xRange=[0,60]) {
   const surface=chartSurface(canvas);if (!surface) return;
-  const fields=[["delta","$δ$ [deg]","deg",180/Math.PI],["w","$w(s)$ · 무차원","w",1],["lambda","$Λ(s)$ · 셀 기대 개수","count",1]];
+  const fields=[["delta","$δ$ [deg]","deg",180/Math.PI],["w","$w(s)$ · dimensionless","w",1],["lambda","$Λ(s)$ · expected count / cell","count",1]];
   fields.forEach(([key,title,unit,multiplier],k) => {
-    const all=cells.map(c=>({x:c.s[0],y:c[key]*multiplier})),[ymin,ymax]=extent(all),axes=chartAxes(surface,{title,xLabel:"$x$ [m] · 아래 실선 / 위 점선",yLabel:unit,xmin:xRange[0],xmax:xRange[1],ymin,ymax,top:k*surface.height/3,height:surface.height/3,metreX:true});
+    const all=cells.map(c=>({x:c.s[0],y:c[key]*multiplier})),[ymin,ymax]=extent(all),axes=chartAxes(surface,{title,xLabel:"$x$ [m] · lower solid / upper dashed",yLabel:unit,xmin:xRange[0],xmax:xRange[1],ymin,ymax,top:k*surface.height/3,height:surface.height/3,metreX:true});
     for (const wall of [0,1]) chartLine(surface,axes,cells.filter(c=>c.wall===wall).map(c=>({x:c.s[0],y:c[key]*multiplier})),surface.color("eval"),wall ? [6,4] : []);
   });
 }
 export function drawCounts(canvas,counts,predicted) {
   const surface=chartSurface(canvas);if (!surface) return;
   const points=counts.map((n,k)=>({x:predicted[k],y:n})).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)),maximum=Math.max(1,...points.flatMap(p=>[p.x,p.y]))*1.1;
-  const axes=chartAxes(surface,{title:"diffuse 개수 · 점선 $y = x$",xLabel:"국소 근사 예측 개수",yLabel:"실제 개수",xmin:0,xmax:maximum,ymin:0,ymax:maximum});
+  const axes=chartAxes(surface,{title:"Diffuse count · dashed $y = x$",xLabel:"Locally predicted count",yLabel:"Actual count",xmin:0,xmax:maximum,ymin:0,ymax:maximum});
   chartLine(surface,axes,[{x:0,y:0},{x:maximum,y:maximum}],surface.color("ink"),[5,5]);
   chartLine(surface,axes,points,surface.color("eval"),[],false,true);
+}
+
+/** Shared-axis comparison; one solid and one dashed curve distinguish methods.
+ * Missing precision stays a gap. No smoothing, interpolation of missing data or CI.
+ */
+export function drawComparisonHistory(canvas,evaluations,selection='recall',snapshots=120) {
+  const surface=chartSurface(canvas);if(!surface)return;
+  const percent=selection!=='p95',series=['guarded','baseline'].map(method=>evaluations.map(e=>{
+    const value=e.methods?.[method]?.[selection];return {x:e.t,y:value==null ? NaN : value*(percent?100:1)};
+  }));
+  const [ymin,ymax]=percent?[0,100]:extent(series.flat());
+  const axes=chartAxes(surface,{xLabel:'Snapshot',yLabel:percent?'%':'m',xmin:0,xmax:Math.max(1,snapshots),ymin,ymax,compact:true});
+  chartLine(surface,axes,series[0],surface.color('accent'),[],false,false,true);
+  chartLine(surface,axes,series[1],surface.color('baseline'),[6,4],false,false,true);
+}
+
+/** Link user navigation only; each view retains its own data and heatmap. */
+export function linkMapCameras(left,right,enabled=()=>true) {
+  for (const [source,target] of [[left,right],[right,left]]) source.onCameraChange=()=>{
+    if (!enabled()) return;
+    target.camera=source.camera ? {...source.camera} : null;
+    target.auto=source.auto;target.fullDomain=source.fullDomain;target.draw();
+  };
 }
