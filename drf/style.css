@@ -4,7 +4,7 @@
   --color-ink:#172c3b; --color-ink-muted:#536572; --color-ink-faint:#536572;
   --color-line:#dbe2e8; --color-grid:#e6ebef; --color-accent:#175d89; --color-focus:#0069ab;
   --color-eval:#80550d; --color-danger:#aa3c30; --color-plot-bg:#fff;
-  --color-track:#296ba1; --color-ellipse:#78929b; --color-proxy:#007b60; --color-truth:#263d4b;
+  --color-track:#296ba1; --color-ellipse:#409bd1; --color-proxy:#007b60; --color-truth:#263d4b;
   --color-field-track:#1a3850; --color-field-casing:#fff; --color-baseline:#b06718;
   --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
   --font-math:"STIX Two Math","Cambria Math",math;
@@ -16,7 +16,7 @@
   --color-ink:#e8eff4; --color-ink-muted:#afc0cc; --color-ink-faint:#afc0cc;
   --color-line:#344957; --color-grid:#2b3d48; --color-accent:#8ac8f0; --color-focus:#8ac8f0;
   --color-eval:#e8be7e; --color-danger:#ff9b8b; --color-plot-bg:#162630;
-  --color-track:#6ab0e5; --color-ellipse:#91adb8; --color-proxy:#64d9b6; --color-truth:#d1dce5;
+  --color-track:#6ab0e5; --color-ellipse:#7dc9f3; --color-proxy:#64d9b6; --color-truth:#d1dce5;
   --color-field-track:#18364c; --color-field-casing:#fff; --color-baseline:#efb366;
 }
 * { box-sizing:border-box; }
