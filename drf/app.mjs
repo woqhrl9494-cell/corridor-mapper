@@ -4,7 +4,7 @@ import { percentile } from './evaluate.mjs?v=20261003-pspt1';
 import { psptSnapshotCsv } from './pspt-evaluate.mjs';
 import { METHOD_PROTOCOL } from './comparison.mjs';
 import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261022-route1';
-import { DrfMap, linkMapCameras, drawComparisonHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261022-compare1';
+import { DrfMap, linkMapCameras, drawComparisonHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261022-ellipses1';
 import { download, png300dpi } from '../surf/exports.mjs';
 
 const $ = id => document.getElementById(id), form = $('settings');

@@ -46,15 +46,16 @@ test('axis-fitted camera preserves metre coordinates and the zoom anchor', () =>
 test('render keeps world row order, uses real DPR/300 dpi pixels, and charts execute', async () => {
   const snapshots={},created=[],rectangles=[],labels=[],gridSegments=[],labelPositions=[],dots=[],ellipseStarts=[],strokes=[],gridColor='#c4d3e2';
   const context=() => {
-    let path=[],point;
+    let path=[],subpathStarts=[],point;
     return new Proxy({font:'16px Arial',createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(data)=>{snapshots.image=data.data;},measureText:(text)=>({width:text.length*9}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return key in target ? target[key] : (...args)=>{
-      if (key==='beginPath') {path=[];point=undefined;}
-      if (key==='moveTo') point=args;
+      if (key==='beginPath') {path=[];subpathStarts=[];point=undefined;}
+      if (key==='moveTo') {point=args;subpathStarts.push(path.length);}
       if (key==='lineTo') {if (point) path.push([point,args]);point=args;}
       if (key==='setLineDash') target.lineDash=args[0].slice();
       if (key==='stroke') strokes.push({color:target.strokeStyle,width:target.lineWidth,cap:target.lineCap,dash:target.lineDash?.slice() ?? [],segments:path.slice()});
       if (key==='stroke' && target.strokeStyle===gridColor) gridSegments.push(...path);
-      if (key==='stroke' && target.strokeStyle!==gridColor && path.length===96) ellipseStarts.push(path[0][0]);
+      if (key==='stroke' && target.strokeStyle!==gridColor) for (const [i,start] of subpathStarts.entries())
+        if ((subpathStarts[i+1] ?? path.length)-start===96) ellipseStarts.push(path[start][0]);
       if (key==='arc') dots.push(args);
       if (key==='fillText') {assert.ok(parseFloat(target.font.match(/(\d+)px/)[1])>=14,args[0]);labels.push(args[0]);if (/^V\d+$/.test(args[0])) labelPositions.push(args);}
       if (key==='strokeRect') rectangles.push(args);

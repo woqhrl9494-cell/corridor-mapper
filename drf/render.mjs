@@ -235,14 +235,25 @@ export class DrfMap {
     // Drawing budget only: the estimator still receives every measured path.
     const ellipseTotal=(wire?.configs ?? []).reduce((sum,config)=>sum+(config.paths?.length ?? 0),0),ellipseStride=Math.max(1,Math.ceil(ellipseTotal/600));
     let ellipseIndex=0,ellipseShown=0;
-    if (layers.showEllipses) for (const config of wire?.configs ?? []) {
-      const a=config.pHat_i,b=config.pHat_j,dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),cos=Math.cos(angle),sin=Math.sin(angle);
-      for (const q of config.paths) {
-        if (ellipseIndex++%ellipseStride!==0 || !(q.dHat>distance)) continue;
-        const major=q.dHat/2,minor=Math.sqrt(major*major-distance*distance/4),points=[];
-        for (let k=0;k<=96;k++) { const t=k*2*Math.PI/96,x=major*Math.cos(t),y=minor*Math.sin(t);points.push([(a[0]+b[0])/2+x*cos-y*sin,(a[1]+b[1])/2+x*sin+y*cos]); }
-        path(points,ellipseColor,1.1,[],.5);ellipseShown++;
+    if (layers.showEllipses) {
+      // Stroke the union once: overlapping ranges must not accumulate opacity.
+      // Keep each ellipse a separate subpath behind walls, candidates and vehicles.
+      ctx.beginPath();ctx.globalAlpha=.28;ctx.strokeStyle=ellipseColor;ctx.lineWidth=.75;
+      ctx.setLineDash([]);ctx.lineJoin='round';ctx.lineCap='round';
+      for (const config of wire?.configs ?? []) {
+        const a=config.pHat_i,b=config.pHat_j,dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),cos=Math.cos(angle),sin=Math.sin(angle);
+        for (const q of config.paths) {
+          if (ellipseIndex++%ellipseStride!==0 || !(q.dHat>distance)) continue;
+          const major=q.dHat/2,minor=Math.sqrt(major*major-distance*distance/4);
+          for (let k=0;k<=96;k++) {
+            const t=k*2*Math.PI/96,x=major*Math.cos(t),y=minor*Math.sin(t);
+            const [sx,sy]=screen([(a[0]+b[0])/2+x*cos-y*sin,(a[1]+b[1])/2+x*sin+y*cos]);
+            k===0 ? ctx.moveTo(sx,sy) : ctx.lineTo(sx,sy);
+          }
+          ellipseShown++;
+        }
       }
+      ctx.stroke();ctx.globalAlpha=1;
     }
     if (target===this.canvas && geometry) {
       this.canvas.dataset.ellipseTotal=String(ellipseTotal);this.canvas.dataset.ellipseShown=String(ellipseShown);
