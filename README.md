@@ -16,7 +16,7 @@ A research workbench for seeing how measurements become surface hypotheses, and 
 
 ![EchoMap: Guarded PSPT and Fixed-fragment B on the same measurement sequence](assets/echomap-comparison.png)
 
-*One synthetic scene, two causal estimators. The screenshot uses seed 549028359, 10 vehicles, 120 snapshots, and position/range SD 0.1 m. It illustrates the interface, not aggregate performance. [Replay these settings](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html#v1=%7B%22vehicles%22%3A10%2C%22snapshots%22%3A120%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22seed%22%3A549028359%7D).*
+*One synthetic scene with independently shaped walls, two causal estimators. The screenshot uses seed 549028359, 10 vehicles, 120 snapshots, and position/range SD 0.1 m. It illustrates the interface, not aggregate performance. [Replay these settings](https://woqhrl9494-cell.github.io/corridor-mapper/drf.html#v1=%7B%22vehicles%22%3A10%2C%22snapshots%22%3A120%2C%22sigmaP%22%3A0.1%2C%22sigmaD%22%3A0.1%2C%22seed%22%3A549028359%7D).*
 
 EchoMap is developed by **Jaebok Lee, Wireless Systems Laboratory, Hanyang University**. It studies a question in collaborative sensing: can noisy, unlabeled path lengths distinguish a wall patch from a plausible geometric alternative?
 
@@ -93,6 +93,8 @@ D̄ is the mean residual density in m⁻². β̂ is a dimensionless field-contra
 4. Choose **Share experiment** to copy a seeded settings URL, or download JSON/CSV to retain results.
 
 Shared URLs preserve their seed and snapshot count on reload. An unseeded visit chooses a new seed. A URL shares settings, not computed outputs or an immutable software revision; retain the JSON and repository commit for a research record.
+
+In **Both walls**, the upper and lower boundaries have independent large-scale curves and small-scale perturbations. A constant vertical shift, applied only when needed, keeps their minimum vertical separation above 6 m without bending or clipping either curve. The route follows the midpoint of the finished walls with its full ±2 m lateral oscillation. The 6 m gap covers this 4 m motion envelope plus 1 m vertical truth-pose clearance on each side, for all supported vehicles and phases. Single-wall modes retain their earlier generator.
 
 The layered wall spans x = 0–80 m. Vehicles advance ⅔ m in x per snapshot, so 120 snapshots cover 80 m from their initial positions. Physical time per snapshot is unspecified. Large fleets cost more: 10 vehicles produce 45 unordered pairs per snapshot. Use progress, pause and cancel rather than interpreting elapsed browser time as a method benchmark.
 

@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-22",
+  "protocol": "independent-walls-gap6",
+  "geometry": {
+    "wallModelKind": "independent-wall-uniform-cubic",
+    "gapAxis": "y at equal x",
+    "wallInterval": [
+      0,
+      80
+    ],
+    "minimumRequiredM": 6,
+    "lateralAmplitudeM": 2,
+    "vehicleClearanceRequiredM": 1,
+    "separation": "Constant symmetric vertical translation only if the exact minimum gap is too small",
+    "minimumCalculation": "Endpoints and derivative roots on the union of all cubic knot spans",
+    "numericalMarginM": 1e-9
+  },
+  "automated": {
+    "command": "PSPT_FULL_PARITY=1 npm test",
+    "passed": 177,
+    "failed": 0,
+    "environment": "macOS arm64, Node.js 26.7.0",
+    "finalBundleAndUi": {
+      "command": "node --test tests/drf/offline.test.mjs tests/drf/ui.test.mjs",
+      "passed": 6,
+      "failed": 0
+    },
+    "pagesBuild": "33 files; git diff --check passed"
+  },
+  "geometryChecks": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      549028359
+    ],
+    "seedCount": 41,
+    "minimumObservedGapM": 6.0000000009999965,
+    "minimumObservedVehicleClearanceM": 1.000022244068905,
+    "translatedScenes": 31,
+    "fleet": 20,
+    "snapshots": 120,
+    "additionalInitialPoseCheck": true,
+    "unchangedLateralAmplitudeChecked": true,
+    "independentAnalyticFixture": "gap(x) = 2 + (x - 0.4)^2 on [0,1]; interior minimum = 2",
+    "examples": [
+      {
+        "seed": 1,
+        "attempt": 0,
+        "minGap": 6.000000001000001,
+        "minVehicleClearance": 1.000723168393403,
+        "separation": 10.475690674644085
+      },
+      {
+        "seed": 549028359,
+        "attempt": 0,
+        "minGap": 6.059049017323985,
+        "minVehicleClearance": 1.0339485009901885,
+        "separation": 0
+      }
+    ]
+  },
+  "sourceSha256": {
+    "drf/wall.mjs": "78ef4f5a2ae12e55c65d08f9110e2c73dcdda3af80a81f3666dfa92e5a46d7fa",
+    "drf/scenario.mjs": "88fe87d94a5347633acaf42ce623f6a839e6d378c7751f87566df56d524c911f",
+    "drf/offline.bundle.js": "d3788167f386c309b643f3b3364e79d0444742e61efa86096b60a984d1a7a917"
+  },
+  "limits": [
+    "Vertical clearance applies to simulated truth positions, not a vehicle-body or Euclidean-distance model.",
+    "Independent wall curves change the scene distribution; estimator thresholds are unchanged and no new population performance claim is made.",
+    "Single-wall modes and archived shared-centre numerical fixtures retain their previous generator."
+  ],
+  "browser": {
+    "connection": "Existing Chrome profile via extension",
+    "runs": [
+      {
+        "seed": 549028359,
+        "vehicles": 10,
+        "snapshots": 120,
+        "completed": true,
+        "consoleErrors": 0
+      },
+      {
+        "seed": 1,
+        "vehicles": 3,
+        "snapshots": 8,
+        "completed": true,
+        "consoleErrors": 0
+      }
+    ],
+    "screenshot": "assets/echomap-comparison.png"
+  }
+}

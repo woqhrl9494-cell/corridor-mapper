@@ -4,7 +4,7 @@
  * Work per snapshot: O(C * (wall cells + emitted paths * visibility cost)).
  */
 import { createWalls, sampleWalls, createTwoLayerWallModel, evaluateCentre, evaluateWall,
-  twoLayerWallSpans, twoLayerWallBounds } from './wall.mjs?v=20261002-layered29';
+  twoLayerWallSpans, twoLayerWallBounds } from './wall.mjs?v=20261022-independent2';
 import { specularPoints } from './specular.mjs?v=20261002-model8';
 import { diffuseProfile, sampleDiffuse } from './diffuse.mjs?v=20261002-model8';
 import { createRng } from './rng.mjs';
@@ -38,13 +38,17 @@ export function normalizeInput(raw = {}) {
   if (!Number.isInteger(p.seed) || p.seed < 0 || p.seed > 0xffffffff) throw new Error('Seed must be a uint32');
   if (p.sigmaM < 0 || p.sigmaM > 12 || p.sigmaDGeometry < 0 || p.sigmaDGeometry > 3
     || p.deltaM < 4 || p.deltaM > 60 || p.deltaD < 1 || p.deltaD > 20)
-    throw new Error('Geometry limits: centre amplitude 0–12 m, spacing 4–60 m; perturbation amplitude 0–3 m, spacing 1–20 m.');
+    throw new Error('Geometry limits: wall-shape amplitude 0–12 m, spacing 4–60 m; perturbation amplitude 0–3 m, spacing 1–20 m.');
   return p;
 }
 export const LAYERED_DOMAIN = Object.freeze([0, 80, -20, 50]);
+const LATERAL_AMPLITUDE = 2, VERTICAL_CLEARANCE = 1;
+// Every vehicle stays within midpoint ±2 m. A 6 m gap leaves ≥1 m on
+// either side for every phase, including between snapshots (truth poses).
+const MIN_VERTICAL_GAP = 2 * (LATERAL_AMPLITUDE + VERTICAL_CLEARANCE);
 /** Truth-only rejection against the fixed supported fleet, independent of V/T,
  * noise and estimator settings. Clearance is vertical at each pose's x, like W.
- * Work O(attempts*(spans + 20*120)); attempts bounded to prevent a stuck worker.
+ * Work O(attempts*(spans*log(spans) + 20*120)); attempts are bounded.
  * Accepted statistics are conditional on this protocol, not iid Gaussian walls. */
 export function createSceneGeometry(input) {
   const wallSide = input.wallSide ?? 'both', activeWalls = wallSide === 'both' ? [0, 1] : [wallSide === 'lower' ? 0 : 1];
@@ -54,8 +58,9 @@ export function createSceneGeometry(input) {
   }
   const rejections = [];
   for (let attempt = 0; attempt < 256; attempt++) {
-    const wallModel = createTwoLayerWallModel({ ...input, wallSide, L: LAYERED_DOMAIN[1], attempt }), bounds = twoLayerWallBounds(wallModel), reasons = [];
-    if (wallSide === 'both' && !(bounds.minWidth > 4)) reasons.push('passage-width');
+    const wallModel = createTwoLayerWallModel({ ...input, wallSide, L: LAYERED_DOMAIN[1], attempt,
+      independent: wallSide === 'both', minWidth: MIN_VERTICAL_GAP }), bounds = twoLayerWallBounds(wallModel), reasons = [];
+    if (wallSide === 'both' && !(bounds.minWidth > MIN_VERTICAL_GAP)) reasons.push('passage-width');
     if (bounds.ymin < LAYERED_DOMAIN[2] || bounds.ymax > LAYERED_DOMAIN[3]) reasons.push('domain');
     let minVehicleClearance = Infinity;
     for (let t = 1; t <= 120; t++) for (const [x, y] of truePoses(t, 20, wallModel)) {
@@ -63,7 +68,7 @@ export function createSceneGeometry(input) {
       for (const wall of activeWalls) minVehicleClearance = Math.min(minVehicleClearance,
         wall === 0 ? y - evaluateWall(wallModel, x, wall).value : evaluateWall(wallModel, x, wall).value - y);
     }
-    if (minVehicleClearance < 1) reasons.push('vehicle-clearance');
+    if (minVehicleClearance < VERTICAL_CLEARANCE) reasons.push('vehicle-clearance');
     if (reasons.length) { rejections.push({ attempt, reasons }); continue; }
     const spans = twoLayerWallSpans(wallModel);
     return { spans, walls: sampleWalls(spans, 0.1), wallModel, domain: [...LAYERED_DOMAIN],
@@ -71,7 +76,8 @@ export function createSceneGeometry(input) {
       ...(wallSide === 'both' ? {} : { cameraBounds: [0, wallModel.L,
         Math.min(bounds.ymin, bounds.centreRange[0] - 2), Math.max(bounds.ymax, bounds.centreRange[1] + 2)] }),
       wallGeneration: { attempt, attempts: attempt + 1, rejections, bounds, minVehicleClearance,
-        wallSide, activeWalls, minWidthRequired: wallSide === 'both' ? 4 : null, vehicleClearanceRequired: 1, clearanceAxis: 'y',
+        wallSide, activeWalls, minWidthRequired: wallSide === 'both' ? MIN_VERTICAL_GAP : null,
+        vehicleClearanceRequired: VERTICAL_CLEARANCE, clearanceAxis: 'y',
         validationFleet: { vehicles: 20, snapshots: 120, wallInterval: [0, wallModel.L] } } };
   }
   throw new Error('All 256 wall-generation attempts were rejected. Reduce geometry amplitudes or choose another seed.');
@@ -86,8 +92,11 @@ export function truePoses(t, vehicles = 3, wallModel = null) {
     const x0 = v < 3 ? 4 + 3 * v : 1 + 13 * (v - 3) / 16;
     const stepM = wallModel ? 2 / 3 : 0.75;
     const x = x0 + stepM * t;
-    const centre = wallModel ? evaluateCentre(wallModel, Math.min(x, wallModel.L)) : { value: 15, first: 0 };
-    return [x, centre.value + centre.first * Math.max(0, x - (wallModel?.L ?? 60)) + 2 * Math.sin(2 * Math.PI * x / 30 + v + 1)];
+    const wallX = Math.min(x, wallModel?.L ?? 60),
+      centre = wallModel ? evaluateCentre(wallModel, wallX) : { value: 15, first: 0 };
+    // The route follows the finished walls' midpoint. The full lateral motion
+    // is retained; wall separation supplies clearance instead of shrinking it.
+    return [x, centre.value + centre.first * Math.max(0, x - (wallModel?.L ?? 60)) + LATERAL_AMPLITUDE * Math.sin(2 * Math.PI * x / 30 + v + 1)];
   });
 }
 /** Independent streams preserve standard pose/specular noise across paired sweeps. */

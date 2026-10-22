@@ -17,7 +17,7 @@ test('DRF DOM contract and readable stylesheet', () => {
   assert.ok(!historySelect.includes('value="all"'),'The compact dashboard renders one metric at a time');
   for (const name of 'scene vehicles snapshots sigmaP sigmaD roughness lambda0 cellStep resolution specular grid band perimeter seed'.split(' ')) assert.ok(html.includes(`name="${name}"`),name);
   assert.ok(!html.includes('장면'));
-  assert.match(html,/Two-layer cubic B-splines/);
+  assert.match(html,/Both walls: independent shapes, ≥6 m vertical gap/);
   assert.match(html,/input name="scene" type="hidden" value="layered"/);
   assert.doesNotMatch(html,/<select[^>]*name="scene"/);
   assert.match(html,/<select name="wallSide"><option value="both">Both walls<\/option><option value="upper">Upper only<\/option><option value="lower">Lower only<\/option>/);

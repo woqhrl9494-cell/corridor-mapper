@@ -27,6 +27,8 @@ The historical `Baseline.report()` default remains 12 solely to reproduce frozen
 | README / shared example | One illustrative scene | 10 | 0.1 m | 0.1 m | 120 | Seed 549028359; not an aggregate benchmark |
 | Parameter sweep | Paired conditions chosen by the user | Current setting | Current setting | Swept | Current setting | Same methods, gates and metrics as the main view |
 
+Since the independent-wall update on 2026-10-22, the current layered **Both walls** generator draws separate large-scale B-splines for the lower and upper walls. It enforces a minimum 6 m vertical gap through constant symmetric translations, using exact piecewise-cubic extrema. The route is then derived from their midpoint, retaining its full ±2 m lateral oscillation. The minimum gap is twice the sum of that 2 m amplitude and 1 m vertical truth-pose clearance: 6 m. This bounds every vehicle phase, including between snapshots; it is not a vehicle-body or Euclidean-clearance model. Domain rejection remains truth-side and independent of the requested fleet, duration, and measured noise. The exported wall-model kind is `independent-wall-uniform-cubic`; single-wall and archived shared-centre models retain `two-layer-uniform-cubic`. Old shared settings URLs use the current generator, so reproducing earlier walls also requires the earlier commit.
+
 The historical and tuning trajectories advanced 0.75 m per snapshot. The current layered trajectory advances ⅔ m per snapshot; legacy `reference` / `random` trajectories retain 0.75 m for historical fixtures. Consequently, even matching vehicle/noise settings does not recreate the old distribution or full observation sequence. Display-grid resolution is independent of the fixed 100 × 100 candidate grids.
 
 ## What the tuning result means
@@ -43,7 +45,7 @@ The selection objective was maximum observed-wall recall subject to **empirical 
 
 These are equal-scene means. The tuning grouped-fragment loss treats an empty estimate as zero FP; centre precision excludes empty scenes. This makes the empty-scene fraction essential to interpreting B's result. Grouped-fragment FP is not the browser's fraction of off-wall centres, and 1.0 nonempty centre precision does not imply complete or error-free wall reconstruction.
 
-Neither method obtained an LTT-certified threshold in the earlier calibration study. Applying a fixed development threshold to a new scene does not introduce online truth leakage, but the scene's displayed metrics do not establish generalisation or a certified error rate. The current release has not undergone a fresh independent population study after its trajectory change.
+Neither method obtained an LTT-certified threshold in the earlier calibration study. Applying a fixed development threshold to a new scene does not introduce online truth leakage, but the scene's displayed metrics do not establish generalisation or a certified error rate. The current release has not undergone a fresh independent population study after its trajectory and independent-wall generator changes.
 
 ## Current post-hoc metrics
 

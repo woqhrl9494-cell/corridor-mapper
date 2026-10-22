@@ -141,3 +141,63 @@ test('2000 seeded models reproduce the predicted second-derivative scale within 
   assert.ok(curvatureRms < observed, 'Curvature has the slope denominator; it is not identical to y second derivative');
   t.diagnostic(`2000 seeds, ${n} samples: std(y'')=${observed}, predicted=${expected}, RMS(curvature)=${curvatureRms}`);
 });
+
+test('independent wall shapes use separate large-scale streams and preserve all derivatives after separation', () => {
+  const model = createTwoLayerWallModel({ seed: 1, L: 80, independent: true });
+  assert.equal(model.kind, 'independent-wall-uniform-cubic');
+  assert.equal(model.mu, undefined);
+  assert.notDeepEqual(model.m[0], model.m[1]);
+  assert.deepEqual(model, JSON.parse(JSON.stringify(model)));
+  assert.deepEqual(model, createTwoLayerWallModel({ seed: 1, L: 80, independent: true }));
+  assert.ok(model.separation > 0);
+  for (let wall = 0; wall < 2; wall++) {
+    const rng = createRng(1, 'wall', 'm', wall), component = model.m[wall], side = wall ? 1 : -1;
+    assert.equal(component.origin, component.spacing * rng.uniform());
+    for (const coefficient of component.coefficients) assert.equal(coefficient, Math.SQRT2 * 6 * rng.normal());
+    for (let x = 0; x <= 80; x += .25) {
+      const value = evaluateWall(model, x, wall);
+      for (const [order, key] of derivatives.entries()) {
+        const expected = independentComponent(component, x, order) + side * independentComponent(model.d[wall], x, order)
+          + (order === 0 ? model.baseline + side * (model.W + model.separation) / 2 : 0);
+        close(value[key], expected);
+      }
+      const midpoint = (evaluateWall(model, x, 0).value + evaluateWall(model, x, 1).value) / 2;
+      close(evaluateCentre(model, x).value, midpoint);
+    }
+  }
+  const raw = { ...model, separation: 0 };
+  close(twoLayerWallBounds(model).minWidth, 6 + 1e-9);
+  close(twoLayerWallBounds(raw).minWidth + model.separation, 6 + 1e-9);
+  const wider = createTwoLayerWallModel({ seed: 1, L: 80, independent: true, minWidth: 8 });
+  assert.deepEqual(wider.m, model.m); assert.deepEqual(wider.d, model.d);
+  close(twoLayerWallBounds(wider).minWidth, 8 + 1e-9);
+});
+
+test('independent-wall gap extrema find an interior minimum between knots', () => {
+  // Cardinal cubic coefficients j^2 - 1/3 reproduce x^2 exactly.
+  // This constructs gap(x) = 2 + (x - 0.4)^2 on [0,1], whose
+  // interior minimum 2 cannot be found by checking only endpoints.
+  const flat = { spacing: 1, origin: 0, start: -2, coefficients: Array(6).fill(0) };
+  const quadratic = { ...flat, coefficients: Array.from({ length: 6 }, (_, i) => (i - 2 - .4) ** 2 - 1 / 3 - 10) };
+  const model = { L: 1, W: 12, baseline: 15, m: [flat, quadratic], d: [flat, flat], separation: 0 };
+  const bounds = twoLayerWallBounds(model);
+  close(bounds.minWidth, 2); close(bounds.maxWidth, 2.36);
+  close(evaluateWall(model, .4, 1).value - evaluateWall(model, .4, 0).value, 2);
+});
+
+test('independent spans remain C2 and match their components on different knot grids', () => {
+  const model = createTwoLayerWallModel({ seed: 739, L: 61, deltaM: 19.7, deltaD: 3.8, independent: true });
+  const spans = twoLayerWallSpans(model);
+  for (let wall = 0; wall < 2; wall++) {
+    const list = spans.filter(span => span.wall === wall);
+    for (const span of list) for (const u of [0, .25, .5, .75, 1]) {
+      const point = evaluate(span, u), value = evaluateWall(model, point.s[0], wall);
+      close(point.s[1], value.value); close(point.t[1] / span.h, value.first); close(point.dd[1] / span.h ** 2, value.second);
+    }
+    for (let k = 1; k < list.length; k++) {
+      const left = evaluate(list[k - 1], 1), right = evaluate(list[k], 0);
+      close(left.s[1], right.s[1]); close(left.t[1] / list[k - 1].h, right.t[1] / list[k].h);
+      close(left.dd[1] / list[k - 1].h ** 2, right.dd[1] / list[k].h ** 2);
+    }
+  }
+});

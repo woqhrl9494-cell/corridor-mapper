@@ -13,7 +13,8 @@ const geometry = () => cachedGeometry ??= createSceneGeometry(input());
 const assertAccepted = g => {
   assert.deepEqual(g.domain, [0, 80, -20, 50]);
   const { bounds, minVehicleClearance, attempt, attempts, rejections } = g.wallGeneration;
-  assert.ok(bounds.minWidth > 4 && bounds.ymin >= -20 && bounds.ymax <= 50 && minVehicleClearance >= 1);
+  assert.ok(bounds.minWidth > 6 && bounds.ymin >= -20 && bounds.ymax <= 50 && minVehicleClearance >= 1);
+  assert.equal(g.wallGeneration.minWidthRequired, 6);
   assert.equal(attempts, attempt + 1); assert.equal(rejections.length, attempt);
   assert.deepEqual(rejections.map(r => r.attempt), Array.from({ length: attempt }, (_, k) => k));
   assert.equal(g.wallGeneration.clearanceAxis, 'y');
@@ -33,13 +34,22 @@ test('layered scene validates its fixed domain and every supported interior vehi
   assert.throws(() => generateSnapshot(input(), g.spans, 1), /accepted truth wall model/);
 });
 
-test('rejection records actual domain, opening and vehicle-clearance failures before acceptance', () => {
+test('independent walls keep their shapes while opening the gap; domain rejection stays recorded', () => {
   const rough = createSceneGeometry(input({ seed: 1, sigmaDGeometry: 2 })); assertAccepted(rough);
-  assert.ok(rough.wallGeneration.attempt > 0);
-  for (const reason of ['passage-width', 'vehicle-clearance'])
-    assert.ok(rough.wallGeneration.rejections.some(r => r.reasons.includes(reason)));
-  const largeCentre = createSceneGeometry(input({ seed: 1, sigmaM: 12 })); assertAccepted(largeCentre);
-  assert.ok(largeCentre.wallGeneration.rejections.some(r => r.reasons.includes('domain')));
+  assert.equal(rough.wallModel.kind, 'independent-wall-uniform-cubic');
+  assert.ok(rough.wallModel.separation > 0);
+  const raw = { ...rough.wallModel, separation: 0 };
+  close(twoLayerWallBounds(raw).minWidth + rough.wallModel.separation, rough.wallGeneration.bounds.minWidth);
+  let rejected = 0;
+  for (let seed = 0; seed < 12; seed++) {
+    const g = createSceneGeometry(input({ seed, sigmaM: 12 })); assertAccepted(g);
+    rejected += g.wallGeneration.rejections.length;
+    for (const row of g.wallGeneration.rejections) {
+      assert.ok(row.reasons.includes('domain'));
+      assert.ok(!row.reasons.includes('passage-width') && !row.reasons.includes('vehicle-clearance'));
+    }
+  }
+  assert.ok(rejected > 0, 'High-amplitude fixtures must exercise fixed-domain rejection');
 });
 
 test('60/120 duration, fleet size, measurement noise and field settings cannot select another wall', () => {
@@ -95,21 +105,20 @@ test('single-wall simulation removes the other boundary from geometry and every 
   assert.equal(DEFAULT_INPUT.wallSide, 'both');
   assert.throws(() => input({ wallSide: 'left' }), /Wall side/);
   assert.throws(() => createTwoLayerWallModel({ wallSide: 'left' }), /Wall side/);
-  const both = geometry();
   for (const [wallSide, wall] of [['lower', 0], ['upper', 1]]) {
     const selected = input({ wallSide, snapshots: 1 }), one = await generateScenario(selected), absent = 1 - wall;
-    assert.equal(one.wallGeneration.attempt, both.wallGeneration.attempt);
+    assert.equal(one.wallModel.kind, 'two-layer-uniform-cubic');
+    const archived = createTwoLayerWallModel({ ...selected, L: 80, attempt: one.wallGeneration.attempt });
+    assert.deepEqual(one.wallModel, archived, 'Single-wall modes retain their existing generator');
     assert.deepEqual(one.wallGeneration.activeWalls, [wall]);
     assert.equal(one.wallGeneration.wallSide, wallSide);
     assert.equal(one.wallGeneration.minWidthRequired, null);
     assert.equal(one.wallGeneration.bounds.minWidth, null); assert.equal(one.wallGeneration.bounds.maxWidth, null);
     assert.equal(one.wallGeneration.bounds.wallRanges[absent], null);
-    assert.deepEqual(one.wallGeneration.bounds.wallRanges[wall], both.wallGeneration.bounds.wallRanges[wall]);
-    assert.deepEqual(one.wallModel.mu, both.wallModel.mu);
-    assert.deepEqual(one.wallModel.d[wall], both.wallModel.d[wall]); assert.equal(one.wallModel.d[absent], null);
+    assert.equal(one.wallModel.d[absent], null);
     assert.throws(() => evaluateWall(one.wallModel, 10, absent), /absent/);
     assert.equal(one.walls.length, 2); assert.deepEqual(one.walls[absent], []);
-    assert.deepEqual(one.walls[wall], both.walls[wall]); assert.ok(one.spans.every(span => span.wall === wall));
+    assert.ok(one.spans.every(span => span.wall === wall));
     for (let x = 0; x <= 80; x += .25) {
       const centre = evaluateCentre(one.wallModel, x).value;
       assert.ok(centre - 2 >= one.cameraBounds[2] - 1e-10 && centre + 2 <= one.cameraBounds[3] + 1e-10);
@@ -133,7 +142,7 @@ test('single-wall simulation removes the other boundary from geometry and every 
   // The absent upper wall would reject attempt 0, but cannot limit lower-only generation.
   const rough = createSceneGeometry(input({ seed: 10, sigmaDGeometry: 2, wallSide: 'lower' }));
   assert.equal(rough.wallGeneration.attempt, 0); assert.ok(rough.wallGeneration.minVehicleClearance >= 1);
-  assert.ok(createSceneGeometry(input({ seed: 10, sigmaDGeometry: 2 })).wallGeneration.attempt > 0);
+  assertAccepted(createSceneGeometry(input({ seed: 10, sigmaDGeometry: 2 })));
   const flat = createTwoLayerWallModel({ wallSide: 'upper', sigmaM: 0, sigmaDGeometry: 0 });
   assert.deepEqual(twoLayerWallBounds(flat).centreRange, [15, 15]);
 });
@@ -181,6 +190,24 @@ test('regular layered roots match independent unsquared Fermat brackets and inwa
       const yp = t[1] / t[0], ypp = dd[1] / t[0] ** 2, side = point.wall === 1 ? 1 : -1;
       const inward = -side * ypp / (1 + yp ** 2) ** 1.5;
       close(point.cth * (1 / ra + 1 / rb) / 2 - point.dkap, inward);
+    }
+  }
+});
+
+test('41 seeded independent scenes preserve the continuous gap and every supported vehicle clearance', () => {
+  for (const seed of [...Array(40).keys(), 549028359]) {
+    const g = createSceneGeometry(input({ seed })); assertAccepted(g);
+    for (let x = 0; x <= 80; x += .1) {
+      const lower = evaluateWall(g.wallModel, x, 0).value, upper = evaluateWall(g.wallModel, x, 1).value;
+      assert.ok(upper - lower > 6);
+      assert.ok(upper - lower >= g.wallGeneration.bounds.minWidth - 1e-10);
+      close(evaluateCentre(g.wallModel, x).value, (lower + upper) / 2);
+    }
+    for (let t = 0; t <= 120; t++) for (const [v, [x, y]] of truePoses(t, 20, g.wallModel).entries()) {
+      if (x > 80) continue;
+      close(y - evaluateCentre(g.wallModel, x).value, 2 * Math.sin(2 * Math.PI * x / 30 + v + 1));
+      assert.ok(y - evaluateWall(g.wallModel, x, 0).value >= 1 - 1e-10);
+      assert.ok(evaluateWall(g.wallModel, x, 1).value - y >= 1 - 1e-10);
     }
   }
 });

@@ -214,7 +214,7 @@ test('actual JSON export handler separates truth, wire, and completed results wi
   assert.ok(output.result.every(f=>f.method==='guarded45'));
   assert.deepEqual(output.truth.wallModel,scene.wallModel,'Preserve component coefficients and shifted knot origins in truth only');
   assert.deepEqual(output.truth.wallGeneration,scene.wallGeneration,'Preserve rejection attempts and the accepted validation protocol');
-  assert.equal(output.truth.wallModel.kind,'two-layer-uniform-cubic');
+  assert.equal(output.truth.wallModel.kind,'independent-wall-uniform-cubic');
   assert.deepEqual(output.grid.domain,[0,80,-20,50]);
   assert.equal(output.truth.role, 'evaluation only'); assert.equal(output.measurement.length, 2);
   assert.equal(output.result.length, 2); assert.equal(output.evaluation.length, 2); assert.equal(output.truth.snapshots.length, 2);

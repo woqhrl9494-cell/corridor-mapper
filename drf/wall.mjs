@@ -63,14 +63,21 @@ export function createWalls({ scene = 'reference', seed = 1 } = {}) {
 /** Truth-only, data-only two-layer wall model. The legacy createWalls fixture
  * remains separate. Coefficients are iid N(0,2*sigma^2), not interpolated data.
  * N3 is the centered cardinal cubic basis with support [-2,2]. Its knot value
- * is (c[j-1]+4*c[j]+c[j+1])/6. Storage/work: O(L/deltaM + L/deltaD).
- * This function draws one attempt; the caller owns rejection thresholds. */
+ * is (c[j-1]+4*c[j]+c[j+1])/6. Let S = L/deltaM + L/deltaD.
+ * Storage is O(S); work is O(S log S) with independent-wall gap extrema,
+ * or O(S) for the archived shared-centre draw.
+ * independent=true draws separate large-scale components for both walls.
+ * A constant symmetric translation enforces minWidth without changing either
+ * curve's derivatives. The route midpoint is derived after wall generation.
+ * The default shared model remains available for archived numerical fixtures.
+ * This function draws one attempt; the caller owns domain rejection. */
 export function createTwoLayerWallModel({ seed = 1, attempt = 0, L = 60, W = 12,
-  baseline = 15, sigmaM = 6, deltaM = 20, sigmaDGeometry = 0.33, deltaD = 4, wallSide = 'both' } = {}) {
+  baseline = 15, sigmaM = 6, deltaM = 20, sigmaDGeometry = 0.33, deltaD = 4, wallSide = 'both',
+  independent = false, minWidth = 6 } = {}) {
   if (!['both', 'upper', 'lower'].includes(wallSide)) throw new RangeError('Wall side must be both, upper or lower');
   if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('Seed must be a uint32');
   if (!Number.isInteger(attempt) || attempt < 0) throw new RangeError('Wall attempt must be a nonnegative integer');
-  if (![L, W, deltaM, deltaD].every(value => Number.isFinite(value) && value > 0)
+  if (![L, W, deltaM, deltaD, minWidth].every(value => Number.isFinite(value) && value > 0)
     || ![sigmaM, sigmaDGeometry].every(value => Number.isFinite(value) && value >= 0)
     || !Number.isFinite(baseline)) throw new RangeError('Wall lengths, amplitudes and baseline must be finite and valid');
   const component = (spacing, sigma, ...address) => {
@@ -81,10 +88,21 @@ export function createTwoLayerWallModel({ seed = 1, attempt = 0, L = 60, W = 12,
     const coefficients = Array.from({ length: Math.ceil(L / spacing) + 4 }, () => Math.SQRT2 * sigma * rng.normal());
     return { spacing, origin, start: -2, coefficients };
   };
-  return { kind: 'two-layer-uniform-cubic', seed, attempt, L, W, baseline, wallSide,
-    mu: component(deltaM, sigmaM, 'mu'),
+  const model = { kind: 'two-layer-uniform-cubic', seed, attempt, L, W, baseline, wallSide,
+    ...(independent && wallSide === 'both'
+      ? { m: [0, 1].map(wall => component(deltaM, sigmaM, 'm', wall)), separation: 0 }
+      : { mu: component(deltaM, sigmaM, 'mu') }),
     d: [0, 1].map(wall => wallSide === 'both' || wall === (wallSide === 'lower' ? 0 : 1)
       ? component(deltaD, sigmaDGeometry, 'd', wall) : null) };
+  if (model.m) {
+    model.kind = 'independent-wall-uniform-cubic';
+    model.minWidthRequired = minWidth;
+    const deficit = minWidth - twoLayerWallBounds(model).minWidth;
+    // Metres: a tiny numerical margin keeps the exact-extrema check above the
+    // lower bound after Float64 subtraction. No pointwise clipping of walls.
+    model.separation = deficit >= 0 ? deficit + 1e-9 : 0;
+  }
+  return model;
 }
 
 /** Scalar value and x derivatives (m, dimensionless, 1/m, 1/m^2), O(1).
@@ -112,16 +130,22 @@ function checkWallX(model, x) {
 }
 export function evaluateCentre(model, x) {
   checkWallX(model, x);
+  if (model.m) {
+    const lower = evaluateWall(model, x, 0), upper = evaluateWall(model, x, 1);
+    return Object.fromEntries(['value', 'first', 'second', 'third'].map(key => [key, (lower[key] + upper[key]) / 2]));
+  }
   const value = evaluateUniformCubic(model.mu, x);
   return { ...value, value: model.baseline + value.value };
 }
 export function evaluateWall(model, x, wall) {
   if (wall !== 0 && wall !== 1) throw new RangeError('Wall ID must be 0 (lower) or 1 (upper)');
   if (!model.d[wall]) throw new RangeError('Requested wall is absent from this model');
-  const mu = evaluateCentre(model, x), d = evaluateUniformCubic(model.d[wall], x), side = wall === 1 ? 1 : -1;
-  return { value: mu.value + side * (model.W / 2 + d.value),
-    first: mu.first + side * d.first, second: mu.second + side * d.second,
-    third: mu.third + side * d.third };
+  checkWallX(model, x);
+  const primary = model.m ? evaluateUniformCubic(model.m[wall], x) : evaluateCentre(model, x),
+    d = evaluateUniformCubic(model.d[wall], x), side = wall === 1 ? 1 : -1;
+  return { value: (model.m ? model.baseline : 0) + primary.value + side * (model.W / 2 + (model.separation ?? 0) / 2 + d.value),
+    first: primary.first + side * d.first, second: primary.second + side * d.second,
+    third: primary.third + side * d.third };
 }
 
 function componentKnots(component, L) {
@@ -146,7 +170,7 @@ export function twoLayerWallSpans(model) {
   const spans = [];
   for (let wall = 0; wall < 2; wall++) {
     if (!model.d[wall]) continue;
-    const knots = unionKnots(model.L, [model.mu, model.d[wall]]);
+    const knots = unionKnots(model.L, [model.m?.[wall] ?? model.mu, model.d[wall]]);
     for (let k = 0; k < knots.length - 1; k++) {
       const x = knots[k], h = knots[k + 1] - x, C = scalarPower(evaluateWall(model, x, wall), h);
       spans.push({ ...makeSpan([[x, C[0]], [h, C[1]], [0, C[2]], [0, C[3]]], spans.length + 1, wall, k === knots.length - 2), h });
@@ -173,13 +197,15 @@ export function twoLayerWallBounds(model) {
     return { xmin: 0, xmax: model.L, ymin: range[0], ymax: range[1], wallRanges, minWidth: null, maxWidth: null,
       centreRange: [Math.min(...centres), Math.max(...centres)] };
   }
-  const knots = unionKnots(model.L, model.d), widths = [];
+  const knots = unionKnots(model.L, [...(model.m ?? []), ...model.d]), widths = [];
   for (let k = 0; k < knots.length - 1; k++) {
-    const x = knots[k], h = knots[k + 1] - x,
-      lower = evaluateUniformCubic(model.d[0], x), upper = evaluateUniformCubic(model.d[1], x);
-    // y_upper-y_lower = W+d_upper+d_lower: the shared centre cancels.
-    const sum = Object.fromEntries(['value', 'first', 'second', 'third'].map(key => [key, lower[key] + upper[key]]));
-    sum.value += model.W;
+    const x = knots[k], h = knots[k + 1] - x;
+    // Independent walls: include both large-scale knot grids in the exact gap.
+    // Preserve the archived shared-model arithmetic for fixture reproducibility.
+    const lower = model.m ? evaluateWall(model, x, 0) : evaluateUniformCubic(model.d[0], x),
+      upper = model.m ? evaluateWall(model, x, 1) : evaluateUniformCubic(model.d[1], x);
+    const sum = Object.fromEntries(['value', 'first', 'second', 'third'].map(key => [key, model.m ? upper[key] - lower[key] : lower[key] + upper[key]]));
+    if (!model.m) sum.value += model.W;
     widths.push(...extrema(scalarPower(sum, h)));
   }
   return { xmin: 0, xmax: model.L, ymin: Math.min(...wallRanges.map(range => range[0])), ymax: Math.max(...wallRanges.map(range => range[1])),
