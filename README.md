@@ -54,15 +54,7 @@ A single range defines an ellipse. Multiple measurements accumulate a **Direct R
 
 PSPT means *Paired Surfel Predictive Test*. The two score scales are different and are not calibrated probabilities. The methods share measurements and a 100 × 100 candidate grid, but their models, state sizes and computational costs differ. Changing the display-field grid does not change their candidate grids.
 
-```mermaid
-flowchart LR
-    S["Synthetic scene"] --> M["Measured positions, covariances and ranges"]
-    M --> P["Guarded PSPT"]
-    M --> B["Fixed-fragment B"]
-    P --> E["Post-hoc evaluation"]
-    B --> E
-    S -. "Truth only here" .-> E
-```
+![Measured positions, covariances and ranges feed both estimators; ground truth enters post-hoc evaluation only](assets/echomap-method-flow.svg)
 
 The inference wire contains snapshot indices, measured 2D positions, reported pose covariances and unordered total path lengths with their reported range SDs. It excludes true walls, true poses, wall count/side, reflection labels, generator seeds and future observations. Candidate birth data are not reused as subsequent predictive evidence. [Inspect the wire contract](drf/wire.mjs).
 

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="288" viewBox="0 0 960 288" role="img" aria-labelledby="title desc">
+  <title id="title">Two causal estimators, one measured input</title>
+  <desc id="desc">A synthetic scene generates measured positions, covariances and ranges. Guarded PSPT and Fixed-fragment B process the same measured prefix. Ground truth is sent separately to post-hoc evaluation only.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 8 4 0 8Z" fill="#476575"/></marker>
+    <marker id="truth-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 8 4 0 8Z" fill="#92703b"/></marker>
+  </defs>
+  <rect width="960" height="288" rx="8" fill="#fff"/>
+  <g fill="none" stroke="#476575" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M162 132H214"/>
+    <path d="M476 132H502V60H526"/>
+    <path d="M476 132H502V202H526"/>
+    <path d="M706 60H734V116H766"/>
+    <path d="M706 202H734V150H766"/>
+  </g>
+  <path d="M89 168V262H856V178" fill="none" stroke="#92703b" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#truth-arrow)"/>
+  <g stroke-width="1.5">
+    <rect x="16" y="96" width="146" height="72" rx="6" fill="#f4f7f9" stroke="#c7d3d9"/>
+    <rect x="215" y="82" width="261" height="100" rx="6" fill="#f4f7f9" stroke="#c7d3d9"/>
+    <rect x="526" y="24" width="180" height="72" rx="6" fill="#eaf3f8" stroke="#2b6688"/>
+    <rect x="526" y="166" width="180" height="72" rx="6" fill="#fff7ed" stroke="#a16b2a"/>
+    <rect x="767" y="90" width="177" height="88" rx="6" fill="#f4f7f9" stroke="#c7d3d9"/>
+  </g>
+  <g font-family="system-ui, -apple-system, Segoe UI, sans-serif" text-anchor="middle" fill="#213440" font-size="18">
+    <text x="89" y="126"><tspan x="89">Synthetic</tspan><tspan x="89" dy="24">scene</tspan></text>
+    <text x="345" y="111" font-weight="600">Measured prefix</text>
+    <text x="345" y="140" font-size="16"><tspan x="345">Positions, covariances</tspan><tspan x="345" dy="23">and unlabeled ranges</tspan></text>
+    <text x="616" y="66" font-weight="600" fill="#245e7e">Guarded PSPT</text>
+    <text x="616" y="208" font-weight="600" fill="#80531f">Fixed-fragment B</text>
+    <text x="855" y="128"><tspan x="855">Post-hoc</tspan><tspan x="855" dy="25">evaluation</tspan></text>
+    <rect x="330" y="248" width="280" height="28" fill="#fff"/>
+    <text x="470" y="268" fill="#805f2e" font-size="16">Ground truth: evaluation only</text>
+  </g>
+</svg>
