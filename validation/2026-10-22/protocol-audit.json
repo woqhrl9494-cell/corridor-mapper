@@ -53,10 +53,10 @@
         1920,
         873
       ],
-      "density_height_px": 300.5,
-      "contrast_height_px": 300.5,
+      "density_height_px": 316.5,
+      "contrast_height_px": 316.5,
       "comparison_height_px": 380,
-      "history_height_px": 215,
+      "history_height_px": 247,
       "column_order": [
         "large candidate map",
         "density above contrast",
@@ -67,13 +67,30 @@
           1440,
           800
         ],
-        "density_height_px": 264,
-        "contrast_height_px": 264,
+        "density_height_px": 280,
+        "contrast_height_px": 280,
         "comparison_height_px": 340,
-        "history_height_px": 182
+        "history_height_px": 214
       }
     },
-    "custom_input_errors": "English duplicate-seed and zero-range-SD messages observed"
+    "custom_input_errors": "English duplicate-seed and zero-range-SD messages observed",
+    "compact_footer": {
+      "tested_viewports": [
+        [
+          1920,
+          873
+        ],
+        [
+          1440,
+          800
+        ]
+      ],
+      "button_width_px": 282.375,
+      "footer_height_px": 30,
+      "dashboard_height_gain_px": 32,
+      "analysis_dialog_open_close_verified": true,
+      "content_overflow": false
+    }
   },
   "export_validation": {
     "schema": "echomap-drf/5",
