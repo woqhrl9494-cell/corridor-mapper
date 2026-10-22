@@ -28,6 +28,9 @@
     "vehicleClearance": 1,
     "clearanceAxis": "y",
     "defaultSnapshots": 120,
+    "trajectoryStepMPerSnapshot": 0.6666666666666666,
+    "trajectoryTravelMAt120": 80,
+    "trajectoryTime": "snapshot index; physical dt unspecified; fixed initial fleet offsets preserved",
     "comparisonSnapshots": 60,
     "rejectionFleet": {
       "vehicles": 20,

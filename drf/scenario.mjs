@@ -78,12 +78,14 @@ export function createSceneGeometry(input) {
 }
 export function truePoses(t, vehicles = 3, wallModel = null) {
   return Array.from({ length: vehicles }, (_, v) => {
-    // Preserve V1–V3 and all shared RNG addresses. Fixed extra slots keep fleet prefixes equal.
-    // Point vehicles retain 0.75 m/snapshot independently of requested duration.
-    // x0 in [1,14]: by t=120 all exit the finite 80 m wall.
+    // Fixed initial slots and RNG addresses keep fleet prefixes equal.
+    // Layered routes advance 80 m in 120 snapshots (2/3 m per snapshot).
+    // Legacy reference/random routes retain 0.75 m per snapshot for fixture parity.
+    // Neither route depends on requested duration or clamps the final position.
     // Only the centreline is tangent-continued beyond the finite open exit.
     const x0 = v < 3 ? 4 + 3 * v : 1 + 13 * (v - 3) / 16;
-    const x = x0 + 0.75 * t;
+    const stepM = wallModel ? 2 / 3 : 0.75;
+    const x = x0 + stepM * t;
     const centre = wallModel ? evaluateCentre(wallModel, Math.min(x, wallModel.L)) : { value: 15, first: 0 };
     return [x, centre.value + centre.first * Math.max(0, x - (wallModel?.L ?? 60)) + 2 * Math.sin(2 * Math.PI * x / 30 + v + 1)];
   });

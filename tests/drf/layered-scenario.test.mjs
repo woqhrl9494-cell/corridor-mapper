@@ -53,10 +53,14 @@ test('60/120 duration, fleet size, measurement noise and field settings cannot s
 test('all 20 vehicles exit through a tangent continuation of the centre without extending either wall', () => {
   const g = geometry(), end = evaluateCentre(g.wallModel, 80), poses = truePoses(120, 20, g.wallModel);
   assert.ok(poses.every(([x]) => x > 80));
-  assert.deepEqual([Math.min(...poses.map(p => p[0])), Math.max(...poses.map(p => p[0]))], [91, 104]);
+  assert.deepEqual([Math.min(...poses.map(p => p[0])), Math.max(...poses.map(p => p[0]))], [81, 94]);
+  const tenVehicles = truePoses(120, 10, g.wallModel);
+  assert.deepEqual([Math.min(...tenVehicles.map(p => p[0])), Math.max(...tenVehicles.map(p => p[0]))], [81, 90]);
+  // Independent endpoint checks: 120 samples cover 80 m from each fixed initial slot.
+  for (let v = 0; v < 20; v++) close(poses[v][0] - truePoses(0, 20, g.wallModel)[v][0], 80);
   for (let t = 1; t < 120; t++) {
     const current = truePoses(t, 20, g.wallModel), next = truePoses(t + 1, 20, g.wallModel);
-    for (let v = 0; v < 20; v++) close(next[v][0] - current[v][0], .75, 1e-14);
+    for (let v = 0; v < 20; v++) close(next[v][0] - current[v][0], 80 / 120, 2e-14);
   }
   poses.forEach(([x, y], v) => close(y - 2 * Math.sin(2 * Math.PI * x / 30 + v + 1), end.value + end.first * (x - 80)));
   for (const wall of g.walls) assert.equal(wall.at(-1)[0], 80);

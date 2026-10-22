@@ -1,9 +1,9 @@
-import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261003-pspt1';
+import { DEFAULT_INPUT, LAYERED_DOMAIN, normalizeInput, createSceneGeometry } from './scenario.mjs?v=20261022-route1';
 import { createGrid } from './field.mjs';
 import { percentile } from './evaluate.mjs?v=20261003-pspt1';
 import { psptSnapshotCsv } from './pspt-evaluate.mjs';
 import { METHOD_PROTOCOL } from './comparison.mjs';
-import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261003-pspt1';
+import { startSweep, parseValues, sweepJobs, aggregateRuns } from './sweep.mjs?v=20261022-route1';
 import { DrfMap, linkMapCameras, drawComparisonHistory, drawSweep, drawHistogram, drawProfile, drawCounts } from './render.mjs?v=20261022-compare1';
 import { download, png300dpi } from '../surf/exports.mjs';
 
@@ -27,7 +27,7 @@ function settings() {
   return normalizeInput(values);
 }
 function makeWorker(name, onProgress = () => {}) {
-  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261022-compare1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
+  const worker = globalThis.__drfOffline?.worker(name) ?? new Worker(new URL(`./${name}.worker.mjs?v=20261022-route1`, import.meta.url), { type: 'module' }), pending = new Map(); let id = 0, stopped = false;
   worker.onmessage = ({ data }) => {
     if (data.type === 'progress') { onProgress(data); return; }
     const request = pending.get(data.requestId); if (!request) return;
